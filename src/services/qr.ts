@@ -16,31 +16,12 @@ export async function generateQRCode(text: string): Promise<string> {
       errorCorrectionLevel: 'M',
     });
     
-    // Convert base64 data URL to local Object URL
-    return dataURLtoObjectURL(dataUrl);
+    // Return base64 data URL directly
+    return dataUrl;
   } catch (error) {
     console.error('Failed to generate QR code:', error);
     return '';
   }
 }
 
-/**
- * Decodes base64 Data URLs and returns a local Blob URL.
- */
-function dataURLtoObjectURL(dataurl: string): string {
-  try {
-    const arr = dataurl.split(',');
-    const mime = arr[0].match(/:(.*?);/)![1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    const blob = new Blob([u8arr], { type: mime });
-    return URL.createObjectURL(blob);
-  } catch (e) {
-    console.error('Failed to convert base64 to Blob URL:', e);
-    return dataurl; // fallback to original dataUrl
-  }
-}
+

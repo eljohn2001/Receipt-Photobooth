@@ -55,14 +55,8 @@ export function ditherImage(
       // Put the modified pixels back
       ctx.putImageData(imageData, 0, 0);
 
-      // Convert to blob and return Object URL to prevent buffer overflow in receipt printers
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(URL.createObjectURL(blob));
-        } else {
-          resolve(canvas.toDataURL('image/png')); // fallback
-        }
-      }, 'image/png');
+      // Resolve directly as base64 Data URL to prevent SVG iframe/image sandbox blocks
+      resolve(canvas.toDataURL('image/png'));
     };
 
     img.onerror = (e) => {
