@@ -30,7 +30,9 @@ export async function uploadToImgBB(blob: Blob, apiKey: string): Promise<string>
  */
 export async function uploadToImgur(blob: Blob): Promise<string> {
   const config = loadKioskConfig();
-  const clientId = config.imgurClientId || '6e08c02c63d5ad3'; 
+  const clientId = (config.imgurClientId && config.imgurClientId.trim() !== '') 
+    ? config.imgurClientId.trim() 
+    : '6e08c02c63d5ad3'; 
   const formData = new FormData();
   formData.append('image', blob);
 
@@ -60,10 +62,14 @@ export async function uploadToImgur(blob: Blob): Promise<string> {
  */
 export async function uploadImage(blob: Blob): Promise<string> {
   const config = loadKioskConfig();
-  if (config.imgbbApiKey) {
+  const imgbbKey = (config.imgbbApiKey && config.imgbbApiKey.trim() !== '') 
+    ? config.imgbbApiKey.trim() 
+    : 'c6b792880a4b31c6d365bd5586f10dc2';
+
+  if (imgbbKey) {
     try {
       console.log('Attempting upload to ImgBB...');
-      return await uploadToImgBB(blob, config.imgbbApiKey);
+      return await uploadToImgBB(blob, imgbbKey);
     } catch (err) {
       console.warn('ImgBB upload failed, trying Imgur fallback:', err);
     }
