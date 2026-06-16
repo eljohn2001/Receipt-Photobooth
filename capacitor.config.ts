@@ -5,6 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Receipt Booth',
   webDir: 'dist',
   server: {
+    url: 'https://photoreceipt.stoodioph.com/',
+    cleartext: true,
     androidScheme: 'https'
   }
 };
