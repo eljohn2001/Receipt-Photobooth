@@ -48,38 +48,146 @@ export async function generateReceiptBlob(session: AppSession): Promise<Blob> {
   // Remove temporary container from DOM
   document.body.removeChild(tempContainer);
 
-  // 3. Extract CSS rules from styleSheets to inject inside the SVG
-  let styles = '';
-  try {
-    for (let i = 0; i < document.styleSheets.length; i++) {
-      const sheet = document.styleSheets[i];
-      try {
-        const rules = sheet.cssRules || sheet.rules;
-        for (let j = 0; j < rules.length; j++) {
-          styles += rules[j].cssText + '\n';
-        }
-      } catch (e) {
-        // Safe catch for cross-origin stylesheet security restrictions (CORS)
-      }
+  // 3. Define a clean, self-contained stylesheet for the receipt SVG rendering
+  // (We avoid parsing document.styleSheets because it contains external @import font urls which browsers block inside SVG images)
+  const styles = `
+    .thermal-paper {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+      font-family: 'Courier Prime', Courier, monospace;
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 100%;
+      padding: 30px 20px;
+      border: 1px solid #000;
+      position: relative;
+      margin: 0;
     }
-  } catch (e) {
-    console.warn('Could not read style sheets:', e);
-  }
+    .collage-receipt-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 2px;
+      background-color: #ffffff;
+    }
+    .template-header {
+      width: 100%;
+      text-align: center;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: center;
+    }
+    .template-header-logo {
+      max-width: 120px;
+      max-height: 48px;
+      object-fit: contain;
+      display: block;
+    }
+    .template-header-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #000000;
+      line-height: 1.2;
+    }
+    .template-photo-grid-1 {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .template-photo-grid-1 .photo-item {
+      width: 100%;
+      aspect-ratio: 1.0;
+      object-fit: cover;
+      border: 1px solid #000000;
+    }
+    .template-photo-grid-4 {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .template-photo-grid-4 .photo-item {
+      width: 100%;
+      aspect-ratio: 1.0;
+      object-fit: cover;
+      border: 1px solid #000000;
+    }
+    .template-photo-grid-3 {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .template-photo-grid-3 .photo-item {
+      width: 100%;
+      aspect-ratio: 1.5;
+      object-fit: cover;
+      border: 1px solid #000000;
+    }
+    .template-photo-grid-6 {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .template-photo-grid-6 .photo-item {
+      width: 100%;
+      aspect-ratio: 1.5;
+      object-fit: cover;
+      border: 1px solid #000000;
+    }
+    .photo-placeholder {
+      background: #f0f0f0;
+      color: #888888;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+    .template-footer {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      color: #333333;
+      margin-top: 12px;
+    }
+    .template-footer-location {
+      text-align: left;
+      font-weight: 700;
+      text-transform: uppercase;
+      max-width: 60%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .template-footer-date {
+      text-align: right;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    ${session.isMirrored ? '.photo-item { transform: scaleX(-1); }' : ''}
+  `;
 
   // 4. Construct SVG containing the HTML markup and stylesheets
   const svgString = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
       <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="thermal-paper" style="background-color: #ffffff; color: #000000; font-family: 'Courier Prime', Courier, monospace; box-sizing: border-box; width: 100%; min-height: 100%; padding: 30px 20px; border: 1px solid #000; position: relative; margin: 0;">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="thermal-paper">
           <style>
             ${styles}
-            /* Enforce high contrast thermal layout print variables */
-            body { background: #ffffff !important; }
-            .thermal-paper { background-color: #ffffff !important; color: #000000 !important; }
-            .receipt-photo, .filmstrip-photo, .polaroid-image, .postcard-image, .collage-image {
-              display: block !important;
-            }
-            ${session.isMirrored ? '.photo-item { transform: scaleX(-1); }' : ''}
           </style>
           ${receiptHtml}
         </div>
