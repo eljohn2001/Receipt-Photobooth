@@ -2,6 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (async function() {
+        if (navigator.onLine && !window.location.href.startsWith('https://photoreceipt.stoodioph.com')) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1500);
+            const res = await fetch('https://photoreceipt.stoodioph.com/favicon.svg', {
+              method: 'HEAD',
+              signal: controller.signal,
+              cache: 'no-store',
+              mode: 'no-cors'
+            });
+            clearTimeout(timeoutId);
+            window.location.replace('https://photoreceipt.stoodioph.com/');
+          } catch (e) {
+            console.warn('Hosted site unreachable, running local assets:', e);
+          }
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- Lock scale and viewport for strict tablet/mobile kiosk setup -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
