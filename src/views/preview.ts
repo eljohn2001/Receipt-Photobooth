@@ -5,7 +5,7 @@ import { getTemplateById } from '../templates';
 import type { AppSession, ReceiptMetadata } from '../types';
 import { loadKioskConfig } from '../services/config';
 import { generateReceiptBlob } from '../services/download';
-import { uploadToImgur } from '../services/upload';
+import { uploadImage } from '../services/upload';
 
 export class PreviewView extends BaseView {
   private activeSession: AppSession;
@@ -238,9 +238,9 @@ export class PreviewView extends BaseView {
       this.activeSession.uploadPromise = (async () => {
         try {
           const blob = await generateReceiptBlob(this.activeSession);
-          const imgurUrl = await uploadToImgur(blob);
+          const uploadedUrl = await uploadImage(blob);
           const baseUrl = window.location.origin;
-          const hybridUrl = `${baseUrl}/?photo=${encodeURIComponent(imgurUrl)}`;
+          const hybridUrl = `${baseUrl}/?photo=${encodeURIComponent(uploadedUrl)}`;
           const qrDataUrl = await generateQRCode(hybridUrl);
           
           if (this.activeSession.metadata) {

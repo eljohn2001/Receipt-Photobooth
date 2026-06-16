@@ -14,6 +14,7 @@ export interface KioskConfig {
   backgroundType: 'image' | 'video' | null;
   customMessage: string;
   imgurClientId?: string;
+  imgbbApiKey?: string;
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -26,7 +27,8 @@ export const DEFAULT_CONFIG: KioskConfig = {
   logoDataUrl: null,
   backgroundType: null,
   customMessage: 'Thank you for stopping by! Keep smiling.',
-  imgurClientId: '6e08c02c63d5ad3'
+  imgurClientId: '6e08c02c63d5ad3',
+  imgbbApiKey: 'c6b792880a4b31c6d365bd5586f10dc2'
 };
 
 const STORAGE_KEY = 'receipt_booth_kiosk_config';
