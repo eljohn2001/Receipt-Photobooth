@@ -15,7 +15,7 @@
               mode: 'no-cors'
             });
             clearTimeout(timeoutId);
-            window.location.replace('https://photoreceipt.stoodioph.com/');
+            window.location.replace('https://photoreceipt.stoodioph.com/' + window.location.search);
           } catch (e) {
             console.warn('Hosted site unreachable, running local assets:', e);
           }

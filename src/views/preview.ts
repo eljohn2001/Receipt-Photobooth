@@ -138,8 +138,8 @@ export class PreviewView extends BaseView {
         hour12: false,
       });
 
-      // 3. Generate QR code link pointing to our own dynamic origin
-      const baseUrl = window.location.origin;
+      // 3. Generate QR code link pointing to our hosted origin
+      const baseUrl = 'https://photoreceipt.stoodioph.com';
       const digitalUrl = `${baseUrl}/`;
       const qrDataUrl = await generateQRCode(digitalUrl);
 
@@ -239,7 +239,7 @@ export class PreviewView extends BaseView {
         try {
           const blob = await generateReceiptBlob(this.activeSession);
           const uploadedUrl = await uploadImage(blob);
-          const baseUrl = window.location.origin;
+          const baseUrl = 'https://photoreceipt.stoodioph.com';
           const hybridUrl = `${baseUrl}/?photo=${encodeURIComponent(uploadedUrl)}`;
           const qrDataUrl = await generateQRCode(hybridUrl);
           
