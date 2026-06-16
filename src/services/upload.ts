@@ -1,9 +1,11 @@
+import { loadKioskConfig } from './config';
+
 /**
  * Uploads a binary image Blob to Imgur anonymously and returns the public URL.
  */
 export async function uploadToImgur(blob: Blob): Promise<string> {
-  // Free Imgur Client-ID registered for the application
-  const clientId = '6e08c02c63d5ad3'; 
+  const config = loadKioskConfig();
+  const clientId = config.imgurClientId || '6e08c02c63d5ad3'; 
   const formData = new FormData();
   formData.append('image', blob);
 

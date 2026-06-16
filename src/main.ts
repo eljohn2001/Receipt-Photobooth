@@ -401,6 +401,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (textColorInput) textColorInput.value = config.textColor;
     if (textColorHomeInput) textColorHomeInput.value = config.textColorHome || '#000000';
 
+    const imgurClientIdInput = document.getElementById('input-imgur-client-id') as HTMLInputElement;
+    if (imgurClientIdInput) imgurClientIdInput.value = config.imgurClientId || '';
+
     updateLogoPreview(config.logoDataUrl);
 
     if (config.backgroundType) {
@@ -478,6 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addressInput = document.getElementById('input-cafe-address') as HTMLInputElement;
     const phoneInput = document.getElementById('input-cafe-phone') as HTMLInputElement;
     const messageInput = document.getElementById('input-custom-message') as HTMLTextAreaElement;
+    const imgurClientIdInput = document.getElementById('input-imgur-client-id') as HTMLInputElement;
     const bgColorInput = document.getElementById('input-bg-color') as HTMLInputElement;
     const textColorInput = document.getElementById('input-text-color') as HTMLInputElement;
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
@@ -501,7 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
       textColor: textColorInput.value,
       textColorHome: textColorHomeInput.value,
       logoDataUrl: currentLogoDataUrl,
-      backgroundType: resolvedBgType
+      backgroundType: resolvedBgType,
+      imgurClientId: imgurClientIdInput ? imgurClientIdInput.value.trim() : ''
     };
 
     saveKioskConfig(newConfig);

@@ -138,8 +138,9 @@ export class PreviewView extends BaseView {
         hour12: false,
       });
 
-      // 3. Generate QR code link
-      const digitalUrl = `https://littlevintagephotobooth.com/receipt/${receiptNumber}`;
+      // 3. Generate QR code link pointing to our own dynamic origin
+      const baseUrl = window.location.origin;
+      const digitalUrl = `${baseUrl}/`;
       const qrDataUrl = await generateQRCode(digitalUrl);
 
       const config = loadKioskConfig();
@@ -238,7 +239,8 @@ export class PreviewView extends BaseView {
         try {
           const blob = await generateReceiptBlob(this.activeSession);
           const imgurUrl = await uploadToImgur(blob);
-          const hybridUrl = `https://photoreceipt.stoodioph.com/?photo=${encodeURIComponent(imgurUrl)}`;
+          const baseUrl = window.location.origin;
+          const hybridUrl = `${baseUrl}/?photo=${encodeURIComponent(imgurUrl)}`;
           const qrDataUrl = await generateQRCode(hybridUrl);
           
           if (this.activeSession.metadata) {
