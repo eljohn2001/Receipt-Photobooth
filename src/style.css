@@ -1,0 +1,2521 @@
+:root {
+  /* Stark Black & White Vintage Theme */
+  --bg-primary: #ffffff;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f5f5;
+  --text-primary: #000000;
+  --text-secondary: #666666;
+  --accent-color: #000000;
+  --accent-secondary: #000000;
+  --accent-danger: #ff0000;
+  --border-primary: rgba(0, 0, 0, 0.15);
+
+  --font-ui: "SF Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Space Grotesk", sans-serif;
+  --font-vintage: 'Playfair Display', serif;
+  --font-script: "Exmouth", "Italianno", "Pinyon Script", cursive;
+
+  --text-home: #000000;
+  --text-home-secondary: rgba(0, 0, 0, 0.6);
+
+  /* Thermal Receipt Theme */
+  --receipt-bg: #ffffff;
+  /* stark black-and-white receipt */
+  --receipt-text: #000000;
+  --font-receipt: 'Courier Prime', Courier, monospace;
+}
+
+/* Base resets */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* -------------------------------------------------------------
+   KIOSK HORIZONTAL VIEW NAVIGATION
+------------------------------------------------------------- */
+.kiosk-app-frame {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.views-slider {
+  display: flex;
+  width: 600%;
+  /* 6 views */
+  height: 100vh;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.view-panel {
+  width: 100vw;
+  height: 100vh;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background-color: #ffffff;
+}
+
+/* -------------------------------------------------------------
+   COMMON COMPONENTS
+------------------------------------------------------------- */
+.screen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 15px;
+}
+
+.header-titles {
+  text-align: center;
+  flex-grow: 1;
+}
+
+.view-title {
+  font-family: var(--font-vintage);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.view-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-family: var(--font-ui);
+  letter-spacing: 0.5px;
+}
+
+.btn-back {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--text-primary);
+  padding: 10px 18px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 0px;
+  /* sharp edges for retro feel */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 1.5px;
+}
+
+.btn-back:hover {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+}
+
+.btn {
+  font-family: var(--font-ui);
+  padding: 16px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid #fff;
+  border-radius: 0px;
+  /* sharp modern/retro edges */
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-primary {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+.btn-primary:active {
+  background: #cccccc;
+}
+
+.btn-primary:disabled {
+  background: #111;
+  border-color: #222;
+  color: #444;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+.btn-pulse {
+  animation: start-pulse 2s infinite alternate;
+}
+
+@keyframes start-pulse {
+  0% {
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1);
+  }
+
+  100% {
+    border-color: rgba(255, 255, 255, 1);
+    transform: scale(1.03);
+  }
+}
+
+#view-idle {
+  padding: 0;
+  background-color: var(--bg-primary);
+}
+
+.idle-screen-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 40px 24px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Home Screen Dynamic Background Photo/Video Container */
+.idle-background-media-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.idle-background-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.attract-logo-container {
+  text-align: center;
+}
+
+.kiosk-badge {
+  background: transparent;
+  border: 1px solid var(--text-home-secondary);
+  color: var(--text-home-secondary);
+  font-family: var(--font-vintage);
+  font-style: italic;
+  font-size: 12px;
+  padding: 6px 16px;
+  border-radius: 0px;
+  display: inline-block;
+  letter-spacing: 2.5px;
+  margin-bottom: 20px;
+}
+
+.brand-title {
+  font-family: var(--font-vintage);
+  font-size: 52px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text-home);
+}
+
+.brand-subtitle {
+  font-family: var(--font-script);
+  font-size: 44px;
+  color: var(--text-home);
+  font-weight: 400;
+  margin-top: 0px;
+  letter-spacing: 1px;
+}
+
+
+/* Attract loop printer animation (3D Hardware Mockup) */
+.printer-attract-hardware {
+  position: relative;
+  width: 300px;
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: auto;
+  overflow: visible;
+}
+
+/* 3D Bevel Printer Mouth (Sleek black plastic capsule) */
+.printer-hardware-mouth {
+  width: 280px;
+  height: 54px;
+  background: linear-gradient(180deg, #3a3d40 0%, #1e2022 40%, #0a0b0c 100%);
+  border-radius: 27px;
+  /* rounded capsule */
+  box-shadow:
+    0 6px 12px rgba(0, 0, 0, 0.15),
+    inset 0 2px 2px rgba(255, 255, 255, 0.1),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  /* Placed behind paper clipper */
+}
+
+/* Inner slot cut (dark opening) */
+.printer-hardware-slot {
+  width: 210px;
+  height: 8px;
+  background: #000000;
+  border-radius: 4px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Paper clip window - aligned to slot center (top: 27px) */
+.printer-paper-clipper {
+  width: 176px;
+  height: 315px;
+  position: absolute;
+  top: 27px;
+  /* emerging from slot center */
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  z-index: 20;
+  /* Placed in front of mouth to overlay bottom lip */
+}
+
+/* Looping print receipt document */
+.attract-loop-receipt {
+  width: 100%;
+  background: #ffffff;
+  color: #333333;
+  padding: 14px 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  font-family: var(--font-receipt);
+  text-align: center;
+  position: relative;
+  transform: translateY(-100%);
+  opacity: 0;
+  transform-origin: top center;
+}
+
+.animate-print {
+  animation: attract-print-loop 7s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+/* Orange Tear Dashed Line */
+.orange-tear-line {
+  border-bottom: 2px dashed #ff6b35;
+  margin: 2px 0 6px 0;
+  width: 100%;
+}
+
+/* RECEIPT Title */
+.receipt-brand-label {
+  font-family: var(--font-receipt);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: #222222;
+  text-transform: uppercase;
+}
+
+/* abstract dotted divider */
+.receipt-abstract-divider {
+  color: #888888;
+  font-size: 8px;
+  letter-spacing: 2.2px;
+  line-height: 1;
+}
+
+/* Printed Photo Receipt Frame Styling */
+.receipt-photo-frame {
+  border: 1px solid #333333;
+  padding: 6px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+.receipt-halftone-photo {
+  height: 75px;
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(#000000 20%, transparent 20%),
+    radial-gradient(#000000 20%, transparent 20%);
+  background-size: 3px 3px;
+  background-position: 0 0, 1.5px 1.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 1px solid #444444;
+}
+
+.photo-emoji {
+  font-size: 32px;
+  z-index: 2;
+  background: #ffffff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #333333;
+  line-height: 1;
+}
+
+.photo-caption {
+  font-size: 8px;
+  font-family: var(--font-receipt);
+  font-weight: 700;
+  color: #333333;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Total Section */
+.receipt-abstract-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #222222;
+}
+
+.total-symbol {
+  font-weight: 700;
+}
+
+/* Double horizontal lines */
+.receipt-abstract-double-divider {
+  border-top: 1px solid #333333;
+  border-bottom: 1px solid #333333;
+  height: 2px;
+  width: 100%;
+}
+
+/* Integrated tactile prompt inside paper */
+.receipt-start-prompt {
+  border: 2px dashed #333333;
+  padding: 6px 10px;
+  margin: 2px 4px 6px 4px;
+  font-family: var(--font-receipt);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: #222222;
+  text-transform: uppercase;
+  animation: prompt-pulse 1.8s ease-in-out infinite;
+  display: block;
+}
+
+@keyframes prompt-pulse {
+  0% {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+    border-color: #000000;
+  }
+
+  100% {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+}
+
+/* Jagged Sawtooth bottom tear edge */
+.receipt-jagged-edge {
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background-image:
+    linear-gradient(-135deg, #ffffff 4px, transparent 0),
+    linear-gradient(135deg, #ffffff 4px, transparent 0);
+  background-size: 8px 8px;
+  background-repeat: repeat-x;
+  z-index: 10;
+}
+
+/* Pull Down and Pull Back Up looping animation timeline */
+@keyframes attract-print-loop {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  5% {
+    transform: translateY(-100%);
+    opacity: 1;
+    /* Fade in inside slot */
+  }
+
+  /* Pull down (eject / print) */
+  45% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* Pause fully printed for reading */
+  70% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* Pull back up (retract into slot) */
+  95% {
+    transform: translateY(-100%);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+/* -------------------------------------------------------------
+   2. TEMPLATE SELECTION
+------------------------------------------------------------- */
+.template-screen-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.templates-grid-wrapper {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.template-screen-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #ffffff;
+}
+
+.template-screen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 30px 40px 10px 40px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.btn-tmpl-back-minimal {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  transition: opacity 0.2s;
+}
+
+.btn-tmpl-back-minimal:hover {
+  opacity: 0.7;
+}
+
+.template-choose-title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 32px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.script-title {
+  font-family: var(--font-script);
+  font-size: 56px;
+  text-transform: none;
+  font-weight: 400;
+  margin-left: 12px;
+  line-height: 0.8;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.templates-grid-wrapper {
+  box-sizing: border-box;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 20px;
+  display: flex;
+}
+
+.templates-static-grid {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(2, 280px);
+  gap: 32px 50px;
+  justify-content: center;
+  align-content: center;
+}
+
+.template-selection-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.template-card-mockup-png-wrapper {
+  position: relative;
+  width: 280px;
+  cursor: pointer;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  border-radius: 0;
+  overflow: hidden;
+  background-color: #ffffff;
+  border: 1px solid #000000;
+}
+
+.template-card-mockup-png-wrapper:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.template-mockup-png-bg {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+.template-card-logo-overlay {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  right: 20px;
+  height: 52px;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.overlay-cafe-logo {
+  max-width: 150px;
+  max-height: 48px;
+  object-fit: contain;
+  display: block;
+}
+
+.overlay-cafe-name {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #000000;
+  text-align: center;
+}
+
+/* Template name title below card */
+.template-mockup-name {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--text-primary);
+  margin-top: 14px;
+  text-align: center;
+}
+
+/* Card Mockup footer formatting adjustments to match mockup */
+.template-card-mockup .template-footer {
+  border-top: none !important;
+  margin-top: 0;
+  padding-top: 0;
+  font-family: var(--font-ui);
+  color: #000000;
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.template-card-mockup .template-footer-location {
+  font-family: var(--font-ui);
+  text-transform: none;
+  font-weight: 500;
+  color: #000000;
+}
+
+.template-card-mockup .template-footer-date {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  color: #000000;
+}
+
+@media (max-width: 768px) {
+  .templates-static-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* -------------------------------------------------------------
+   3. CAMERA CAPTURE VIEW
+------------------------------------------------------------- */
+.capture-screen-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.camera-viewport-container {
+  flex-grow: 1;
+  position: relative;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.webcam-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.webcam-feed.mirror {
+  transform: scaleX(-1);
+}
+
+.camera-frame-guide {
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  right: 10%;
+  bottom: 10%;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.camera-frame-guide::before {
+  content: 'FOCUS FRAME';
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 3px 12px;
+}
+
+.countdown-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  backdrop-filter: blur(2px);
+}
+
+#countdown-text {
+  font-family: var(--font-vintage);
+  font-size: 140px;
+  font-weight: 300;
+  color: #ffffff;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.scale-pulse {
+  animation: num-pulse 1s ease-out forwards;
+}
+
+@keyframes num-pulse {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.2;
+  }
+
+  30% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.shutter-flash {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shutter-flash.active {
+  animation: flash-animation 0.4s ease-out forwards;
+}
+
+@keyframes flash-animation {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.capture-controls {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.shutter-button {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 4px solid var(--bg-primary);
+  box-shadow:
+    0 0 0 2px var(--text-primary),
+    0 6px 16px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: 10px 0;
+  padding: 0;
+}
+
+.shutter-button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.shutter-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.shutter-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.shutter-icon {
+  font-size: 24px;
+  color: var(--bg-primary);
+  line-height: 1;
+  display: inline-block;
+}
+
+.camera-status-tag {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: transparent;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  letter-spacing: 1px;
+}
+
+.sequence-progress {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 5px;
+}
+
+.seq-dot {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.seq-dot.active {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.seq-dot.captured {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* -------------------------------------------------------------
+   4. THERMAL RECEIPT PREVIEW VIEW
+------------------------------------------------------------- */
+.preview-screen-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-layout-container {
+  flex-grow: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.thermal-paper-scroll-wrapper {
+  width: 100%;
+  max-width: 380px;
+  height: 100%;
+  overflow-y: auto;
+  padding-bottom: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.thermal-paper-scroll-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.thermal-paper-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.thermal-paper {
+  background-color: var(--receipt-bg);
+  color: var(--receipt-text);
+  font-family: var(--font-receipt);
+  width: 100%;
+  padding: 30px 20px;
+  position: relative;
+  border: 1px solid #000;
+}
+
+/* Ripped paper look at the top/bottom */
+.thermal-paper::before,
+.receipt-footer-tear {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background-size: 16px 10px;
+  z-index: 10;
+}
+
+.thermal-paper::before {
+  top: -5px;
+  background-image: linear-gradient(135deg, #000 25%, transparent 25%),
+    linear-gradient(225deg, #000 25%, transparent 25%);
+}
+
+.receipt-footer-tear {
+  bottom: -5px;
+  background-image: linear-gradient(45deg, #000 25%, transparent 25%),
+    linear-gradient(-45deg, #000 25%, transparent 25%);
+}
+
+.dither-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  color: #111;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #000;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+.spinner-accent {
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-left-color: #fff;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loader-text {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.preview-actions-bar {
+  margin-top: 20px;
+  display: flex;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+.btn-half {
+  flex: 1;
+}
+
+/* -------------------------------------------------------------
+   THERMAL RECEIPT CONTENT STYLING
+------------------------------------------------------------- */
+.receipt-content-target {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.receipt-header {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.receipt-title {
+  font-family: var(--font-receipt);
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.receipt-subtitle {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.receipt-divider {
+  text-align: center;
+  margin: 10px 0;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.receipt-info-block {
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.receipt-itemized-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.receipt-item-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 0;
+}
+
+.receipt-photo-container {
+  border: 1px dashed var(--receipt-text);
+  padding: 6px;
+  margin: 15px 0;
+  text-align: center;
+  background: #fff;
+}
+
+.receipt-photo {
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.receipt-photo-caption {
+  font-size: 9px;
+  margin-top: 6px;
+  font-weight: 700;
+}
+
+.receipt-total-block {
+  font-size: 12px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 2px 0;
+}
+
+.total-row.bold {
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.receipt-nutrition {
+  font-size: 11px;
+}
+
+.nutrition-title {
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.nutrition-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 2px 0;
+}
+
+.receipt-message {
+  text-align: center;
+  font-style: italic;
+  padding: 10px 5px;
+  font-size: 11px;
+}
+
+.receipt-barcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.barcode-lines {
+  height: 35px;
+  width: 160px;
+  background: repeating-linear-gradient(90deg,
+      #000,
+      #000 2px,
+      transparent 2px,
+      transparent 5px,
+      #000 5px,
+      #000 6px,
+      transparent 6px,
+      transparent 8px);
+}
+
+.barcode-text {
+  font-size: 9px;
+  margin-top: 4px;
+  letter-spacing: 2px;
+}
+
+.receipt-qr-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.qr-info-text {
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.receipt-qr-image {
+  width: 110px;
+  height: 110px;
+  display: block;
+}
+
+.qr-web-link {
+  font-size: 9px;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+/* Filmstrip specific styles inside receipt */
+.filmstrip-container {
+  background: #000;
+  padding: 15px 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.filmstrip-frame {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.sprockets-left,
+.sprockets-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 200px;
+}
+
+.sprocket {
+  width: 8px;
+  height: 12px;
+  background: var(--receipt-bg);
+  border-radius: 0px;
+}
+
+.filmstrip-image-container {
+  width: 82%;
+  background: #000;
+  border: 1px solid #111;
+}
+
+.filmstrip-photo {
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.filmstrip-cell-divider {
+  color: #fff;
+  font-size: 8px;
+  text-align: center;
+  letter-spacing: 3px;
+  margin: 2px 0;
+}
+
+/* Date theme borders */
+.hearts-border {
+  font-size: 10px;
+  letter-spacing: 2.2px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.date-photo-container {
+  position: relative;
+}
+
+.heart-corner {
+  position: absolute;
+  font-size: 16px;
+  color: #000;
+}
+
+.heart-corner.top-left {
+  top: 10px;
+  left: 10px;
+}
+
+.heart-corner.top-right {
+  top: 10px;
+  right: 10px;
+}
+
+.heart-corner.bottom-left {
+  bottom: 10px;
+  left: 10px;
+}
+
+.heart-corner.bottom-right {
+  bottom: 10px;
+  right: 10px;
+}
+
+.receipt-chemistry {
+  font-size: 11px;
+}
+
+.chem-title {
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.chem-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 2px 0;
+}
+
+/* Journal design */
+.journal-quote {
+  font-size: 11px;
+  text-align: center;
+}
+
+.quote-text {
+  margin-top: 4px;
+}
+
+.journal-lines-container {
+  padding: 10px 0;
+}
+
+.journal-lines-header {
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.journal-dot-line {
+  margin: 8px 0;
+  letter-spacing: 1px;
+  color: #999;
+}
+
+/* Seasonal receipt */
+.seasonal-border {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.coupon-block {
+  border: 1px dashed #000;
+  padding: 10px;
+  text-align: center;
+  margin: 15px 0;
+}
+
+.coupon-title {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.coupon-desc {
+  font-size: 10px;
+  margin: 4px 0;
+}
+
+.coupon-discount {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 6px 0;
+}
+
+.coupon-fineprint {
+  font-size: 8px;
+  color: #555;
+}
+
+/* -------------------------------------------------------------
+   5. PRINTING ANIMATION SCREEN
+------------------------------------------------------------- */
+.printing-screen-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 40px 0;
+}
+
+.printing-status-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  text-align: center;
+}
+
+.printing-headline {
+  font-family: var(--font-vintage);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: 2px;
+}
+
+.printing-subline {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.virtual-printer-box {
+  width: 320px;
+  height: 380px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.printer-body {
+  width: 100%;
+  height: 120px;
+  background: var(--bg-tertiary);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 20;
+}
+
+.printer-slot-opening {
+  position: absolute;
+  top: 40px;
+  left: 30px;
+  right: 30px;
+  height: 10px;
+  background: #000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.printed-paper-delivery {
+  position: absolute;
+  left: 45px;
+  right: 45px;
+  bottom: 78px;
+  height: 250px;
+  overflow: hidden;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.printed-paper-animation {
+  width: 100%;
+  padding: 20px 15px;
+  border: 1px solid #000;
+
+  animation: receipt-eject 5s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
+  transform: translateY(100%);
+}
+
+@keyframes receipt-eject {
+  0% {
+    transform: translateY(100%);
+  }
+
+  15% {
+    transform: translateY(80%);
+  }
+
+  30% {
+    transform: translateY(60%);
+  }
+
+  50% {
+    transform: translateY(40%);
+  }
+
+  70% {
+    transform: translateY(15%);
+  }
+
+  90% {
+    transform: translateY(0%);
+  }
+
+  100% {
+    transform: translateY(0%);
+  }
+}
+
+.printing-footer-hint {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* -------------------------------------------------------------
+   6. FINISHED VIEW
+------------------------------------------------------------- */
+.finished-screen-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 30px 0;
+}
+
+.success-banner {
+  text-align: center;
+}
+
+.success-icon {
+  width: 50px;
+  height: 50px;
+  border: 1px solid var(--text-primary);
+  color: var(--text-primary);
+  background: transparent;
+  font-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.finished-title {
+  font-family: var(--font-vintage);
+  font-size: 28px;
+  font-weight: 400;
+  color: #fff;
+  letter-spacing: 2px;
+}
+
+.finished-subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.finished-download-card {
+  width: 100%;
+  max-width: 320px;
+  background: var(--bg-tertiary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0px;
+  padding: 24px;
+  text-align: center;
+}
+
+.download-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.finished-qr-container {
+  background: var(--receipt-bg);
+  padding: 12px;
+  border: 1px solid #000;
+  margin: 15px auto;
+  width: 164px;
+  height: 164px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.finished-qr-image {
+  width: 140px;
+  height: 140px;
+}
+
+.btn-download-png {
+  width: 100%;
+  padding: 12px;
+  font-size: 11px;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin-bottom: 15px;
+  font-weight: 500;
+  border-radius: 0px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.btn-download-png:hover:not(:disabled) {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+}
+
+.btn-download-png:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.cafe-tag {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.cafe-tag strong {
+  color: var(--text-primary);
+}
+
+.finished-controls {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  max-width: 400px;
+  padding: 0 20px;
+}
+
+.finished-controls button {
+  flex: 1;
+}
+
+.auto-reset-indicator {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+
+/* -------------------------------------------------------------
+   HARDWARE PHYSICAL PRINT STYLING
+------------------------------------------------------------- */
+#print-container {
+  display: none;
+}
+
+@media print {
+
+  /* Force printer roll size (58mm width / 2.25 inches, auto length) and strip browser headers */
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+
+  html, body {
+    height: auto !important;
+    width: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body>*:not(#print-container) {
+    display: none !important;
+  }
+
+  #print-container {
+    display: block !important;
+    width: 58mm;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 4mm 2mm;
+    box-sizing: border-box;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Courier Prime', Courier, monospace;
+    font-size: 8pt;
+  }
+
+  .receipt-photo-container {
+    border: 1px dashed #000000 !important;
+    background: #ffffff !important;
+  }
+
+  .receipt-photo,
+  .filmstrip-photo,
+  .polaroid-image,
+  .postcard-image,
+  .collage-image {
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .filmstrip-container {
+    background: #000000 !important;
+    color: #ffffff !important;
+    padding: 15px 5px !important;
+  }
+
+  .sprocket {
+    background: #ffffff !important;
+  }
+
+  .barcode-lines {
+    background: repeating-linear-gradient(90deg,
+        #000,
+        #000 2px,
+        transparent 2px,
+        transparent 5px) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .polaroid-wrapper {
+    background: #ffffff !important;
+    border: 1px solid #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .collage-grid-container {
+    background: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .collage-cell {
+    background: #ffffff !important;
+  }
+
+  .postcard-postmark {
+    border-color: #000000 !important;
+  }
+
+  .postcard-postage-stamp {
+    border-color: #000000 !important;
+  }
+}
+
+/* -------------------------------------------------------------
+   VINTAGE POLAROID TEMPLATE STYLES
+------------------------------------------------------------- */
+.polaroid-wrapper {
+  background: #ffffff;
+  border: 1px solid #000000;
+  padding: 12px 12px 24px 12px;
+  margin: 15px 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.polaroid-frame-container {
+  background: #000000;
+  width: 100%;
+}
+
+.polaroid-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.polaroid-handwritten-caption {
+  font-family: var(--font-script);
+  font-size: 26px;
+  color: #000000;
+  text-align: center;
+  margin-top: 12px;
+  background: #ffffff;
+  line-height: 1.1;
+  text-transform: none;
+}
+
+/* -------------------------------------------------------------
+   VINTAGE POSTCARD TEMPLATE STYLES
+------------------------------------------------------------- */
+.postcard-stamp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0 20px 0;
+}
+
+.postcard-postmark {
+  border: 1px solid #000000;
+  border-radius: 50%;
+  width: 76px;
+  height: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  line-height: 1.2;
+  text-align: center;
+  padding: 5px;
+  border-style: double;
+  border-width: 3px;
+  text-transform: uppercase;
+}
+
+.postmark-text {
+  font-weight: 700;
+}
+
+.postmark-date {
+  font-size: 7px;
+}
+
+.postmark-loc {
+  font-size: 7px;
+}
+
+.postcard-postage-stamp {
+  border: 1px dashed #000000;
+  width: 48px;
+  height: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.postage-emoji {
+  font-size: 18px;
+}
+
+.postage-value {
+  font-size: 8px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.postcard-body-container {
+  display: flex;
+  justify-content: space-between;
+  margin: 15px 0;
+  height: 190px;
+}
+
+.postcard-left-pane {
+  width: 48%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.postcard-photo-frame {
+  border: 1px solid #000000;
+  padding: 3px;
+  background: #ffffff;
+}
+
+.postcard-image {
+  width: 100%;
+  display: block;
+}
+
+.postcard-caption {
+  font-size: 8px;
+  text-align: center;
+  letter-spacing: 2px;
+  font-weight: 700;
+  margin-top: 5px;
+}
+
+.postcard-center-divider {
+  width: 1px;
+  border-left: 1px dashed #000000;
+  height: 100%;
+}
+
+.postcard-right-pane {
+  width: 44%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 15px;
+}
+
+.postcard-address-title {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.postcard-address-line {
+  font-size: 10px;
+  border-bottom: 1px dotted #888888;
+  padding-bottom: 2px;
+}
+
+/* -------------------------------------------------------------
+   GRID COLLAGE TEMPLATE STYLES
+------------------------------------------------------------- */
+.collage-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #000000;
+  padding: 8px;
+  margin: 15px 0;
+}
+
+.collage-grid-row {
+  display: flex;
+  gap: 8px;
+}
+
+.collage-cell {
+  flex: 1;
+  position: relative;
+  border: 1px solid #111111;
+  background: #ffffff;
+}
+
+.collage-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.collage-cell-num {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  font-size: 8px;
+  padding: 1px 4px;
+  font-family: var(--font-receipt);
+}
+
+/* -------------------------------------------------------------
+   SLIDE-DOWN EXIT ANIMATION (PREVIEW -> PRINT)
+------------------------------------------------------------- */
+.thermal-paper.slide-down-exit {
+  animation: paper-drop-down 0.8s cubic-bezier(0.47, 0, 0.745, 0.715) forwards !important;
+}
+
+@keyframes paper-drop-down {
+  0% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(120%);
+  }
+}
+
+/* -------------------------------------------------------------
+   MINIMAL QR CODE FOOTER LAYOUT
+------------------------------------------------------------- */
+.minimal-qr-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px 0 5px 0;
+  background: transparent;
+}
+
+.minimal-qr-image {
+  width: 76px !important;
+  height: 76px !important;
+  display: block !important;
+  margin: 0 auto;
+  border: 1px solid #000;
+  padding: 2px;
+  background: #ffffff;
+}
+
+/* -------------------------------------------------------------
+   ADMIN CONFIG MODAL OVERLAY
+------------------------------------------------------------- */
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+}
+
+.admin-modal-content {
+  background: #181818;
+  border: 1px solid #2e2e2e;
+  width: 90%;
+  max-width: 460px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  color: #ffffff;
+}
+
+.admin-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #2e2e2e;
+  flex-shrink: 0;
+}
+
+.admin-modal-title {
+  font-family: var(--font-vintage);
+  font-size: 20px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.admin-close-x {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.admin-close-x:hover {
+  color: var(--text-primary);
+}
+
+.admin-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+/* Form layouts */
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #aaaaaa;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+  background: #252525;
+  border: 1px solid #3a3a3a;
+  color: #ffffff;
+  padding: 10px 12px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  width: 100%;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+  border-color: #ffffff;
+  outline: none;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.half-width {
+  flex: 1;
+}
+
+/* Color picker styling */
+.color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-picker-wrapper input[type="color"] {
+  -webkit-appearance: none;
+  border: 1px solid var(--border-primary);
+  width: 100%;
+  height: 36px;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+}
+
+.color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker-wrapper input[type="color"]::-webkit-color-swatch {
+  border: none;
+}
+
+/* File upload styling */
+.file-input-hidden {
+  display: none !important;
+}
+
+.file-uploader-label {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  border: 1px dashed var(--border-primary);
+  font-size: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+}
+
+.file-uploader-label:hover {
+  border-color: var(--text-primary);
+  background: rgba(128, 128, 128, 0.05);
+}
+
+.uploader-preview-img {
+  margin-top: 8px;
+  text-align: center;
+  background: var(--bg-primary);
+  padding: 8px;
+  border: 1px solid var(--border-primary);
+}
+
+.uploader-preview-img img {
+  max-height: 60px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Action buttons inside form */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border-primary);
+  padding-top: 16px;
+}
+
+.btn-admin {
+  flex: 1;
+  padding: 12px;
+  font-size: 12px;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  border-radius: 0px;
+}
+
+.btn-admin-primary {
+  background: #ffffff;
+  color: #111111;
+  border-color: #ffffff;
+}
+
+.btn-admin-primary:hover {
+  background: #dddddd;
+  border-color: #dddddd;
+}
+
+.btn-admin-secondary {
+  background: transparent;
+  color: #ffffff;
+  border-color: #3a3a3a;
+}
+
+.btn-admin-secondary:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-admin-danger {
+  background: transparent;
+  color: #ff5252;
+  border-color: rgba(255, 82, 82, 0.3);
+}
+
+.btn-admin-danger:hover {
+  border-color: #ff5252;
+  background: rgba(255, 82, 82, 0.08);
+}
+
+.admin-modal-content .file-uploader-label {
+  border-color: #3a3a3a;
+  color: #ffffff;
+}
+
+.admin-modal-content .file-uploader-label:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-modal-content .uploader-preview-img {
+  background: #252525;
+  border-color: #3a3a3a;
+}
+
+.admin-modal-content .form-actions {
+  border-top: 1px solid #2e2e2e;
+}
+
+/* Attract view Logo sizing override */
+.attract-cafe-logo {
+  max-height: 240px;
+  max-width: 460px;
+  object-fit: contain;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Welcome screen blcklabs footer styling */
+.idle-footer {
+  position: absolute;
+  bottom: 24px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--text-home-secondary);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.6;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* -------------------------------------------------------------
+   TEMPLATE RECEIPT LAYOUTS (MOCKUP COMPACT FORMATS)
+   ------------------------------------------------------------- */
+.collage-receipt-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 2px;
+}
+
+.template-header {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.template-header-logo {
+  max-width: 120px;
+  max-height: 48px;
+  object-fit: contain;
+  display: block;
+}
+
+.template-header-name {
+  font-family: var(--font-vintage);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #000000;
+  line-height: 1.2;
+}
+
+/* Grids for different layout configurations */
+.template-photo-grid-1 {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.template-photo-grid-1 .photo-item {
+  width: 100%;
+  aspect-ratio: 1.0;
+  object-fit: cover;
+  border: 1px solid #000000;
+  image-rendering: pixelated;
+}
+
+.template-photo-grid-4 {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.template-photo-grid-4 .photo-item {
+  width: 100%;
+  aspect-ratio: 1.0;
+  object-fit: cover;
+  border: 1px solid #000000;
+  image-rendering: pixelated;
+}
+
+.template-photo-grid-3 {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.template-photo-grid-3 .photo-item {
+  width: 100%;
+  aspect-ratio: 1.5;
+  /* Horizontal landscape */
+  object-fit: cover;
+  border: 1px solid #000000;
+  image-rendering: pixelated;
+}
+
+.template-photo-grid-6 {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.template-photo-grid-6 .photo-item {
+  width: 100%;
+  aspect-ratio: 1.5;
+  /* Horizontal landscape */
+  object-fit: cover;
+  border: 1px solid #000000;
+  image-rendering: pixelated;
+}
+
+.photo-placeholder {
+  background: #f0f0f0;
+  color: #888888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-receipt);
+  font-size: 11px;
+}
+
+/* Template Footer Location and Date Delimited with Pipes */
+.template-footer {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-receipt);
+  font-size: 9px;
+  color: #333333;
+  margin-top: 12px;
+}
+
+.template-footer-location {
+  text-align: left;
+  font-weight: 700;
+  text-transform: uppercase;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.template-footer-date {
+  text-align: right;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* -------------------------------------------------------------
+   PRINT OPTIONS PANEL & PHOTO MIRRORING
+   ------------------------------------------------------------- */
+.preview-options-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 400px;
+  margin: 15px auto 5px auto;
+  padding: 12px 20px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  box-sizing: border-box;
+}
+
+.option-control-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.option-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+/* Quantity Selector Styling */
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-primary);
+  height: 32px;
+}
+
+.btn-qty {
+  width: 32px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  transition: background 0.2s;
+}
+
+.btn-qty:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.qty-val {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  width: 28px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+/* Toggle Switch Styling */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .3s;
+  border: 1px solid var(--border-primary);
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border: 1px solid var(--border-primary);
+}
+
+input:checked+.toggle-slider {
+  background-color: var(--text-primary);
+}
+
+input:checked+.toggle-slider:before {
+  transform: translateX(20px);
+  background-color: var(--bg-primary);
+}
+
+/* Photo Mirroring CSS transform styling */
+.receipt-mirrored .photo-item {
+  transform: scaleX(-1);
+}

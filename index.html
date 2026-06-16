@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Lock scale and viewport for strict tablet/mobile kiosk setup -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- Meta details for SEO/kiosk headers -->
+    <title>Beans & Bites — Receipt Photo Booth Kiosk</title>
+    <meta name="description" content="Premium monochrome memory vending machine and thermal receipt printing kiosk for cafés." />
+    
+    <!-- Google Fonts for UI, Vintage Serif, Script, and Monospace Thermal styling -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=Pinyon+Script&family=Italianno&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <!-- Main Kiosk Frame (Scroll disabled, horizontal sliding only) -->
+    <div id="app" class="kiosk-app-frame">
+      <div class="views-slider" id="views-slider">
+        <!-- 1. Idle Attract Screen -->
+        <div class="view-panel active-slide" id="view-idle"></div>
+        
+        <!-- 2. Template Selection -->
+        <div class="view-panel" id="view-template-selection"></div>
+        
+        <!-- 3. Camera Capture -->
+        <div class="view-panel" id="view-camera-capture"></div>
+        
+        <!-- 4. Thermal Paper Preview -->
+        <div class="view-panel" id="view-preview"></div>
+        
+        <!-- 5. Printing Animation -->
+        <div class="view-panel" id="view-printing"></div>
+        
+        <!-- 6. Finished & Digital Download -->
+        <div class="view-panel" id="view-finished"></div>
+      </div>
+    </div>
+
+    <!-- Hidden printing queue container (rendered at 58mm via CSS media print query) -->
+    <div id="print-container"></div>
+
+    <!-- Hidden Admin settings panel overlay -->
+    <div id="admin-modal" class="admin-modal-overlay hidden">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <h3 class="admin-modal-title">Booth Setup Panel</h3>
+          <button id="admin-close-x" class="admin-close-x" type="button">&times;</button>
+        </div>
+        <div class="admin-modal-body">
+          <form id="admin-config-form" class="admin-form">
+            
+            <div class="form-group">
+              <label for="input-cafe-name">Café Name</label>
+              <input type="text" id="input-cafe-name" placeholder="e.g. BEANS & BITES" required />
+            </div>
+
+            <div class="form-group">
+              <label for="input-cafe-address">Location Address</label>
+              <input type="text" id="input-cafe-address" placeholder="e.g. 128 Espresso Blvd, City" required />
+            </div>
+
+            <div class="form-group">
+              <label for="input-cafe-phone">Telephone (Receipt Footer)</label>
+              <input type="text" id="input-cafe-phone" placeholder="e.g. 555-123-4567" required />
+            </div>
+
+            <div class="form-group">
+              <label for="input-custom-message">Receipt Message</label>
+              <textarea id="input-custom-message" rows="2" placeholder="e.g. Keep smiling!"></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group half-width">
+                <label for="input-bg-color">Background Color</label>
+                <div class="color-picker-wrapper">
+                  <input type="color" id="input-bg-color" />
+                </div>
+              </div>
+              <div class="form-group half-width">
+                <label for="input-text-color">UI Text Color</label>
+                <div class="color-picker-wrapper">
+                  <input type="color" id="input-text-color" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group half-width">
+                <label for="input-text-home-color">Home Screen Text Color</label>
+                <div class="color-picker-wrapper">
+                  <input type="color" id="input-text-home-color" />
+                </div>
+              </div>
+              <div class="form-group half-width">
+                <!-- Spacer -->
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Café Logo (PNG/SVG recommended)</label>
+              <div class="file-uploader-box">
+                <input type="file" id="input-logo-file" accept="image/*" class="file-input-hidden" />
+                <label for="input-logo-file" class="file-uploader-label">Choose Logo Image</label>
+                <div id="preview-logo-container" class="uploader-preview-img hidden"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Home Screen Background Media (Photo/Video)</label>
+              <div class="file-uploader-box">
+                <input type="file" id="input-bg-file" accept="image/*,video/*" class="file-input-hidden" />
+                <label for="input-bg-file" class="file-uploader-label">Choose Background Media</label>
+                <div id="preview-bg-container" class="uploader-preview-img hidden"></div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="admin-reset-btn" class="btn-admin btn-admin-danger">Reset stock</button>
+              <button type="button" id="admin-cancel-btn" class="btn-admin btn-admin-secondary">Cancel</button>
+              <button type="submit" class="btn-admin btn-admin-primary">Save setup</button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
