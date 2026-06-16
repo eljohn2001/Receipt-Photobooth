@@ -11,8 +11,153 @@ import { loadKioskConfig, saveKioskConfig, resetKioskConfig, type KioskConfig } 
 
 import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia } from './services/db';
 
-// 1. Initialize Global Session State
-const session: AppSession = {
+function renderDownloadPage(photoUrl: string) {
+  document.body.innerHTML = `
+    <div class="download-page-container">
+      <div class="download-page-card">
+        <div class="download-page-header">
+          <h1 class="download-title">YOUR MEMORY</h1>
+          <p class="download-subtitle">Beans & Bites Photo Booth</p>
+        </div>
+        
+        <div class="download-image-wrapper">
+          <img class="download-receipt-image" src="${photoUrl}" alt="Photo Receipt" />
+        </div>
+        
+        <div class="download-instructions">
+          <p class="instruction-main">Tap and hold (long press) the image above to save it to your Photos/Gallery.</p>
+          <p class="instruction-sub">Or click the button below to download directly:</p>
+        </div>
+        
+        <a href="${photoUrl}" download="receipt-photo.png" class="btn-download-action">
+          💾 DOWNLOAD PHOTO
+        </a>
+        
+        <div class="download-page-footer">
+          powered by blcklabs
+        </div>
+      </div>
+    </div>
+  `;
+
+  const styleEl = document.createElement('style');
+  styleEl.innerHTML = `
+    body {
+      background-color: #f5f5f5 !important;
+      color: #000000 !important;
+      font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      min-height: 100vh !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 20px !important;
+      box-sizing: border-box !important;
+      overflow-y: auto !important;
+    }
+    .download-page-container {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .download-page-card {
+      background-color: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 30px 24px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .download-page-header {
+      margin-bottom: 24px;
+    }
+    .download-title {
+      font-family: "Playfair Display", serif;
+      font-size: 26px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      margin: 0 0 4px 0;
+      text-transform: uppercase;
+    }
+    .download-subtitle {
+      font-size: 13px;
+      color: #666666;
+      margin: 0;
+    }
+    .download-image-wrapper {
+      width: 100%;
+      border: 1px solid #000000;
+      padding: 8px;
+      background-color: #ffffff;
+      box-sizing: border-box;
+      margin-bottom: 24px;
+    }
+    .download-receipt-image {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .download-instructions {
+      margin-bottom: 24px;
+      padding: 0 10px;
+    }
+    .instruction-main {
+      font-size: 13px;
+      font-weight: 500;
+      color: #000000;
+      line-height: 1.5;
+      margin: 0 0 8px 0;
+    }
+    .instruction-sub {
+      font-size: 11px;
+      color: #666666;
+      margin: 0;
+    }
+    .btn-download-action {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000000;
+      color: #ffffff !important;
+      text-decoration: none !important;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 14px 24px;
+      width: 100%;
+      box-sizing: border-box;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      transition: opacity 0.2s;
+      cursor: pointer;
+    }
+    .btn-download-action:hover {
+      opacity: 0.8;
+    }
+    .download-page-footer {
+      margin-top: 30px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(0, 0, 0, 0.4);
+    }
+  `;
+  document.head.appendChild(styleEl);
+}
+
+// 1. Check for hybrid download page parameter on startup
+const urlParams = new URLSearchParams(window.location.search);
+const photoUrl = urlParams.get('photo');
+if (photoUrl) {
+  renderDownloadPage(photoUrl);
+} else {
+  // 2. Initialize Global Session State
+  const session: AppSession = {
   selectedTemplateId: null,
   capturedPhotos: [],
   ditheredPhotos: [],
@@ -398,3 +543,4 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
   resetInactivityTimer();
 });
+}

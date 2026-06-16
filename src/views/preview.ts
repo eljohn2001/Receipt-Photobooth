@@ -4,6 +4,8 @@ import { generateQRCode } from '../services/qr';
 import { getTemplateById } from '../templates';
 import type { AppSession, ReceiptMetadata } from '../types';
 import { loadKioskConfig } from '../services/config';
+import { generateReceiptBlob } from '../services/download';
+import { uploadToImgur } from '../services/upload';
 
 export class PreviewView extends BaseView {
   private activeSession: AppSession;
@@ -231,6 +233,24 @@ export class PreviewView extends BaseView {
 
     // Print button triggers printing screen and triggers standard print
     this.printBtn?.addEventListener('click', () => {
+      // 1. Kick off background upload before transitioning
+      this.activeSession.uploadPromise = (async () => {
+        try {
+          const blob = await generateReceiptBlob(this.activeSession);
+          const imgurUrl = await uploadToImgur(blob);
+          const hybridUrl = `https://photoreceipt.stoodioph.com/?photo=${encodeURIComponent(imgurUrl)}`;
+          const qrDataUrl = await generateQRCode(hybridUrl);
+          
+          if (this.activeSession.metadata) {
+            this.activeSession.metadata.qrCodeUrl = qrDataUrl;
+          }
+          return qrDataUrl;
+        } catch (err) {
+          console.error('Failed to upload receipt in background:', err);
+          return null; // Fallback to local default QR code url on error
+        }
+      })();
+
       const paperEl = this.element.querySelector('#preview-thermal-paper');
       if (paperEl) {
         paperEl.classList.add('slide-down-exit');

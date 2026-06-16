@@ -2,26 +2,16 @@ import { getTemplateById } from '../templates';
 import type { AppSession } from '../types';
 
 /**
- * Renders the receipt template HTML to a high-quality PNG image offline and triggers a download.
+ * Renders the receipt template HTML to a high-quality PNG image Blob offline.
  */
-export async function downloadReceiptImage(session: AppSession): Promise<void> {
+export async function generateReceiptBlob(session: AppSession): Promise<Blob> {
   const template = getTemplateById(session.selectedTemplateId || '');
   if (!template || !session.metadata) {
     throw new Error('Missing template or metadata to generate receipt copy');
   }
 
-  // 1. Render template HTML
-  const templateHtml = template.render(session.ditheredPhotos, session.metadata);
-
-  // Combine receipt template HTML with divider and QR code blocks as in PreviewView
-  const receiptHtml = `
-    ${templateHtml}
-    <div class="receipt-divider">--------------------------------</div>
-    <div class="receipt-qr-block minimal-qr-block" style="text-align: center; margin: 15px 0;">
-      <img class="receipt-qr-image minimal-qr-image" src="${session.metadata.qrCodeUrl}" alt="QR Link" style="width: 130px; height: 130px; display: inline-block;" />
-    </div>
-    <div class="receipt-footer-tear"></div>
-  `;
+  // 1. Render template HTML (clean design ending right after the footer)
+  const receiptHtml = template.render(session.ditheredPhotos, session.metadata);
 
   // 2. Create a temporary container to calculate the exact rendered height of the receipt
   const tempContainer = document.createElement('div');
@@ -40,7 +30,7 @@ export async function downloadReceiptImage(session: AppSession): Promise<void> {
   tempContainer.innerHTML = receiptHtml;
   document.body.appendChild(tempContainer);
 
-  // Wait for all image elements (photos + QR code) inside the receipt to be loaded
+  // Wait for all image elements inside the receipt to be loaded
   const imgs = Array.from(tempContainer.querySelectorAll('img'));
   await Promise.all(
     imgs.map((img) => {
@@ -126,24 +116,31 @@ export async function downloadReceiptImage(session: AppSession): Promise<void> {
   ctx.drawImage(img, 0, 0);
   URL.revokeObjectURL(url);
 
-  // 7. Convert canvas output to PNG blob and trigger standard download
-  return new Promise((resolve, reject) => {
+  // 7. Convert canvas output to PNG blob
+  return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) {
-        const link = document.createElement('a');
-        const filename = `receipt-${session.metadata?.receiptNumber || 'print'}.png`;
-        link.download = filename;
-        link.href = URL.createObjectURL(blob);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Revoke after download is triggered
-        setTimeout(() => URL.revokeObjectURL(link.href), 100);
-        resolve();
+        resolve(blob);
       } else {
         reject(new Error('Canvas toBlob conversion failed'));
       }
     }, 'image/png');
   });
+}
+
+/**
+ * Exporter to render receipt HTML and trigger a local file download
+ */
+export async function downloadReceiptImage(session: AppSession): Promise<void> {
+  const blob = await generateReceiptBlob(session);
+  const link = document.createElement('a');
+  const filename = `receipt-${session.metadata?.receiptNumber || 'print'}.png`;
+  link.download = filename;
+  link.href = URL.createObjectURL(blob);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  // Revoke after download is triggered
+  setTimeout(() => URL.revokeObjectURL(link.href), 100);
 }

@@ -40,4 +40,5 @@ export interface AppSession {
   metadata: ReceiptMetadata | null;
   isMirrored?: boolean;
   copiesCount?: number;
+  uploadPromise?: Promise<string | null>;
 }

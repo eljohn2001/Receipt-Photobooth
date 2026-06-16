@@ -58,10 +58,50 @@ export class FinishedView extends BaseView {
     // 0. Play high-quality physical paper tear audio
     audioManager.playPaperTear();
 
-    // 1. Set QR code source from metadata
+    // 1. Set QR code source from metadata (awaiting background upload if active)
     const qrImg = this.element.querySelector('#finished-qr-img') as HTMLImageElement;
-    if (qrImg && this.activeSession.metadata?.qrCodeUrl) {
-      qrImg.src = this.activeSession.metadata.qrCodeUrl;
+    const qrContainer = this.element.querySelector('.finished-qr-container') as HTMLElement;
+    
+    if (qrImg) {
+      qrImg.classList.add('hidden'); // Hide until upload resolves
+    }
+
+    let loadingText: HTMLDivElement | null = null;
+    if (qrContainer && this.activeSession.uploadPromise) {
+      loadingText = document.createElement('div');
+      loadingText.style.fontFamily = 'var(--font-ui)';
+      loadingText.style.fontSize = '12px';
+      loadingText.style.color = 'var(--text-primary)';
+      loadingText.style.textAlign = 'center';
+      loadingText.style.fontWeight = 'bold';
+      loadingText.innerHTML = `⏳ GENERATING QR CODE...`;
+      qrContainer.appendChild(loadingText);
+    }
+
+    if (this.activeSession.uploadPromise) {
+      this.activeSession.uploadPromise.then((url) => {
+        if (loadingText) loadingText.remove();
+        if (qrImg) {
+          if (url) {
+            qrImg.src = url;
+          } else if (this.activeSession.metadata?.qrCodeUrl) {
+            qrImg.src = this.activeSession.metadata.qrCodeUrl;
+          }
+          qrImg.classList.remove('hidden');
+        }
+      }).catch((err) => {
+        if (loadingText) loadingText.remove();
+        console.error('Failed to load uploaded QR url:', err);
+        if (qrImg && this.activeSession.metadata?.qrCodeUrl) {
+          qrImg.src = this.activeSession.metadata.qrCodeUrl;
+          qrImg.classList.remove('hidden');
+        }
+      });
+    } else {
+      if (qrImg && this.activeSession.metadata?.qrCodeUrl) {
+        qrImg.src = this.activeSession.metadata.qrCodeUrl;
+        qrImg.classList.remove('hidden');
+      }
     }
 
     // 2. Explode confetti!
