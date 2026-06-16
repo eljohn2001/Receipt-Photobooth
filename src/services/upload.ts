@@ -7,7 +7,7 @@ export async function uploadToImgBB(blob: Blob, apiKey: string): Promise<string>
   const formData = new FormData();
   formData.append('image', blob);
 
-  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+  const res = await fetch(`https://api.imgbb.com/1/upload?expiration=1800&key=${apiKey}`, {
     method: 'POST',
     body: formData
   });
