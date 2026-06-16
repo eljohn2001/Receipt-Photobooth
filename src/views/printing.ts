@@ -19,9 +19,9 @@ export class PrintingView extends BaseView {
     this.element.innerHTML = `
       <div class="printing-screen-content">
         <div class="printing-status-container">
-          <div class="spinner spinner-accent"></div>
-          <h2 class="printing-headline">PRINTING YOUR MEMORY...</h2>
-          <p class="printing-subline">Do not touch the printer slot</p>
+          <div class="spinner spinner-accent" id="printing-spinner"></div>
+          <h2 class="printing-headline">PREPARING YOUR PRINT...</h2>
+          <p class="printing-subline">Please check the print window</p>
         </div>
 
         <!-- Virtual Printer Hardware Mock -->
@@ -31,15 +31,23 @@ export class PrintingView extends BaseView {
             
             <!-- Paper rolls up out of the slot -->
             <div class="printed-paper-delivery">
-              <div class="thermal-paper printed-paper-animation" id="delivery-paper-content">
+              <div class="thermal-paper" id="delivery-paper-content" style="transform: translateY(100%);">
                 <!-- Injected dynamically on enter -->
               </div>
             </div>
           </div>
         </div>
         
-        <div class="printing-footer-hint">
-          <p>Please tear carefully when paper stops feeding.</p>
+        <div class="printing-footer-hint-group">
+          <div class="printing-footer-hint" id="printing-hint-box">
+            <p>Please complete the system print dialog.</p>
+          </div>
+          <!-- Proceed action button shown after printing completes -->
+          <div class="printing-proceed-container hidden" id="printing-proceed-container">
+            <button class="btn btn-primary btn-glow" id="btn-printing-proceed" style="min-width: 220px;">
+              VIEW QR CODE ➔
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -47,42 +55,55 @@ export class PrintingView extends BaseView {
 
   unmount(): void {
     audioManager.stopDispenser();
-    if (this.transitionTimeoutId !== null) {
-      window.clearTimeout(this.transitionTimeoutId);
-      this.transitionTimeoutId = null;
-    }
+    this.clearTimers();
   }
 
   async onEnter(): Promise<void> {
-    const deliveryContent = this.element.querySelector('#delivery-paper-content');
+    const deliveryContent = this.element.querySelector('#delivery-paper-content') as HTMLElement;
     const previewContent = document.getElementById('receipt-content-target');
+    const proceedContainer = this.element.querySelector('#printing-proceed-container') as HTMLElement;
+    const printingSpinner = this.element.querySelector('#printing-spinner') as HTMLElement;
+    const headlineEl = this.element.querySelector('.printing-headline');
+    const sublineEl = this.element.querySelector('.printing-subline');
+    const hintBoxEl = this.element.querySelector('#printing-hint-box');
     
+    // 1. Reset visual elements and animation classes
+    if (deliveryContent) {
+      deliveryContent.classList.remove('printed-paper-animation');
+      deliveryContent.style.transform = 'translateY(100%)';
+    }
+    if (proceedContainer) proceedContainer.classList.add('hidden');
+    if (printingSpinner) printingSpinner.classList.remove('hidden');
+    if (headlineEl) headlineEl.textContent = 'PREPARING YOUR PRINT...';
+    if (sublineEl) sublineEl.textContent = 'Please check the print window';
+    if (hintBoxEl) {
+      hintBoxEl.innerHTML = '<p>Please complete the system print dialog.</p>';
+    }
+
     if (deliveryContent && previewContent) {
       // Inject receipt HTML content into the delivery paper
       deliveryContent.innerHTML = previewContent.innerHTML;
     }
 
     const copies = this.activeSession.copiesCount || 1;
-    const headlineEl = this.element.querySelector('.printing-headline');
 
     try {
       for (let i = 0; i < copies; i++) {
         if (headlineEl) {
           headlineEl.textContent = copies > 1 
-            ? `PRINTING COPY ${i + 1} OF ${copies}...`
-            : 'PRINTING YOUR MEMORY...';
+            ? `PREPARING COPY ${i + 1} OF ${copies}...`
+            : 'PREPARING YOUR PRINT...';
         }
 
-        // 1. Play synthesized thermal print whirr
+        // Play brief synthesized hum while waiting/preparing print dialog
         audioManager.playDispenser();
 
-        // 2. Trigger actual browser print dialog
+        // Trigger actual browser print dialog (blocks thread until closed)
         await this.triggerWindowPrint();
 
-        // 3. Stop whirr
         audioManager.stopDispenser();
 
-        // 4. Brief delay between copies
+        // Brief delay between copies
         if (i < copies - 1) {
           await new Promise((resolve) => setTimeout(resolve, 800));
         }
@@ -91,14 +112,57 @@ export class PrintingView extends BaseView {
       console.error('Error during printing loop:', e);
     }
 
-    // Auto-transition to finished view after all copies are done
-    this.transitionTimeoutId = window.setTimeout(() => {
+    // --- Print loop is finished ---
+    // Now trigger the screen eject animation and physical tear guidelines!
+    if (headlineEl) headlineEl.textContent = 'EJECTING RECEIPT...';
+    if (sublineEl) sublineEl.textContent = 'Virtually feeding thermal paper';
+    if (printingSpinner) printingSpinner.classList.add('hidden');
+    if (hintBoxEl) {
+      hintBoxEl.innerHTML = '<p>Tear carefully when paper stops feeding.</p>';
+    }
+
+    if (deliveryContent) {
+      // Trigger CSS animation
+      deliveryContent.classList.add('printed-paper-animation');
+    }
+
+    // Play physical motor hum sound for the duration of the screen eject
+    audioManager.playDispenser();
+    
+    // Show proceed button immediately once printing finishes
+    if (proceedContainer) {
+      proceedContainer.classList.remove('hidden');
+    }
+
+    const AUTO_TRANSITION_TIME = 5000; // 5 seconds (matches receipt-eject CSS animation duration)
+    
+    const stopAudioAndGo = () => {
+      audioManager.stopDispenser();
       this.navigateTo('finished');
-    }, 1000);
+    };
+
+    // Auto-transition to finished view after animation finishes
+    this.transitionTimeoutId = window.setTimeout(stopAudioAndGo, AUTO_TRANSITION_TIME);
+
+    // Set up click handler on proceed button to bypass remaining time
+    const proceedBtn = this.element.querySelector('#btn-printing-proceed');
+    if (proceedBtn) {
+      const newProceedBtn = proceedBtn.cloneNode(true) as HTMLButtonElement;
+      proceedBtn.parentNode?.replaceChild(newProceedBtn, proceedBtn);
+      
+      newProceedBtn.addEventListener('click', () => {
+        this.clearTimers();
+        stopAudioAndGo();
+      });
+    }
   }
 
   onLeave(): void {
     audioManager.stopDispenser();
+    this.clearTimers();
+  }
+
+  private clearTimers() {
     if (this.transitionTimeoutId !== null) {
       window.clearTimeout(this.transitionTimeoutId);
       this.transitionTimeoutId = null;
@@ -112,7 +176,7 @@ export class PrintingView extends BaseView {
     if (printTarget && previewContent) {
       printTarget.innerHTML = previewContent.innerHTML;
       
-      // Wait for all base64 images to be fully loaded in the print DOM tree
+      // Wait for all images to load in the print DOM tree
       const images = Array.from(printTarget.querySelectorAll('img'));
       
       try {
@@ -126,7 +190,7 @@ export class PrintingView extends BaseView {
           })
         );
 
-        // Wait for image frames to be decoded and rendered by browser thread
+        // Decode check
         await Promise.all(
           images.map((img) => {
             if (typeof img.decode === 'function') {
@@ -139,7 +203,6 @@ export class PrintingView extends BaseView {
         console.warn('Error waiting for image layouts:', e);
       }
 
-      // Small delay to ensure CSS styles and layouts have settled in print container
       await new Promise((resolve) => setTimeout(resolve, 300));
       
       try {
