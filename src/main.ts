@@ -261,8 +261,8 @@ async function applyTheme(config: KioskConfig) {
       }
     } else {
       // If we are in 'graphic' mode, use Snap Home.png as default
-      if (config.homeScreenMode === 'graphic') {
-        bgContainer.style.backgroundImage = `url(${defaultSnapHome})`;
+      if (config.homeScreenMode === 'graphic' || !config.homeScreenMode) {
+        bgContainer.style.backgroundImage = `url("${defaultSnapHome}")`;
       }
     }
   }
