@@ -7,6 +7,9 @@ export class IdleView extends BaseView {
   mount(): void {
     this.element.innerHTML = `
       <div class="idle-screen-content">
+        <!-- Hidden hotspot for admin panel -->
+        <div class="admin-hotspot" id="admin-hotspot"></div>
+
         <!-- Dynamic isolated background media (photo/video) container -->
         <div class="idle-background-media-container" id="idle-bg-container"></div>
 
@@ -70,9 +73,9 @@ export class IdleView extends BaseView {
     this.updateBranding();
 
     this.clickHandler = (e: MouseEvent) => {
-      // Don't navigate to template selection if they click/tap on the logo/admin area
+      // Don't navigate to template selection if they click/tap on the logo/admin area or administrative hotspot
       const target = e.target as HTMLElement;
-      if (target.closest('.attract-logo-container')) {
+      if (target.closest('.attract-logo-container') || target.closest('#admin-hotspot')) {
         return;
       }
       this.navigateTo('template-selection');
@@ -87,6 +90,31 @@ export class IdleView extends BaseView {
       let lastTap = 0;
       let tapCount = 0;
       logoContainer.addEventListener('click', (e) => {
+        e.stopPropagation(); // Avoid triggering clickHandler
+        const now = Date.now();
+        if (now - lastTap < 400) {
+          tapCount++;
+        } else {
+          tapCount = 1;
+        }
+        lastTap = now;
+        if (tapCount === 3) {
+          tapCount = 0;
+          const adminModal = document.getElementById('admin-modal');
+          if (adminModal) {
+            adminModal.classList.remove('hidden');
+            adminModal.dispatchEvent(new CustomEvent('open-admin'));
+          }
+        }
+      });
+    }
+
+    // Setup triple-tap listener on administrative hotspot
+    const adminHotspot = this.element.querySelector('#admin-hotspot');
+    if (adminHotspot) {
+      let lastTap = 0;
+      let tapCount = 0;
+      adminHotspot.addEventListener('click', (e) => {
         e.stopPropagation(); // Avoid triggering clickHandler
         const now = Date.now();
         if (now - lastTap < 400) {

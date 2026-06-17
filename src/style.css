@@ -207,6 +207,24 @@ body {
   box-sizing: border-box;
 }
 
+.admin-hotspot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  z-index: 100;
+  background: transparent;
+  cursor: default;
+}
+
+/* Home Screen Modes */
+.home-mode-graphic .attract-logo-container,
+.home-mode-graphic .printer-attract-hardware,
+.home-mode-graphic .idle-footer {
+  display: none !important;
+}
+
 /* Home Screen Dynamic Background Photo/Video Container */
 .idle-background-media-container {
   position: absolute;
@@ -2096,7 +2114,8 @@ body {
 }
 
 .form-group input[type="text"],
-.form-group textarea {
+.form-group textarea,
+.form-group select {
   background: #252525;
   border: 1px solid #3a3a3a;
   color: #ffffff;
@@ -2104,10 +2123,12 @@ body {
   font-family: var(--font-ui);
   font-size: 13px;
   width: 100%;
+  border-radius: 0px;
 }
 
 .form-group input[type="text"]:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
   border-color: #ffffff;
   outline: none;
 }

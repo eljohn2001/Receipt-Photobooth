@@ -8,8 +8,8 @@ import { PrintingView } from './views/printing';
 import { FinishedView } from './views/finished';
 import { BaseView } from './views/base';
 import { loadKioskConfig, saveKioskConfig, resetKioskConfig, type KioskConfig } from './services/config';
-
 import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia } from './services/db';
+import defaultSnapHome from './assets/Snap Home.png';
 
 function renderDownloadPage(photoUrl: string) {
   document.body.innerHTML = `
@@ -224,6 +224,18 @@ async function applyTheme(config: KioskConfig) {
   }
   root.style.setProperty('--bg-tertiary', bgTertiary);
 
+  // Apply home mode classes to show/hide template layout elements
+  const idleViewPanel = document.getElementById('view-idle');
+  if (idleViewPanel) {
+    if (config.homeScreenMode === 'graphic') {
+      idleViewPanel.classList.add('home-mode-graphic');
+      idleViewPanel.classList.remove('home-mode-layout');
+    } else {
+      idleViewPanel.classList.add('home-mode-layout');
+      idleViewPanel.classList.remove('home-mode-graphic');
+    }
+  }
+
   // Apply background photo/video on the isolated welcome container
   const bgContainer = document.getElementById('idle-bg-container');
   if (bgContainer) {
@@ -246,6 +258,11 @@ async function applyTheme(config: KioskConfig) {
             <video class="idle-background-video" src="${activeBgObjectUrl}" autoplay loop muted playsinline></video>
           `;
         }
+      }
+    } else {
+      // If we are in 'graphic' mode, use Snap Home.png as default
+      if (config.homeScreenMode === 'graphic') {
+        bgContainer.style.backgroundImage = `url(${defaultSnapHome})`;
       }
     }
   }
@@ -392,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bgColorInput = document.getElementById('input-bg-color') as HTMLInputElement;
     const textColorInput = document.getElementById('input-text-color') as HTMLInputElement;
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
+    const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
     
     if (nameInput) nameInput.value = config.cafeName;
     if (addressInput) addressInput.value = config.cafeAddress;
@@ -400,6 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (bgColorInput) bgColorInput.value = config.backgroundColor;
     if (textColorInput) textColorInput.value = config.textColor;
     if (textColorHomeInput) textColorHomeInput.value = config.textColorHome || '#000000';
+    if (homeModeSelect) homeModeSelect.value = config.homeScreenMode || 'graphic';
 
     const imgurClientIdInput = document.getElementById('input-imgur-client-id') as HTMLInputElement;
     if (imgurClientIdInput) imgurClientIdInput.value = config.imgurClientId || '';
@@ -489,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bgColorInput = document.getElementById('input-bg-color') as HTMLInputElement;
     const textColorInput = document.getElementById('input-text-color') as HTMLInputElement;
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
+    const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
 
     // Handle background media save
     let resolvedBgType: 'image' | 'video' | null = bgFileType;
@@ -511,7 +531,8 @@ document.addEventListener('DOMContentLoaded', () => {
       logoDataUrl: currentLogoDataUrl,
       backgroundType: resolvedBgType,
       imgurClientId: imgurClientIdInput ? imgurClientIdInput.value.trim() : '',
-      imgbbApiKey: imgbbApiKeyInput ? imgbbApiKeyInput.value.trim() : ''
+      imgbbApiKey: imgbbApiKeyInput ? imgbbApiKeyInput.value.trim() : '',
+      homeScreenMode: homeModeSelect ? (homeModeSelect.value as 'graphic' | 'layout') : 'graphic'
     };
 
     saveKioskConfig(newConfig);
