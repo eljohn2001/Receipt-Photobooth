@@ -741,8 +741,25 @@ body {
 
 @media (max-width: 768px) {
   .templates-static-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
+    grid-template-columns: repeat(2, 200px);
+    gap: 16px 24px;
+    justify-content: center;
+  }
+  .template-card-mockup-png-wrapper {
+    width: 200px;
+  }
+  .template-card-logo-overlay {
+    top: 12px;
+    left: 15px;
+    right: 15px;
+    height: 38px;
+  }
+  .overlay-cafe-logo {
+    max-width: 110px;
+    max-height: 34px;
+  }
+  .overlay-cafe-name {
+    font-size: 11px;
   }
 }
 
