@@ -247,19 +247,24 @@ async function applyTheme(config: KioskConfig) {
       activeBgObjectUrl = null;
     }
 
+    let bgLoaded = false;
     if (config.backgroundType) {
       const blob = await getBackgroundMedia();
       if (blob) {
         activeBgObjectUrl = URL.createObjectURL(blob);
         if (config.backgroundType === 'image') {
-          bgContainer.style.backgroundImage = `url(${activeBgObjectUrl})`;
+          bgContainer.style.backgroundImage = `url("${activeBgObjectUrl}")`;
+          bgLoaded = true;
         } else if (config.backgroundType === 'video') {
           bgContainer.innerHTML = `
             <video class="idle-background-video" src="${activeBgObjectUrl}" autoplay loop muted playsinline></video>
           `;
+          bgLoaded = true;
         }
       }
-    } else {
+    }
+
+    if (!bgLoaded) {
       // If we are in 'graphic' mode, use Snap Home.png as default
       if (config.homeScreenMode === 'graphic' || !config.homeScreenMode) {
         bgContainer.style.backgroundImage = `url("${defaultSnapHome}")`;
