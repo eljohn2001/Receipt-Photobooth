@@ -676,10 +676,10 @@ body {
 
 .template-card-logo-overlay {
   position: absolute;
-  top: 18px;
-  left: 20px;
-  right: 20px;
-  height: 52px;
+  top: 5%;
+  left: 7%;
+  right: 7%;
+  height: 14%;
   background-color: #ffffff;
   display: flex;
   align-items: center;
@@ -741,22 +741,15 @@ body {
 
 @media (max-width: 768px) {
   .templates-static-grid {
-    grid-template-columns: repeat(2, 200px);
-    gap: 16px 24px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
     justify-content: center;
+    max-width: 520px;
+    width: 100%;
   }
   .template-card-mockup-png-wrapper {
-    width: 200px;
-  }
-  .template-card-logo-overlay {
-    top: 12px;
-    left: 15px;
-    right: 15px;
-    height: 38px;
-  }
-  .overlay-cafe-logo {
-    max-width: 110px;
-    max-height: 34px;
+    width: 100%;
+    max-width: 240px;
   }
   .overlay-cafe-name {
     font-size: 11px;
@@ -2630,42 +2623,39 @@ input:checked+.toggle-slider:before {
   }
   
   .templates-grid-wrapper {
-    display: block;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-grow: 1;
     padding: 10px;
+    box-sizing: border-box;
   }
   
   .templates-static-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 16px;
     margin: 0 auto;
+    width: 100%;
+    max-width: 340px;
   }
   
   .template-card-mockup-png-wrapper {
-    width: 240px;
+    width: 100%;
+    max-width: 150px;
     margin: 0 auto;
   }
   
-  .template-card-logo-overlay {
-    top: 15px;
-    left: 15px;
-    right: 15px;
-    height: 44px;
-  }
-  
   .overlay-cafe-logo {
-    max-width: 120px;
-    max-height: 40px;
+    max-width: 90%;
+    max-height: 90%;
   }
   
   .overlay-cafe-name {
-    font-size: 14px;
+    font-size: 8px;
   }
   
   .template-mockup-name {
-    font-size: 14px;
+    font-size: 12px;
     margin-top: 6px;
     text-align: center;
   }
