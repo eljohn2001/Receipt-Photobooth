@@ -33,7 +33,6 @@ export class CaptureView extends BaseView {
             <h2 class="view-title" id="capture-title">GET READY</h2>
             <p class="view-subtitle" id="capture-subtitle">Strike a pose!</p>
           </div>
-          <div style="width: 60px;"></div> <!-- Spacer to align -->
         </div>
 
         <div class="camera-viewport-container">

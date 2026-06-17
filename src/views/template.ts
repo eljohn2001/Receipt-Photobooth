@@ -26,7 +26,6 @@ export class TemplateView extends BaseView {
         <div class="template-screen-header">
           <button class="btn-tmpl-back-minimal" id="btn-tmpl-back">← BACK</button>
           <h2 class="template-choose-title">CHOOSE A <span class="script-title">Layout</span></h2>
-          <div style="width: 80px;"></div> <!-- Spacer to center title -->
         </div>
 
         <!-- Static 2x2 Grid Layout for the 4 Mockup Cards -->

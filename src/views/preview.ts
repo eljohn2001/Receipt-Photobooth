@@ -30,7 +30,6 @@ export class PreviewView extends BaseView {
             <h2 class="view-title">PREVIEW PRINT</h2>
             <p class="view-subtitle">Review your thermal receipt memory</p>
           </div>
-          <div style="width: 60px;"></div>
         </div>
 
         <div class="preview-layout-container">
