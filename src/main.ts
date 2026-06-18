@@ -1,5 +1,6 @@
 import './style.css';
 import type { AppSession, AppState } from './types';
+import { ActivationView } from './views/activation';
 import { IdleView } from './views/idle';
 import { TemplateView } from './views/template';
 import { CaptureView } from './views/capture';
@@ -9,9 +10,18 @@ import { FinishedView } from './views/finished';
 import { BaseView } from './views/base';
 import { loadKioskConfig, saveKioskConfig, resetKioskConfig, type KioskConfig } from './services/config';
 import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia } from './services/db';
+import { checkLicenseOnStartup, deactivateLicense } from './services/license';
+import { getShareRecord, getPublicStorageUrl } from './services/supabase';
 import defaultSnapHome from './assets/Snap Home.png';
 
-function renderDownloadPage(photoUrl: string) {
+function renderDownloadPage(
+  photoUrl: string | null,
+  photoBw: string | null = null,
+  photoColor: string | null = null
+) {
+  const isTabbed = !!(photoBw && photoColor);
+  const activePhoto = photoBw || photoUrl || '';
+
   document.body.innerHTML = `
     <div class="download-page-container">
       <div class="download-page-card">
@@ -20,8 +30,20 @@ function renderDownloadPage(photoUrl: string) {
           <p class="download-subtitle">Beans & Bites Photo Booth</p>
         </div>
         
+        ${isTabbed ? `
+        <div class="download-toggle-tabs">
+          <button class="tab-btn active" id="tab-bw">🖤 VINTAGE B&W</button>
+          <button class="tab-btn" id="tab-color">💛 ORIGINAL COLOR</button>
+        </div>
+        ` : ''}
+        
         <div class="download-image-wrapper">
-          <img class="download-receipt-image" src="${photoUrl}" alt="Photo Receipt" />
+          ${isTabbed ? `
+          <img class="download-receipt-image" id="receipt-img-bw" src="${photoBw}" alt="Vintage B&W Receipt" onerror="const card = this.closest('.download-page-card'); if (card) { card.innerHTML = \`<div class=&quot;download-page-header&quot;><h1 class=&quot;download-title&quot; style=&quot;color: #e03131; font-weight: 700;&quot;>⚠️ DOWNLOAD EXPIRED</h1><p class=&quot;download-subtitle&quot;>Digital copies are only available for 1 hour.</p></div><div style=&quot;font-size: 64px; margin: 30px 0;&quot;>⏳</div><p style=&quot;font-size: 13px; color: #555; line-height: 1.6; max-width: 300px; margin: 0 auto 24px;&quot;>For privacy and security, softcopies are deleted automatically 1 hour after printing.</p><div class=&quot;download-page-footer&quot;>powered by blcklabs</div>\`; }" />
+          <img class="download-receipt-image hidden" id="receipt-img-color" src="${photoColor}" alt="Color Receipt" onerror="const card = this.closest('.download-page-card'); if (card) { card.innerHTML = \`<div class=&quot;download-page-header&quot;><h1 class=&quot;download-title&quot; style=&quot;color: #e03131; font-weight: 700;&quot;>⚠️ DOWNLOAD EXPIRED</h1><p class=&quot;download-subtitle&quot;>Digital copies are only available for 1 hour.</p></div><div style=&quot;font-size: 64px; margin: 30px 0;&quot;>⏳</div><p style=&quot;font-size: 13px; color: #555; line-height: 1.6; max-width: 300px; margin: 0 auto 24px;&quot;>For privacy and security, softcopies are deleted automatically 1 hour after printing.</p><div class=&quot;download-page-footer&quot;>powered by blcklabs</div>\`; }" />
+          ` : `
+          <img class="download-receipt-image" src="${photoUrl}" alt="Photo Receipt" onerror="const card = this.closest('.download-page-card'); if (card) { card.innerHTML = \`<div class=&quot;download-page-header&quot;><h1 class=&quot;download-title&quot; style=&quot;color: #e03131; font-weight: 700;&quot;>⚠️ DOWNLOAD EXPIRED</h1><p class=&quot;download-subtitle&quot;>Digital copies are only available for 1 hour.</p></div><div style=&quot;font-size: 64px; margin: 30px 0;&quot;>⏳</div><p style=&quot;font-size: 13px; color: #555; line-height: 1.6; max-width: 300px; margin: 0 auto 24px;&quot;>For privacy and security, softcopies are deleted automatically 1 hour after printing.</p><div class=&quot;download-page-footer&quot;>powered by blcklabs</div>\`; }" />
+          `}
         </div>
         
         <div class="download-instructions">
@@ -29,8 +51,8 @@ function renderDownloadPage(photoUrl: string) {
           <p class="instruction-sub">Or click the button below to download directly:</p>
         </div>
         
-        <a href="${photoUrl}" download="receipt-photo.png" class="btn-download-action">
-          💾 DOWNLOAD PHOTO
+        <a href="${activePhoto}" download="${isTabbed ? 'receipt-bw.png' : 'receipt-photo.png'}" class="btn-download-action" id="btn-download-link">
+          💾 ${isTabbed ? 'DOWNLOAD VINTAGE B&W' : 'DOWNLOAD PHOTO'}
         </a>
         
         <div class="download-page-footer">
@@ -90,6 +112,40 @@ function renderDownloadPage(photoUrl: string) {
       color: #666666;
       margin: 0;
     }
+    
+    /* Toggle Tabs */
+    .download-toggle-tabs {
+      display: flex;
+      width: 100%;
+      border: 1px solid #000000;
+      margin-bottom: 24px;
+      box-sizing: border-box;
+    }
+    .tab-btn {
+      flex: 1;
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      padding: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: "Space Grotesk", sans-serif;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: #000000;
+      color: #ffffff;
+    }
+    .tab-btn:not(.active):hover {
+      background: #f5f5f5;
+    }
+    .hidden {
+      display: none !important;
+    }
+
     .download-image-wrapper {
       width: 100%;
       border: 1px solid #000000;
@@ -148,12 +204,96 @@ function renderDownloadPage(photoUrl: string) {
     }
   `;
   document.head.appendChild(styleEl);
+
+  if (isTabbed) {
+    const tabBw = document.getElementById('tab-bw');
+    const tabColor = document.getElementById('tab-color');
+    const imgBw = document.getElementById('receipt-img-bw');
+    const imgColor = document.getElementById('receipt-img-color');
+    const downloadLink = document.getElementById('btn-download-link');
+
+    if (tabBw && tabColor && imgBw && imgColor && downloadLink) {
+      tabBw.addEventListener('click', () => {
+        tabBw.classList.add('active');
+        tabColor.classList.remove('active');
+        imgBw.classList.remove('hidden');
+        imgColor.classList.add('hidden');
+        downloadLink.setAttribute('href', photoBw || '');
+        downloadLink.setAttribute('download', 'receipt-bw.png');
+        downloadLink.innerHTML = '💾 DOWNLOAD VINTAGE B&W';
+      });
+
+      tabColor.addEventListener('click', () => {
+        tabColor.classList.add('active');
+        tabBw.classList.remove('active');
+        imgColor.classList.remove('hidden');
+        imgBw.classList.add('hidden');
+        downloadLink.setAttribute('href', photoColor || '');
+        downloadLink.setAttribute('download', 'receipt-color.png');
+        downloadLink.innerHTML = '💾 DOWNLOAD COLOR PHOTO';
+      });
+    }
+  }
 }
 
 // 1. Check for hybrid download page parameter on startup
 const urlParams = new URLSearchParams(window.location.search);
+const shareId = urlParams.get('id');
 const photoUrl = urlParams.get('photo');
-if (photoUrl) {
+const photoBw = urlParams.get('photo_bw');
+const photoColor = urlParams.get('photo_color');
+
+if (shareId) {
+  // Show a premium loading state first while we fetch from Supabase
+  document.body.innerHTML = `
+    <div class="download-page-container">
+      <div class="download-page-card">
+        <div style="font-size: 48px; margin: 30px 0; animation: spin 1.5s linear infinite;">⏳</div>
+        <h2 class="download-title">LOADING SECURE MEMORY...</h2>
+        <p class="download-subtitle">Retrieving photo booth files</p>
+      </div>
+    </div>
+  `;
+  
+  // Add quick keyframe rotation to body if not exist
+  const spinStyle = document.createElement('style');
+  spinStyle.innerHTML = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(spinStyle);
+  
+  getShareRecord(shareId).then((record) => {
+    if (record) {
+      const bwUrl = getPublicStorageUrl(record.bw_path);
+      const colorUrl = getPublicStorageUrl(record.color_path);
+      renderDownloadPage(null, bwUrl, colorUrl);
+    } else {
+      // Show expired screen
+      document.body.innerHTML = `
+        <div class="download-page-container">
+          <div class="download-page-card">
+            <div class="download-page-header">
+              <h1 class="download-title" style="color: #e03131; font-weight: 700;">⚠️ DOWNLOAD EXPIRED</h1>
+              <p class="download-subtitle">Digital copies are only available for 1 hour.</p>
+            </div>
+            <div style="font-size: 64px; margin: 30px 0;">⏳</div>
+            <p style="font-size: 13px; color: #555; line-height: 1.6; max-width: 300px; margin: 0 auto 24px;">For privacy and security, softcopies are deleted automatically 1 hour after printing.</p>
+            <div class="download-page-footer">
+              powered by blcklabs
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }).catch((err) => {
+    console.error('Failed to load share:', err);
+  });
+} else if (photoBw && photoColor) {
+  renderDownloadPage(null, photoBw, photoColor);
+} else if (photoUrl) {
   renderDownloadPage(photoUrl);
 } else {
   // 2. Initialize Global Session State
@@ -166,12 +306,13 @@ if (photoUrl) {
 
 // 2. Map states to panel IDs and view classes
 const stateIndexMap: Record<AppState, number> = {
-  'idle': 0,
-  'template-selection': 1,
-  'camera-capture': 2,
-  'preview': 3,
-  'printing': 4,
-  'finished': 5
+  'activation': 0,
+  'idle': 1,
+  'template-selection': 2,
+  'camera-capture': 3,
+  'preview': 4,
+  'printing': 5,
+  'finished': 6
 };
 
 let activeBgObjectUrl: string | null = null;
@@ -281,8 +422,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Active View track
-  let currentActiveState: AppState = 'idle';
+  let currentActiveState: AppState = 'activation';
   const views: Record<AppState, BaseView> = {
+    'activation': new ActivationView(document.getElementById('view-activation')!, navigateTo),
     'idle': new IdleView(document.getElementById('view-idle')!, navigateTo),
     'template-selection': new TemplateView(document.getElementById('view-template-selection')!, navigateTo, session),
     'camera-capture': new CaptureView(document.getElementById('view-camera-capture')!, navigateTo, session),
@@ -341,8 +483,8 @@ document.addEventListener('DOMContentLoaded', () => {
       inactivityTimeoutId = null;
     }
 
-    // We only time out if the screen is NOT already idle
-    if (currentActiveState !== 'idle') {
+    // We only time out if the screen is NOT already idle and NOT the activation screen
+    if (currentActiveState !== 'idle' && currentActiveState !== 'activation') {
       inactivityTimeoutId = window.setTimeout(() => {
         console.warn('Kiosk inactive. Auto-returning to attracts loop...');
         navigateTo('idle');
@@ -373,6 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeBtn = document.getElementById('admin-close-x');
   const cancelBtn = document.getElementById('admin-cancel-btn');
   const resetBtn = document.getElementById('admin-reset-btn');
+  const deactivateBtn = document.getElementById('admin-deactivate-btn');
 
   let currentLogoDataUrl: string | null = null;
   let pendingBgFile: File | null = null;
@@ -411,6 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addressInput = document.getElementById('input-cafe-address') as HTMLInputElement;
     const phoneInput = document.getElementById('input-cafe-phone') as HTMLInputElement;
     const messageInput = document.getElementById('input-custom-message') as HTMLTextAreaElement;
+    const socialTagInput = document.getElementById('input-social-tag') as HTMLInputElement;
     const bgColorInput = document.getElementById('input-bg-color') as HTMLInputElement;
     const textColorInput = document.getElementById('input-text-color') as HTMLInputElement;
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
@@ -420,6 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (addressInput) addressInput.value = config.cafeAddress;
     if (phoneInput) phoneInput.value = config.cafePhone;
     if (messageInput) messageInput.value = config.customMessage;
+    if (socialTagInput) socialTagInput.value = config.socialTag || 'beansandbites';
     if (bgColorInput) bgColorInput.value = config.backgroundColor;
     if (textColorInput) textColorInput.value = config.textColor;
     if (textColorHomeInput) textColorHomeInput.value = config.textColorHome || '#000000';
@@ -508,6 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addressInput = document.getElementById('input-cafe-address') as HTMLInputElement;
     const phoneInput = document.getElementById('input-cafe-phone') as HTMLInputElement;
     const messageInput = document.getElementById('input-custom-message') as HTMLTextAreaElement;
+    const socialTagInput = document.getElementById('input-social-tag') as HTMLInputElement;
     const imgurClientIdInput = document.getElementById('input-imgur-client-id') as HTMLInputElement;
     const imgbbApiKeyInput = document.getElementById('input-imgbb-api-key') as HTMLInputElement;
     const bgColorInput = document.getElementById('input-bg-color') as HTMLInputElement;
@@ -530,6 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cafeAddress: addressInput.value.trim().toUpperCase(),
       cafePhone: phoneInput.value.trim().toUpperCase(),
       customMessage: messageInput.value.trim(),
+      socialTag: socialTagInput ? socialTagInput.value.trim() : 'beansandbites',
       backgroundColor: bgColorInput.value,
       textColor: textColorInput.value,
       textColorHome: textColorHomeInput.value,
@@ -573,9 +720,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 5. Initialize the Attract Screen
+  // Deactivate license key
+  deactivateBtn?.addEventListener('click', async () => {
+    if (confirm('Are you sure you want to deactivate this device? This will clear the activation key and lock the app.')) {
+      await deactivateLicense();
+      closeModal();
+      navigateTo('activation');
+    }
+  });
+
+  // 5. Initialize Kiosk with Activation Check
   (async () => {
-    await views['idle'].onEnter?.();
+    const isActivated = await checkLicenseOnStartup();
+    if (isActivated) {
+      navigateTo('idle');
+    } else {
+      navigateTo('activation');
+    }
   })();
   resetInactivityTimer();
 });

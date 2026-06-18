@@ -1,4 +1,5 @@
 export type AppState =
+  | 'activation'
   | 'idle'
   | 'template-selection'
   | 'camera-capture'

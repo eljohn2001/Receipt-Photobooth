@@ -1,6 +1,14 @@
 import { BaseView } from './base';
 import { audioManager } from '../services/audio';
 import type { AppSession } from '../types';
+import { generateReceiptEscPos } from '../services/download';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+interface DirectPrinterPlugin {
+  printRawUsb(options: { base64Data: string }): Promise<void>;
+}
+
+const DirectPrinter = registerPlugin<DirectPrinterPlugin>('DirectPrinter');
 
 export class PrintingView extends BaseView {
   private transitionTimeoutId: number | null = null;
@@ -85,31 +93,65 @@ export class PrintingView extends BaseView {
       deliveryContent.innerHTML = previewContent.innerHTML;
     }
 
-    const copies = this.activeSession.copiesCount || 1;
+    const isNative = Capacitor.isNativePlatform();
 
-    try {
-      for (let i = 0; i < copies; i++) {
-        if (headlineEl) {
-          headlineEl.textContent = copies > 1 
-            ? `PREPARING COPY ${i + 1} OF ${copies}...`
-            : 'PREPARING YOUR PRINT...';
+    if (isNative) {
+      const copies = this.activeSession.copiesCount || 1;
+      try {
+        for (let i = 0; i < copies; i++) {
+          if (headlineEl) {
+            headlineEl.textContent = copies > 1 
+              ? `GENERATING COPY ${i + 1} OF ${copies}...`
+              : 'GENERATING PRINT DATA...';
+          }
+          audioManager.playDispenser();
+          
+          const escPosBytes = await generateReceiptEscPos(this.activeSession);
+          
+          let binaryString = '';
+          const len = escPosBytes.byteLength;
+          for (let j = 0; j < len; j++) {
+            binaryString += String.fromCharCode(escPosBytes[j]);
+          }
+          const base64Data = btoa(binaryString);
+          
+          if (headlineEl) {
+            headlineEl.textContent = copies > 1
+              ? `SENDING COPY ${i + 1} OF ${copies}...`
+              : 'SENDING TO USB PRINTER...';
+          }
+          
+          await DirectPrinter.printRawUsb({ base64Data });
+          
+          audioManager.stopDispenser();
+          if (i < copies - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+          }
         }
-
-        // Play brief synthesized hum while waiting/preparing print dialog
-        audioManager.playDispenser();
-
-        // Trigger actual browser print dialog (blocks thread until closed)
-        await this.triggerWindowPrint();
-
+      } catch (e: any) {
+        console.error('Direct USB print failed:', e);
+        alert('Direct USB print failed: ' + (e.message || e));
         audioManager.stopDispenser();
-
-        // Brief delay between copies
-        if (i < copies - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 800));
-        }
       }
-    } catch (e) {
-      console.error('Error during printing loop:', e);
+    } else {
+      const copies = this.activeSession.copiesCount || 1;
+      try {
+        for (let i = 0; i < copies; i++) {
+          if (headlineEl) {
+            headlineEl.textContent = copies > 1 
+              ? `PREPARING COPY ${i + 1} OF ${copies}...`
+              : 'PREPARING YOUR PRINT...';
+          }
+          audioManager.playDispenser();
+          await this.triggerWindowPrint();
+          audioManager.stopDispenser();
+          if (i < copies - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 800));
+          }
+        }
+      } catch (e) {
+        console.error('Error during printing loop:', e);
+      }
     }
 
     // --- Print loop is finished ---
@@ -206,7 +248,11 @@ export class PrintingView extends BaseView {
       await new Promise((resolve) => setTimeout(resolve, 300));
       
       try {
-        window.print();
+        if ((window as any).AndroidPrintBridge) {
+          (window as any).AndroidPrintBridge.print();
+        } else {
+          window.print();
+        }
       } catch (err) {
         console.warn('System print failed or was cancelled:', err);
       }

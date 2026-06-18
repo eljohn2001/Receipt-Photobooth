@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <script>
       (async function() {
+        // Do not redirect if running inside a native app wrapper (Capacitor)
+        if (
+          window.location.hostname === 'localhost' || 
+          window.location.protocol === 'capacitor:' || 
+          window.location.protocol === 'http:' && window.location.hostname === '10.0.2.2'
+        ) {
+          console.log('Running in native wrapper, skipping redirect.');
+          return;
+        }
         if (navigator.onLine && !window.location.href.startsWith('https://photoreceipt.stoodioph.com')) {
           try {
             const controller = new AbortController();
@@ -39,8 +48,11 @@
     <!-- Main Kiosk Frame (Scroll disabled, horizontal sliding only) -->
     <div id="app" class="kiosk-app-frame">
       <div class="views-slider" id="views-slider">
+        <!-- 0. Device Activation -->
+        <div class="view-panel active-slide" id="view-activation"></div>
+
         <!-- 1. Idle Attract Screen -->
-        <div class="view-panel active-slide" id="view-idle"></div>
+        <div class="view-panel" id="view-idle"></div>
         
         <!-- 2. Template Selection -->
         <div class="view-panel" id="view-template-selection"></div>
@@ -90,6 +102,11 @@
             <div class="form-group">
               <label for="input-custom-message">Receipt Message</label>
               <textarea id="input-custom-message" rows="2" placeholder="e.g. Keep smiling!"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="input-social-tag">Instagram Username / Social Tag (Finished Screen)</label>
+              <input type="text" id="input-social-tag" placeholder="e.g. @beansandbites" />
             </div>
 
             <div class="form-group">
@@ -164,6 +181,7 @@
             </div>
 
             <div class="form-actions">
+              <button type="button" id="admin-deactivate-btn" class="btn-admin btn-admin-warning">Deactivate License</button>
               <button type="button" id="admin-reset-btn" class="btn-admin btn-admin-danger">Reset stock</button>
               <button type="button" id="admin-cancel-btn" class="btn-admin btn-admin-secondary">Cancel</button>
               <button type="submit" class="btn-admin btn-admin-primary">Save setup</button>

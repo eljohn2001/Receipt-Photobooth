@@ -5,7 +5,7 @@ import { getTemplateById } from '../templates';
 import type { AppSession, ReceiptMetadata } from '../types';
 import { loadKioskConfig } from '../services/config';
 import { generateReceiptBlob } from '../services/download';
-import { uploadImage } from '../services/upload';
+import { uploadReceiptPhotos } from '../services/upload';
 
 export class PreviewView extends BaseView {
   private activeSession: AppSession;
@@ -236,10 +236,14 @@ export class PreviewView extends BaseView {
       // 1. Kick off background upload before transitioning
       this.activeSession.uploadPromise = (async () => {
         try {
-          const blob = await generateReceiptBlob(this.activeSession);
-          const uploadedUrl = await uploadImage(blob);
+          // Generate high quality B&W (grayscale, non-dithered) and Color receipt images
+          const bwBlob = await generateReceiptBlob(this.activeSession, 'bw');
+          const colorBlob = await generateReceiptBlob(this.activeSession, 'color');
+          
+          const shareId = await uploadReceiptPhotos(bwBlob, colorBlob);
+          
           const baseUrl = 'https://photoreceipt.stoodioph.com';
-          const hybridUrl = `${baseUrl}/?photo=${encodeURIComponent(uploadedUrl)}`;
+          const hybridUrl = `${baseUrl}/?id=${shareId}`;
           const qrDataUrl = await generateQRCode(hybridUrl);
           
           if (this.activeSession.metadata) {
@@ -247,7 +251,7 @@ export class PreviewView extends BaseView {
           }
           return qrDataUrl;
         } catch (err) {
-          console.error('Failed to upload receipt in background:', err);
+          console.error('Failed to upload receipts in background:', err);
           return null; // Fallback to local default QR code url on error
         }
       })();

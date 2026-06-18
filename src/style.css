@@ -1804,7 +1804,107 @@ body {
   .postcard-postage-stamp {
     border-color: #000000 !important;
   }
+
+  /* Custom Print Layout overrides for the collage preview template */
+  .collage-receipt-container {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .template-header {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    margin-bottom: 12px !important;
+  }
+
+  .template-header-logo {
+    display: block !important;
+    max-width: 220px !important;
+    max-height: 80px !important;
+    object-fit: contain !important;
+    margin: 0 auto !important;
+  }
+
+  .template-header-name {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-size: 20px !important;
+    font-weight: bold !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+  }
+
+  .template-photo-grid-1,
+  .template-photo-grid-3,
+  .template-photo-grid-4,
+  .template-photo-grid-6 {
+    width: 100% !important;
+    margin-bottom: 10px !important;
+  }
+
+  .template-photo-grid-1 {
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  .template-photo-grid-3 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+  }
+
+  .template-photo-grid-4 {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .template-photo-grid-6 {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .photo-item {
+    width: 100% !important;
+    border: 1px solid #000000 !important;
+    object-fit: cover !important;
+    display: block !important;
+  }
+
+  .template-footer {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-family: 'Courier Prime', 'Courier New', Courier, monospace !important;
+    font-size: 9px !important;
+    font-weight: bold !important;
+    margin-top: 12px !important;
+  }
+
+  .template-footer-location {
+    text-align: left !important;
+    max-width: 60% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    text-transform: uppercase !important;
+  }
+
+  .template-footer-date {
+    text-align: right !important;
+    max-width: 40% !important;
+  }
 }
+
+
 
 /* -------------------------------------------------------------
    VINTAGE POLAROID TEMPLATE STYLES
@@ -2271,6 +2371,17 @@ body {
   background: rgba(255, 82, 82, 0.08);
 }
 
+.btn-admin-warning {
+  background: transparent;
+  color: #ffb300;
+  border-color: rgba(255, 179, 0, 0.3);
+}
+
+.btn-admin-warning:hover {
+  border-color: #ffb300;
+  background: rgba(255, 179, 0, 0.08);
+}
+
 .admin-modal-content .file-uploader-label {
   border-color: #3a3a3a;
   color: #ffffff;
@@ -2334,8 +2445,8 @@ body {
 }
 
 .template-header-logo {
-  max-width: 120px;
-  max-height: 48px;
+  max-width: 220px;
+  max-height: 80px;
   object-fit: contain;
   display: block;
 }
@@ -2702,4 +2813,168 @@ input:checked+.toggle-slider:before {
     font-size: 11px;
     padding: 12px 18px;
   }
+}
+
+/* -------------------------------------------------------------
+   8. DEVICE ACTIVATION SCREEN & CUSTOM STYLES
+------------------------------------------------------------- */
+.activation-screen-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 60px 20px;
+  box-sizing: border-box;
+}
+
+.activation-header {
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.activation-header .brand-title {
+  font-family: var(--font-vintage);
+  font-size: 38px;
+  font-weight: 400;
+  letter-spacing: 4px;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.activation-header .brand-subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.activation-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  padding: 40px 30px;
+  box-sizing: border-box;
+  text-align: center;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.activation-card:hover {
+  transform: translateY(-2px);
+}
+
+.activation-title {
+  font-family: var(--font-vintage);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: 1.5px;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.activation-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 30px 0;
+}
+
+.activation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: left;
+}
+
+.activation-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.activation-form label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+}
+
+.activation-input {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  font-family: var(--font-receipt); /* Monospace */
+  letter-spacing: 2px;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  box-sizing: border-box;
+  text-align: center;
+  text-transform: uppercase;
+  transition: border-color 0.2s ease;
+}
+
+.activation-input:focus {
+  outline: none;
+  border-color: var(--text-primary);
+}
+
+.activation-status-message {
+  font-size: 12px;
+  padding: 12px;
+  text-align: center;
+  line-height: 1.5;
+  border-radius: 0px;
+  box-sizing: border-box;
+}
+
+.status-loading {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-primary);
+}
+
+.status-success {
+  background: rgba(46, 125, 50, 0.1);
+  color: #2e7d32;
+  border: 1px solid #2e7d32;
+}
+
+.status-error {
+  background: rgba(198, 40, 40, 0.1);
+  color: #c62828;
+  border: 1px solid #c62828;
+}
+
+.device-info-footer {
+  font-size: 11px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.device-info-footer code {
+  font-family: var(--font-receipt);
+  background: var(--bg-tertiary);
+  padding: 4px 8px;
+  border: 1px solid var(--border-primary);
+}
+
+/* Shake card on activation error */
+.shake-error {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
 }
