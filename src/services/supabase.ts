@@ -95,7 +95,7 @@ export async function uploadReceiptPhoto(blob: Blob, path: string): Promise<stri
     .from('receipts')
     .upload(path, blob, {
       contentType: 'image/png',
-      upsert: true,
+      upsert: false,
     });
 
   if (error) {
@@ -124,7 +124,7 @@ export async function uploadRawReceiptPhoto(blob: Blob, path: string): Promise<v
     .from('receipts')
     .upload(path, blob, {
       contentType: 'image/png',
-      upsert: true,
+      upsert: false,
     });
 
   if (error) {
