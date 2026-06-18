@@ -570,6 +570,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (textColorHomeInput) textColorHomeInput.value = config.textColorHome || '#000000';
     if (homeModeSelect) homeModeSelect.value = config.homeScreenMode || 'graphic';
 
+    const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
+    if (enableQrInput) enableQrInput.checked = config.enableQrCode !== false;
+
     const imgurClientIdInput = document.getElementById('input-imgur-client-id') as HTMLInputElement;
     if (imgurClientIdInput) imgurClientIdInput.value = config.imgurClientId || '';
 
@@ -660,6 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const textColorInput = document.getElementById('input-text-color') as HTMLInputElement;
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
     const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
+    const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
 
     // Handle background media save
     let resolvedBgType: 'image' | 'video' | null = bgFileType;
@@ -684,7 +688,8 @@ document.addEventListener('DOMContentLoaded', () => {
       backgroundType: resolvedBgType,
       imgurClientId: imgurClientIdInput ? imgurClientIdInput.value.trim() : '',
       imgbbApiKey: imgbbApiKeyInput ? imgbbApiKeyInput.value.trim() : '',
-      homeScreenMode: homeModeSelect ? (homeModeSelect.value as 'graphic' | 'layout') : 'graphic'
+      homeScreenMode: homeModeSelect ? (homeModeSelect.value as 'graphic' | 'layout') : 'graphic',
+      enableQrCode: enableQrInput ? enableQrInput.checked : true
     };
 
     saveKioskConfig(newConfig);

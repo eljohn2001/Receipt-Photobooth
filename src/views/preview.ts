@@ -233,28 +233,33 @@ export class PreviewView extends BaseView {
 
     // Print button triggers printing screen and triggers standard print
     this.printBtn?.addEventListener('click', () => {
-      // 1. Kick off background upload before transitioning
-      this.activeSession.uploadPromise = (async () => {
-        try {
-          // Generate high quality B&W (grayscale, non-dithered) and Color receipt images
-          const bwBlob = await generateReceiptBlob(this.activeSession, 'bw');
-          const colorBlob = await generateReceiptBlob(this.activeSession, 'color');
-          
-          const shareId = await uploadReceiptPhotos(bwBlob, colorBlob);
-          
-          const baseUrl = 'https://photoreceipt.stoodioph.com';
-          const hybridUrl = `${baseUrl}/?id=${shareId}`;
-          const qrDataUrl = await generateQRCode(hybridUrl);
-          
-          if (this.activeSession.metadata) {
-            this.activeSession.metadata.qrCodeUrl = qrDataUrl;
+      const config = loadKioskConfig();
+      if (config.enableQrCode !== false) {
+        // 1. Kick off background upload before transitioning
+        this.activeSession.uploadPromise = (async () => {
+          try {
+            // Generate high quality B&W (grayscale, non-dithered) and Color receipt images
+            const bwBlob = await generateReceiptBlob(this.activeSession, 'bw');
+            const colorBlob = await generateReceiptBlob(this.activeSession, 'color');
+            
+            const shareId = await uploadReceiptPhotos(bwBlob, colorBlob);
+            
+            const baseUrl = 'https://photoreceipt.stoodioph.com';
+            const hybridUrl = `${baseUrl}/?id=${shareId}`;
+            const qrDataUrl = await generateQRCode(hybridUrl);
+            
+            if (this.activeSession.metadata) {
+              this.activeSession.metadata.qrCodeUrl = qrDataUrl;
+            }
+            return qrDataUrl;
+          } catch (err) {
+            console.error('Failed to upload receipts in background:', err);
+            return null; // Fallback to local default QR code url on error
           }
-          return qrDataUrl;
-        } catch (err) {
-          console.error('Failed to upload receipts in background:', err);
-          return null; // Fallback to local default QR code url on error
-        }
-      })();
+        })();
+      } else {
+        this.activeSession.uploadPromise = undefined;
+      }
 
       const paperEl = this.element.querySelector('#preview-thermal-paper');
       if (paperEl) {

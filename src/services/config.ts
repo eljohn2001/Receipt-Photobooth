@@ -17,6 +17,7 @@ export interface KioskConfig {
   imgbbApiKey?: string;
   homeScreenMode?: 'graphic' | 'layout';
   socialTag?: string;
+  enableQrCode?: boolean;
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -32,7 +33,8 @@ export const DEFAULT_CONFIG: KioskConfig = {
   imgurClientId: '6e08c02c63d5ad3',
   imgbbApiKey: 'c6b792880a4b31c6d365bd5586f10dc2',
   homeScreenMode: 'graphic',
-  socialTag: 'beansandbites'
+  socialTag: 'beansandbites',
+  enableQrCode: true
 };
 
 const STORAGE_KEY = 'receipt_booth_kiosk_config';

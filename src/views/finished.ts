@@ -93,6 +93,26 @@ export class FinishedView extends BaseView {
       offlineWarning.remove();
     }
 
+    // If QR code feature is disabled, hide elements and return early
+    if (config.enableQrCode === false) {
+      if (downloadLabel) {
+        downloadLabel.textContent = 'Digital copy disabled';
+      }
+      if (qrContainer) {
+        qrContainer.style.display = 'none';
+      }
+      if (qrImg) {
+        qrImg.classList.add('hidden');
+      }
+      
+      // Explode confetti!
+      this.triggerConfetti();
+
+      // Start auto-reset timer (20 seconds)
+      this.startResetTimer(20);
+      return;
+    }
+
     // 3. Set QR code source from metadata (awaiting background upload if active)
     let loadingText: HTMLDivElement | null = null;
     if (qrContainer && this.activeSession.uploadPromise) {
