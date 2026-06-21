@@ -1,5 +1,5 @@
 import type { ReceiptMetadata, ReceiptTemplate } from '../types';
-import { renderReceiptHeader, renderReceiptFooter } from './helper';
+import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR } from './helper';
 
 export const filmStackTemplate: ReceiptTemplate = {
   id: 'film-stack',
@@ -29,6 +29,7 @@ export const filmStackTemplate: ReceiptTemplate = {
           ${renderPhoto(photo3, 3)}
         </div>
         
+        ${renderReceiptQR(metadata)}
         ${renderReceiptFooter(metadata)}
       </div>
     `;

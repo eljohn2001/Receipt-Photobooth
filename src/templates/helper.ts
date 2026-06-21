@@ -44,3 +44,18 @@ export function renderReceiptFooter(metadata: ReceiptMetadata): string {
     </div>
   `;
 }
+
+export function renderReceiptQR(metadata: ReceiptMetadata): string {
+  const config = loadKioskConfig();
+  if (config.enableQrCode === false || !metadata.qrCodeUrl) {
+    return '';
+  }
+  return `
+    <div class="receipt-divider">.............................</div>
+    <div class="receipt-qr-block">
+      <div class="qr-info-text">SCAN FOR DIGITAL COPY</div>
+      <img class="receipt-qr-image" src="${metadata.qrCodeUrl}" alt="QR Link" />
+      <div class="qr-web-link">photoreceipt.stoodioph.com</div>
+    </div>
+  `;
+}

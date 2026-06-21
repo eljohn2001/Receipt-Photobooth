@@ -4,6 +4,7 @@ import type { AppSession } from '../types';
 import { audioManager } from '../services/audio';
 import { downloadReceiptImage } from '../services/download';
 import { loadKioskConfig } from '../services/config';
+import { saveOfflineShare } from '../services/db';
 
 export class FinishedView extends BaseView {
   private activeSession: AppSession;
@@ -165,6 +166,21 @@ export class FinishedView extends BaseView {
     const qrContainer = this.element.querySelector('.finished-qr-container') as HTMLElement;
     if (qrContainer) {
       qrContainer.style.display = 'none';
+    }
+
+    // Cache photo blobs locally in IndexedDB for later manual synchronization
+    if (this.activeSession.bwBlob && this.activeSession.colorBlob && this.activeSession.metadata) {
+      const offlineId = `offline-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      saveOfflineShare({
+        id: offlineId,
+        timestamp: this.activeSession.metadata.timestamp,
+        bwBlob: this.activeSession.bwBlob,
+        colorBlob: this.activeSession.colorBlob
+      }).then(() => {
+        console.log(`Saved offline capture locally: ${offlineId}`);
+      }).catch((err) => {
+        console.error('Failed to save offline capture locally:', err);
+      });
     }
 
     // Check if offline warning already exists

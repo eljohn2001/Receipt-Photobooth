@@ -79,8 +79,12 @@ export class TemplateView extends BaseView {
       card.addEventListener('click', () => {
         const id = card.getAttribute('data-template-id');
         if (id) {
+          card.classList.add('selected-active');
           this.currentSession.selectedTemplateId = id;
-          this.navigateTo('camera-capture');
+          setTimeout(() => {
+            card.classList.remove('selected-active');
+            this.navigateTo('camera-capture');
+          }, 150);
         }
       });
     });

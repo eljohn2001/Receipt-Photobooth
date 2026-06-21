@@ -100,10 +100,15 @@ export class IdleView extends BaseView {
         lastTap = now;
         if (tapCount === 3) {
           tapCount = 0;
-          const adminModal = document.getElementById('admin-modal');
-          if (adminModal) {
-            adminModal.classList.remove('hidden');
-            adminModal.dispatchEvent(new CustomEvent('open-admin'));
+          const pin = prompt('Enter Admin PIN to access configuration:');
+          if (pin === '1234') {
+            const adminModal = document.getElementById('admin-modal');
+            if (adminModal) {
+              adminModal.classList.remove('hidden');
+              adminModal.dispatchEvent(new CustomEvent('open-admin'));
+            }
+          } else if (pin !== null) {
+            alert('Incorrect PIN!');
           }
         }
       });
@@ -125,10 +130,15 @@ export class IdleView extends BaseView {
         lastTap = now;
         if (tapCount === 3) {
           tapCount = 0;
-          const adminModal = document.getElementById('admin-modal');
-          if (adminModal) {
-            adminModal.classList.remove('hidden');
-            adminModal.dispatchEvent(new CustomEvent('open-admin'));
+          const pin = prompt('Enter Admin PIN to access configuration:');
+          if (pin === '1234') {
+            const adminModal = document.getElementById('admin-modal');
+            if (adminModal) {
+              adminModal.classList.remove('hidden');
+              adminModal.dispatchEvent(new CustomEvent('open-admin'));
+            }
+          } else if (pin !== null) {
+            alert('Incorrect PIN!');
           }
         }
       });

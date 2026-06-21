@@ -1,5 +1,5 @@
 import type { ReceiptMetadata, ReceiptTemplate } from '../types';
-import { renderReceiptHeader, renderReceiptFooter } from './helper';
+import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR } from './helper';
 
 export const hexGridTemplate: ReceiptTemplate = {
   id: 'hex-grid',
@@ -35,6 +35,7 @@ export const hexGridTemplate: ReceiptTemplate = {
           ${renderPhoto(photo6, 6)}
         </div>
         
+        ${renderReceiptQR(metadata)}
         ${renderReceiptFooter(metadata)}
       </div>
     `;

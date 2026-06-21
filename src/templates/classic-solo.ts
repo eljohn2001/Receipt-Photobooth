@@ -1,5 +1,5 @@
 import type { ReceiptMetadata, ReceiptTemplate } from '../types';
-import { renderReceiptHeader, renderReceiptFooter } from './helper';
+import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR } from './helper';
 
 export const classicSoloTemplate: ReceiptTemplate = {
   id: 'classic-solo',
@@ -19,6 +19,7 @@ export const classicSoloTemplate: ReceiptTemplate = {
           ${photo ? `<img class="photo-item" src="${photo}" alt="Solo Frame" />` : '<div class="photo-item photo-placeholder">PHOTO</div>'}
         </div>
         
+        ${renderReceiptQR(metadata)}
         ${renderReceiptFooter(metadata)}
       </div>
     `;

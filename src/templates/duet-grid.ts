@@ -1,5 +1,5 @@
 import type { ReceiptMetadata, ReceiptTemplate } from '../types';
-import { renderReceiptHeader, renderReceiptFooter } from './helper';
+import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR } from './helper';
 
 export const duetGridTemplate: ReceiptTemplate = {
   id: 'duet-grid',
@@ -31,6 +31,7 @@ export const duetGridTemplate: ReceiptTemplate = {
           ${renderPhoto(photo4, 4)}
         </div>
         
+        ${renderReceiptQR(metadata)}
         ${renderReceiptFooter(metadata)}
       </div>
     `;

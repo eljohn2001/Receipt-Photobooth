@@ -33,7 +33,7 @@ export class ActivationView extends BaseView {
               />
             </div>
 
-            <div class="activation-status-message id="activation-status-msg" style="display: none;"></div>
+            <div class="activation-status-message" id="activation-status-msg" style="display: none;"></div>
 
             <button type="submit" class="btn btn-primary btn-full" id="btn-activate-submit">
               ⚡ ACTIVATE DEVICE

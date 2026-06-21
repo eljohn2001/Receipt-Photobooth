@@ -88,6 +88,20 @@ export class PrintingView extends BaseView {
       hintBoxEl.innerHTML = '<p>Please complete the system print dialog.</p>';
     }
 
+    // Wait for the background QR code upload to complete if active, to ensure the correct QR code is printed
+    if (this.activeSession.uploadPromise) {
+      if (headlineEl) headlineEl.textContent = 'GENERATING QR CODE...';
+      if (sublineEl) sublineEl.textContent = 'Connecting to cloud storage...';
+      try {
+        await this.activeSession.uploadPromise;
+      } catch (err) {
+        console.error('Failed to resolve uploadPromise during printing:', err);
+      }
+      // Restore headline/subline
+      if (headlineEl) headlineEl.textContent = 'PREPARING YOUR PRINT...';
+      if (sublineEl) sublineEl.textContent = 'Please check the print window';
+    }
+
     if (deliveryContent && previewContent) {
       // Inject receipt HTML content into the delivery paper
       deliveryContent.innerHTML = previewContent.innerHTML;

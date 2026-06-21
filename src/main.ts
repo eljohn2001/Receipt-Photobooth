@@ -9,8 +9,9 @@ import { PrintingView } from './views/printing';
 import { FinishedView } from './views/finished';
 import { BaseView } from './views/base';
 import { loadKioskConfig, saveKioskConfig, resetKioskConfig, type KioskConfig } from './services/config';
-import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia } from './services/db';
+import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia, listOfflineShares, deleteOfflineShare } from './services/db';
 import { checkLicenseOnStartup, deactivateLicense } from './services/license';
+import { uploadReceiptPhotos } from './services/upload';
 import { getShareRecord, getPublicStorageUrl } from './services/supabase';
 import defaultSnapHome from './assets/Snap Home.png';
 
@@ -446,6 +447,29 @@ document.addEventListener('DOMContentLoaded', () => {
       prevView.onLeave();
     }
 
+    // Clean up session if returning to Welcome screen (idle)
+    if (nextState === 'idle') {
+      if (session.ditheredPhotos) {
+        session.ditheredPhotos.forEach((url) => {
+          if (url.startsWith('blob:')) {
+            try { URL.revokeObjectURL(url); } catch (e) {}
+          }
+        });
+      }
+      if (session.metadata?.qrCodeUrl && session.metadata.qrCodeUrl.startsWith('blob:')) {
+        try { URL.revokeObjectURL(session.metadata.qrCodeUrl); } catch (e) {}
+      }
+      session.selectedTemplateId = null;
+      session.capturedPhotos = [];
+      session.ditheredPhotos = [];
+      session.metadata = null;
+      session.isMirrored = false;
+      session.copiesCount = 1;
+      session.uploadPromise = undefined;
+      session.bwBlob = undefined;
+      session.colorBlob = undefined;
+    }
+
     // Slide viewport container to the active slide index
     const slideIndex = stateIndexMap[nextState];
     slider!.style.transform = `translateX(-${slideIndex * 100}vw)`;
@@ -602,6 +626,48 @@ document.addEventListener('DOMContentLoaded', () => {
     currentLogoDataUrl = config.logoDataUrl;
     pendingBgFile = null;
     bgFileType = config.backgroundType;
+
+    // Refresh offline captures UI
+    const offlineShares = await listOfflineShares();
+    const countText = document.getElementById('offline-captures-count');
+    const syncBtn = document.getElementById('admin-sync-btn') as HTMLButtonElement;
+    if (countText && syncBtn) {
+      countText.textContent = `${offlineShares.length} captures saved offline`;
+      syncBtn.disabled = offlineShares.length === 0;
+    }
+  });
+
+  // Sync offline captures to Supabase
+  const syncBtn = document.getElementById('admin-sync-btn');
+  syncBtn?.addEventListener('click', async () => {
+    const syncBtnEl = syncBtn as HTMLButtonElement;
+    const countText = document.getElementById('offline-captures-count');
+    if (!syncBtnEl || !countText) return;
+
+    const shares = await listOfflineShares();
+    if (shares.length === 0) return;
+
+    syncBtnEl.disabled = true;
+    syncBtnEl.textContent = 'Syncing...';
+
+    let successCount = 0;
+    for (const share of shares) {
+      try {
+        await uploadReceiptPhotos(share.bwBlob, share.colorBlob);
+        await deleteOfflineShare(share.id);
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to sync offline capture ${share.id}:`, err);
+      }
+    }
+
+    alert(`Successfully synced ${successCount} of ${shares.length} offline captures to cloud storage!`);
+    
+    // Refresh UI
+    const updatedShares = await listOfflineShares();
+    countText.textContent = `${updatedShares.length} captures saved offline`;
+    syncBtnEl.disabled = updatedShares.length === 0;
+    syncBtnEl.textContent = 'Sync Now';
   });
 
   // File readers

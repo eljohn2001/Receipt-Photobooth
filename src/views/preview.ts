@@ -242,6 +242,9 @@ export class PreviewView extends BaseView {
             const bwBlob = await generateReceiptBlob(this.activeSession, 'bw');
             const colorBlob = await generateReceiptBlob(this.activeSession, 'color');
             
+            this.activeSession.bwBlob = bwBlob;
+            this.activeSession.colorBlob = colorBlob;
+            
             const shareId = await uploadReceiptPhotos(bwBlob, colorBlob);
             
             const baseUrl = 'https://photoreceipt.stoodioph.com';
@@ -251,6 +254,13 @@ export class PreviewView extends BaseView {
             if (this.activeSession.metadata) {
               this.activeSession.metadata.qrCodeUrl = qrDataUrl;
             }
+
+            // Proactively update any rendered HTML preview or print containers with the correct QR code image
+            const previewQrImages = document.querySelectorAll('.receipt-qr-image');
+            previewQrImages.forEach((img) => {
+              (img as HTMLImageElement).src = qrDataUrl;
+            });
+
             return qrDataUrl;
           } catch (err) {
             console.error('Failed to upload receipts in background:', err);

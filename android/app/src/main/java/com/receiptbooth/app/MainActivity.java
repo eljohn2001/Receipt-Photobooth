@@ -15,6 +15,9 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.PluginCall;
 import java.util.HashMap;
@@ -29,12 +32,39 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(DirectPrinterPlugin.class);
         super.onCreate(savedInstanceState);
 
+        hideSystemUI();
+
         // Register USB permission broadcast receiver
         IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(usbReceiver, filter, Context.RECEIVER_EXPORTED);
         } else {
             registerReceiver(usbReceiver, filter);
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        hideSystemUI();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            hideSystemUI();
+        }
+    }
+
+    private void hideSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (controller != null) {
+            controller.hide(WindowInsetsCompat.Type.systemBars());
+            controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         }
     }
 

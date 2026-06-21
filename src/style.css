@@ -667,6 +667,14 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
+.template-card-mockup-png-wrapper:active,
+.template-card-mockup-png-wrapper.selected-active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #555555;
+  filter: brightness(0.9);
+}
+
 .template-mockup-png-bg {
   width: 100%;
   height: auto;

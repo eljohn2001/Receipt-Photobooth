@@ -42,4 +42,6 @@ export interface AppSession {
   isMirrored?: boolean;
   copiesCount?: number;
   uploadPromise?: Promise<string | null>;
+  bwBlob?: Blob;
+  colorBlob?: Blob;
 }

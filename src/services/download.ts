@@ -73,14 +73,26 @@ export async function renderReceiptToCanvas(
     }
   }
 
+  // Load QR code image if enabled
+  let qrImg: HTMLImageElement | null = null;
+  const qrSize = 110; // matches receipt-qr-image CSS width
+  if (config.enableQrCode !== false && metadata.qrCodeUrl) {
+    try {
+      qrImg = await loadImage(metadata.qrCodeUrl);
+    } catch (e) {
+      console.warn('Failed to load QR code image for canvas:', e);
+    }
+  }
+
   // Dynamic layout calculations to avoid trailing blank paper
   const headerHeight = logoImg ? logoH : 26;
   const spacingAfterHeader = 20;
   const spacingAfterGrid = 20;
+  const qrHeight = qrImg ? (qrSize + 50) : 0; // QR image size + divider spacing + text spacing
   const footerHeight = 16;
   const padding = 25; // padding top and bottom
 
-  const height = padding * 2 + headerHeight + spacingAfterHeader + gridHeight + spacingAfterGrid + footerHeight;
+  const height = padding * 2 + headerHeight + spacingAfterHeader + gridHeight + spacingAfterGrid + qrHeight + footerHeight;
   canvas.height = height;
 
   // Fill canvas with solid white
@@ -107,16 +119,31 @@ export async function renderReceiptToCanvas(
 
   y += spacingAfterHeader;
 
-  // 2. Draw Photos with clean black borders
+  // 2. Draw Photos with clean black borders and optional mirroring support
   if (mode === 'bw') {
     ctx.filter = 'grayscale(100%)';
   } else {
     ctx.filter = 'none';
   }
 
+  const isMirrored = session.isMirrored || false;
+
+  const drawPhotoWithMirror = (img: HTMLImageElement, px: number, py: number, w: number, h: number) => {
+    ctx.save();
+    if (isMirrored) {
+      // Move context origin to the center of the image area to flip horizontally
+      ctx.translate(px + w / 2, py + h / 2);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, -w / 2, -h / 2, w, h);
+    } else {
+      ctx.drawImage(img, px, py, w, h);
+    }
+    ctx.restore();
+    ctx.strokeRect(px, py, w, h);
+  };
+
   if (templateId === 'classic-solo' && loadedPhotos[0]) {
-    ctx.drawImage(loadedPhotos[0], margin, y, printWidth, printWidth);
-    ctx.strokeRect(margin, y, printWidth, printWidth);
+    drawPhotoWithMirror(loadedPhotos[0], margin, y, printWidth, printWidth);
     y += printWidth;
   } else if (templateId === 'duet-grid') {
     const size = (printWidth - 8) / 2;
@@ -127,8 +154,7 @@ export async function renderReceiptToCanvas(
         const row = Math.floor(i / 2);
         const px = margin + col * (size + 8);
         const py = y + row * (size + 8);
-        ctx.drawImage(img, px, py, size, size);
-        ctx.strokeRect(px, py, size, size);
+        drawPhotoWithMirror(img, px, py, size, size);
       }
     }
     y += size * 2 + 8;
@@ -138,8 +164,7 @@ export async function renderReceiptToCanvas(
       const img = loadedPhotos[i];
       if (img) {
         const py = y + i * (pHeight + 8);
-        ctx.drawImage(img, margin, py, printWidth, pHeight);
-        ctx.strokeRect(margin, py, printWidth, pHeight);
+        drawPhotoWithMirror(img, margin, py, printWidth, pHeight);
       }
     }
     y += (pHeight + 8) * 3 - 8;
@@ -153,8 +178,7 @@ export async function renderReceiptToCanvas(
         const row = Math.floor(i / 2);
         const px = margin + col * (sizeW + 8);
         const py = y + row * (sizeH + 8);
-        ctx.drawImage(img, px, py, sizeW, sizeH);
-        ctx.strokeRect(px, py, sizeW, sizeH);
+        drawPhotoWithMirror(img, px, py, sizeW, sizeH);
       }
     }
     y += (sizeH + 8) * 3 - 8;
@@ -163,7 +187,30 @@ export async function renderReceiptToCanvas(
   ctx.filter = 'none';
   y += spacingAfterGrid;
 
-  // 3. Draw Footer: Location (Left) and Piped Date (Right)
+  // 3. Draw QR Code if available
+  if (qrImg) {
+    // Draw divider dots
+    ctx.font = 'bold 12px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('.............................', width / 2, y + 10);
+    y += 18;
+
+    // Draw "SCAN FOR DIGITAL COPY" text
+    ctx.font = 'bold 10px "Space Grotesk", Arial, sans-serif';
+    ctx.fillText('SCAN FOR DIGITAL COPY', width / 2, y + 10);
+    y += 16;
+
+    // Draw QR image centered
+    ctx.drawImage(qrImg, (width - qrSize) / 2, y, qrSize, qrSize);
+    y += qrSize;
+
+    // Draw link text
+    ctx.font = '9px "Space Grotesk", Arial, sans-serif';
+    ctx.fillText('photoreceipt.stoodioph.com', width / 2, y + 10);
+    y += 16;
+  }
+
+  // 4. Draw Footer: Location (Left) and Piped Date (Right)
   const getFormattedDate = (dateStr: string) => {
     try {
       const cleaned = dateStr.split(',')[0].trim();
