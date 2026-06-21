@@ -13,6 +13,7 @@ export class CaptureView extends BaseView {
   private activeSession: AppSession;
   private countdownIntervalId: number | null = null;
   private activeSequenceTimeoutId: number | null = null;
+  private isCaptureActive = false;
 
   constructor(
     element: HTMLElement,
@@ -75,6 +76,7 @@ export class CaptureView extends BaseView {
     // Back Button listener
     const backBtn = this.element.querySelector('#btn-capture-back');
     backBtn?.addEventListener('click', () => {
+      this.isCaptureActive = false;
       this.cameraService.stop();
       this.navigateTo('template-selection');
     });
@@ -99,6 +101,7 @@ export class CaptureView extends BaseView {
   }
 
   async onEnter(): Promise<void> {
+    this.isCaptureActive = true;
     const template = getTemplateById(this.activeSession.selectedTemplateId || '');
     if (!template) {
       console.error('No template selected, aborting');
@@ -163,6 +166,7 @@ export class CaptureView extends BaseView {
   }
 
   onLeave(): void {
+    this.isCaptureActive = false;
     this.cameraService.stop();
     this.clearAllTimers();
     if (this.countdownOverlay) this.countdownOverlay.classList.add('hidden');
@@ -183,7 +187,9 @@ export class CaptureView extends BaseView {
    * Run the countdown and capture photos based on count requirements
    */
   private async runCaptureSequence(totalShots: number) {
+    this.isCaptureActive = true;
     for (let shotIndex = 0; shotIndex < totalShots; shotIndex++) {
+      if (!this.isCaptureActive) break;
       // 1. Update active indicator dot
       if (totalShots > 1) {
         const activeDot = this.element.querySelector(`#seq-dot-${shotIndex}`);
@@ -192,6 +198,7 @@ export class CaptureView extends BaseView {
 
       // 2. Perform Countdown (3, 2, 1)
       await this.countdown(3);
+      if (!this.isCaptureActive) break;
 
       // 3. Shutter flash effect & capture frame
       this.triggerFlash();
@@ -209,9 +216,12 @@ export class CaptureView extends BaseView {
 
       // Pause briefly between shots in sequence
       if (shotIndex < totalShots - 1) {
+        if (!this.isCaptureActive) break;
         await new Promise((r) => setTimeout(r, 1200));
       }
     }
+
+    if (!this.isCaptureActive) return;
 
     // Sequence completed! Stop camera and move to Preview View
     this.cameraService.stop();
@@ -242,6 +252,14 @@ export class CaptureView extends BaseView {
       let current = seconds;
 
       this.countdownIntervalId = window.setInterval(() => {
+        if (!this.isCaptureActive) {
+          if (this.countdownIntervalId !== null) {
+            window.clearInterval(this.countdownIntervalId);
+            this.countdownIntervalId = null;
+          }
+          resolve();
+          return;
+        }
         current--;
         if (current <= 0) {
           if (this.countdownIntervalId !== null) {

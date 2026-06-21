@@ -1,5 +1,36 @@
 import type { AppSession } from '../types';
 import { loadKioskConfig } from './config';
+import { getIllustrationSvgById } from '../templates/helper';
+
+/**
+ * Helper to wrap text into multiple lines for canvas drawing.
+ */
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const testLine = currentLine ? currentLine + ' ' + word : word;
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+    if (testWidth > maxWidth && i > 0) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  return lines;
+}
 
 /**
  * Draws the receipt contents onto an HTML5 canvas element with high quality,
@@ -8,7 +39,8 @@ import { loadKioskConfig } from './config';
 export async function renderReceiptToCanvas(
   session: AppSession, 
   canvas: HTMLCanvasElement, 
-  mode: 'print' | 'bw' | 'color' = 'print'
+  mode: 'print' | 'bw' | 'color' = 'print',
+  includeQrCode = false
 ): Promise<void> {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not get canvas 2D context');
@@ -28,7 +60,18 @@ export async function renderReceiptToCanvas(
   const margin = 24; // Standard receipt margin matching CSS
   const printWidth = width - margin * 2; // 336px
 
-  if (templateId === 'classic-solo') {
+  let comfortHeight = 0;
+  let comfortLines: string[] = [];
+
+  if (templateId === 'comfort-card') {
+    gridHeight = 0;
+    ctx.save();
+    ctx.font = 'italic 11px "Courier Prime", "Courier New", Courier, monospace';
+    const quoteText = `"${session.selectedQuote || ''}"`;
+    comfortLines = wrapText(ctx, quoteText, printWidth - 24);
+    ctx.restore();
+    comfortHeight = 160 + 16 + 18 + 16 + (comfortLines.length * 15) + 10;
+  } else if (templateId === 'classic-solo') {
     gridHeight = printWidth; // 336px
   } else if (templateId === 'duet-grid') {
     const size = (printWidth - 8) / 2; // 164px
@@ -42,6 +85,20 @@ export async function renderReceiptToCanvas(
     gridHeight = (sizeH + 8) * 3 - 8; // 343px
   } else {
     gridHeight = printWidth;
+  }
+
+  let fortuneHeight = 0;
+  let fortuneLines: string[] = [];
+  const hasFortune = config.enableMemoryFortune !== false && !!session.selectedQuote;
+
+  if (hasFortune) {
+    ctx.save();
+    ctx.font = 'italic 10px "Courier Prime", "Courier New", Courier, monospace';
+    const quoteText = `"${session.selectedQuote}"`;
+    fortuneLines = wrapText(ctx, quoteText, printWidth - 16);
+    ctx.restore();
+
+    fortuneHeight = 18 + 16 + (fortuneLines.length * 14) + 10;
   }
 
   // Helper to load image securely
@@ -73,10 +130,10 @@ export async function renderReceiptToCanvas(
     }
   }
 
-  // Load QR code image if enabled
+  // Load QR code image if enabled and explicitly requested
   let qrImg: HTMLImageElement | null = null;
   const qrSize = 110; // matches receipt-qr-image CSS width
-  if (config.enableQrCode !== false && metadata.qrCodeUrl) {
+  if (includeQrCode && config.enableQrCode !== false && metadata.qrCodeUrl) {
     try {
       qrImg = await loadImage(metadata.qrCodeUrl);
     } catch (e) {
@@ -87,12 +144,12 @@ export async function renderReceiptToCanvas(
   // Dynamic layout calculations to avoid trailing blank paper
   const headerHeight = logoImg ? logoH : 26;
   const spacingAfterHeader = 20;
-  const spacingAfterGrid = 20;
+  const spacingAfterGrid = templateId === 'comfort-card' ? 0 : 20;
   const qrHeight = qrImg ? (qrSize + 50) : 0; // QR image size + divider spacing + text spacing
   const footerHeight = 16;
   const padding = 25; // padding top and bottom
 
-  const height = padding * 2 + headerHeight + spacingAfterHeader + gridHeight + spacingAfterGrid + qrHeight + footerHeight;
+  const height = padding * 2 + headerHeight + spacingAfterHeader + gridHeight + spacingAfterGrid + qrHeight + footerHeight + fortuneHeight + comfortHeight;
   canvas.height = height;
 
   // Fill canvas with solid white
@@ -142,7 +199,35 @@ export async function renderReceiptToCanvas(
     ctx.strokeRect(px, py, w, h);
   };
 
-  if (templateId === 'classic-solo' && loadedPhotos[0]) {
+  if (templateId === 'comfort-card') {
+    const svgString = getIllustrationSvgById(session.selectedIllustration || 'coffee');
+    const svgDataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgString);
+    try {
+      const svgImg = await loadImage(svgDataUrl);
+      const size = 160;
+      ctx.drawImage(svgImg, (width - size) / 2, y, size, size);
+      y += size + 16;
+    } catch (e) {
+      console.warn('Failed to load comfort card SVG:', e);
+      y += 160 + 16;
+    }
+
+    ctx.font = 'bold 12px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('.............................', width / 2, y + 10);
+    y += 18;
+
+    ctx.font = 'bold 11px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.fillText('COMFORT CARD', width / 2, y + 10);
+    y += 16;
+
+    ctx.font = 'italic 11px "Courier Prime", "Courier New", Courier, monospace';
+    for (const line of comfortLines) {
+      ctx.fillText(line, width / 2, y + 10);
+      y += 15;
+    }
+    y += 10;
+  } else if (templateId === 'classic-solo' && loadedPhotos[0]) {
     drawPhotoWithMirror(loadedPhotos[0], margin, y, printWidth, printWidth);
     y += printWidth;
   } else if (templateId === 'duet-grid') {
@@ -232,6 +317,30 @@ export async function renderReceiptToCanvas(
   ctx.fillText(metadata.cafeAddress.toUpperCase(), margin, y + 10);
   ctx.textAlign = 'right';
   ctx.fillText(formattedDate, width - margin, y + 10);
+
+  y += footerHeight;
+
+  if (hasFortune) {
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'center';
+
+    // 1. Divider dots
+    ctx.font = 'bold 12px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.fillText('.............................', width / 2, y + 10);
+    y += 18;
+
+    // 2. Title "MEMORY FORTUNE"
+    ctx.font = 'bold 11px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.fillText('MEMORY FORTUNE', width / 2, y + 10);
+    y += 16;
+
+    // 3. Quote text lines
+    ctx.font = 'italic 10px "Courier Prime", "Courier New", Courier, monospace';
+    for (const line of fortuneLines) {
+      ctx.fillText(line, width / 2, y + 10);
+      y += 14;
+    }
+  }
 }
 
 /**

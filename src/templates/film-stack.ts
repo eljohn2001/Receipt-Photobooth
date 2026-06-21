@@ -1,5 +1,5 @@
-import type { ReceiptMetadata, ReceiptTemplate } from '../types';
-import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR } from './helper';
+import type { ReceiptMetadata, ReceiptTemplate, AppSession } from '../types';
+import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR, renderReceiptFortune } from './helper';
 
 export const filmStackTemplate: ReceiptTemplate = {
   id: 'film-stack',
@@ -8,7 +8,7 @@ export const filmStackTemplate: ReceiptTemplate = {
   emoji: '🎞',
   photoCount: 3,
   aspectRatio: 1.5, // horizontal rectangle
-  render: (photos: string[], metadata: ReceiptMetadata): string => {
+  render: (photos: string[], metadata: ReceiptMetadata, session?: AppSession): string => {
     const photo1 = photos[0] || '';
     const photo2 = photos[1] || '';
     const photo3 = photos[2] || '';
@@ -31,6 +31,7 @@ export const filmStackTemplate: ReceiptTemplate = {
         
         ${renderReceiptQR(metadata)}
         ${renderReceiptFooter(metadata)}
+        ${session ? renderReceiptFortune(session) : ''}
       </div>
     `;
   }

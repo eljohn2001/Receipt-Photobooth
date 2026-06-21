@@ -1,5 +1,5 @@
-import type { ReceiptMetadata, ReceiptTemplate } from '../types';
-import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR } from './helper';
+import type { ReceiptMetadata, ReceiptTemplate, AppSession } from '../types';
+import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR, renderReceiptFortune } from './helper';
 
 export const duetGridTemplate: ReceiptTemplate = {
   id: 'duet-grid',
@@ -8,7 +8,7 @@ export const duetGridTemplate: ReceiptTemplate = {
   emoji: '🔳',
   photoCount: 4,
   aspectRatio: 1.0,
-  render: (photos: string[], metadata: ReceiptMetadata): string => {
+  render: (photos: string[], metadata: ReceiptMetadata, session?: AppSession): string => {
     const photo1 = photos[0] || '';
     const photo2 = photos[1] || '';
     const photo3 = photos[2] || '';
@@ -33,6 +33,7 @@ export const duetGridTemplate: ReceiptTemplate = {
         
         ${renderReceiptQR(metadata)}
         ${renderReceiptFooter(metadata)}
+        ${session ? renderReceiptFortune(session) : ''}
       </div>
     `;
   }

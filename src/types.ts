@@ -1,6 +1,7 @@
 export type AppState =
   | 'activation'
   | 'idle'
+  | 'mode-selection'
   | 'template-selection'
   | 'camera-capture'
   | 'preview'
@@ -31,7 +32,7 @@ export interface ReceiptTemplate {
   emoji: string;
   photoCount: number; // 1 or 3 for filmstrip
   aspectRatio: number; // e.g. 1.0 for square, 0.75 for 3:4 portrait
-  render: (photos: string[], metadata: ReceiptMetadata) => string;
+  render: (photos: string[], metadata: ReceiptMetadata, session?: AppSession) => string;
 }
 
 export interface AppSession {
@@ -44,4 +45,7 @@ export interface AppSession {
   uploadPromise?: Promise<string | null>;
   bwBlob?: Blob;
   colorBlob?: Blob;
+  shareId?: string;
+  selectedQuote?: string;
+  selectedIllustration?: string;
 }

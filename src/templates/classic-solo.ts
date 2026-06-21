@@ -1,5 +1,5 @@
-import type { ReceiptMetadata, ReceiptTemplate } from '../types';
-import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR } from './helper';
+import type { ReceiptMetadata, ReceiptTemplate, AppSession } from '../types';
+import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR, renderReceiptFortune } from './helper';
 
 export const classicSoloTemplate: ReceiptTemplate = {
   id: 'classic-solo',
@@ -8,7 +8,7 @@ export const classicSoloTemplate: ReceiptTemplate = {
   emoji: '🖼',
   photoCount: 1,
   aspectRatio: 1.0,
-  render: (photos: string[], metadata: ReceiptMetadata): string => {
+  render: (photos: string[], metadata: ReceiptMetadata, session?: AppSession): string => {
     const photo = photos[0] || '';
     
     return `
@@ -21,6 +21,7 @@ export const classicSoloTemplate: ReceiptTemplate = {
         
         ${renderReceiptQR(metadata)}
         ${renderReceiptFooter(metadata)}
+        ${session ? renderReceiptFortune(session) : ''}
       </div>
     `;
   }

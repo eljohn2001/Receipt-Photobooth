@@ -27,7 +27,7 @@ export interface LicenseRecord {
 export async function verifyLicenseKeyOnline(
   key: string,
   deviceId: string
-): Promise<{ success: boolean; error?: string; license?: LicenseRecord }> {
+): Promise<{ success: boolean; error?: string; license?: LicenseRecord; isTransientError?: boolean }> {
   try {
     // 1. Fetch license by key
     const { data: license, error } = await supabase
@@ -38,22 +38,22 @@ export async function verifyLicenseKeyOnline(
 
     if (error) {
       console.error('Supabase query error verifying license:', error);
-      return { success: false, error: 'Database error occurred. Please try again.' };
+      return { success: false, error: 'Database error occurred. Please try again.', isTransientError: true };
     }
 
     if (!license) {
-      return { success: false, error: 'Invalid activation key. Please check and try again.' };
+      return { success: false, error: 'Invalid activation key. Please check and try again.', isTransientError: false };
     }
 
     const record = license as LicenseRecord;
 
     if (!record.is_active) {
-      return { success: false, error: 'This activation key has been deactivated.' };
+      return { success: false, error: 'This activation key has been deactivated.', isTransientError: false };
     }
 
     // 2. Check device binding
     if (record.device_id && record.device_id !== deviceId) {
-      return { success: false, error: 'This key is already activated on another device.' };
+      return { success: false, error: 'This key is already activated on another device.', isTransientError: false };
     }
 
     // 3. If device_id is empty, bind it to this device
@@ -71,7 +71,7 @@ export async function verifyLicenseKeyOnline(
 
       if (updateError) {
         console.error('Supabase update error binding device:', updateError);
-        return { success: false, error: 'Failed to bind license to this device. Try again.' };
+        return { success: false, error: 'Failed to bind license to this device. Try again.', isTransientError: true };
       }
 
       return { success: true, license: updatedLicense as LicenseRecord };
@@ -81,7 +81,7 @@ export async function verifyLicenseKeyOnline(
     return { success: true, license: record };
   } catch (err) {
     console.error('Exception during license verification:', err);
-    return { success: false, error: 'Network or connection error. Please check your internet.' };
+    return { success: false, error: 'Network or connection error. Please check your internet.', isTransientError: true };
   }
 }
 
@@ -156,8 +156,8 @@ export interface ShareRecord {
  * Uploads both B&W and Color receipt images, creates a short-ID share record,
  * and returns the short share ID.
  */
-export async function createShareRecord(bwBlob: Blob, colorBlob: Blob): Promise<string> {
-  const shareId = generateShortId(6);
+export async function createShareRecord(bwBlob: Blob, colorBlob: Blob, customShareId?: string): Promise<string> {
+  const shareId = customShareId || generateShortId(6);
   const fileId = `${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
   
   const bwPath = `receipts/${fileId}-bw.png`;

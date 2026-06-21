@@ -18,6 +18,11 @@ export interface KioskConfig {
   homeScreenMode?: 'graphic' | 'layout';
   socialTag?: string;
   enableQrCode?: boolean;
+  homeSubtitleTop?: string;
+  homeSubtitleBottom?: string;
+  adminPin?: string;
+  enableMemoryFortune?: boolean;
+  enableComfortCards?: boolean;
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -34,7 +39,12 @@ export const DEFAULT_CONFIG: KioskConfig = {
   imgbbApiKey: 'c6b792880a4b31c6d365bd5586f10dc2',
   homeScreenMode: 'graphic',
   socialTag: 'beansandbites',
-  enableQrCode: true
+  enableQrCode: true,
+  homeSubtitleTop: '06.21.2026',
+  homeSubtitleBottom: 'Receipt Photo Booth',
+  adminPin: '1234',
+  enableMemoryFortune: true,
+  enableComfortCards: true
 };
 
 const STORAGE_KEY = 'receipt_booth_kiosk_config';

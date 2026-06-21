@@ -6,11 +6,12 @@ import { createShareRecord } from './supabase';
  */
 export async function uploadReceiptPhotos(
   bwBlob: Blob, 
-  colorBlob: Blob
+  colorBlob: Blob,
+  customShareId?: string
 ): Promise<string> {
   console.log('Initiating parallel upload and share record creation...');
   try {
-    const shareId = await createShareRecord(bwBlob, colorBlob);
+    const shareId = await createShareRecord(bwBlob, colorBlob, customShareId);
     console.log(`Share record created successfully with ID: ${shareId}`);
     return shareId;
   } catch (err) {

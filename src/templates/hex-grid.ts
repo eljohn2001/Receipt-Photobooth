@@ -1,5 +1,5 @@
-import type { ReceiptMetadata, ReceiptTemplate } from '../types';
-import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR } from './helper';
+import type { ReceiptMetadata, ReceiptTemplate, AppSession } from '../types';
+import { renderReceiptHeader, renderReceiptFooter, renderReceiptQR, renderReceiptFortune } from './helper';
 
 export const hexGridTemplate: ReceiptTemplate = {
   id: 'hex-grid',
@@ -8,7 +8,7 @@ export const hexGridTemplate: ReceiptTemplate = {
   emoji: '🔲',
   photoCount: 6,
   aspectRatio: 1.5, // horizontal rectangles
-  render: (photos: string[], metadata: ReceiptMetadata): string => {
+  render: (photos: string[], metadata: ReceiptMetadata, session?: AppSession): string => {
     const photo1 = photos[0] || '';
     const photo2 = photos[1] || '';
     const photo3 = photos[2] || '';
@@ -37,6 +37,7 @@ export const hexGridTemplate: ReceiptTemplate = {
         
         ${renderReceiptQR(metadata)}
         ${renderReceiptFooter(metadata)}
+        ${session ? renderReceiptFortune(session) : ''}
       </div>
     `;
   }

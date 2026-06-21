@@ -6,6 +6,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 
 interface DirectPrinterPlugin {
   printRawUsb(options: { base64Data: string }): Promise<void>;
+  savePhotoToGallery(options: { base64Data: string }): Promise<void>;
 }
 
 const DirectPrinter = registerPlugin<DirectPrinterPlugin>('DirectPrinter');
@@ -110,6 +111,21 @@ export class PrintingView extends BaseView {
     const isNative = Capacitor.isNativePlatform();
 
     if (isNative) {
+      // Auto-save original captured photos to device gallery silently in the background
+      (async () => {
+        try {
+          const photos = this.activeSession.capturedPhotos || [];
+          console.log(`Auto-saving ${photos.length} captured photos to gallery...`);
+          for (const photo of photos) {
+            const cleanBase64 = photo.replace(/^data:image\/[a-z]+;base64,/, '');
+            await DirectPrinter.savePhotoToGallery({ base64Data: cleanBase64 });
+          }
+          console.log('Finished saving photos to gallery.');
+        } catch (err) {
+          console.error('Error auto-saving photos to gallery:', err);
+        }
+      })();
+
       const copies = this.activeSession.copiesCount || 1;
       try {
         for (let i = 0; i < copies; i++) {

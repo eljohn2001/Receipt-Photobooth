@@ -21,6 +21,17 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.PluginCall;
 import java.util.HashMap;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 
 public class MainActivity extends BridgeActivity {
     private static final String ACTION_USB_PERMISSION = "com.receiptbooth.app.USB_PERMISSION";
@@ -290,6 +301,62 @@ public class MainActivity extends BridgeActivity {
         } finally {
             connection.releaseInterface(usbInterface);
             connection.close();
+        }
+    }
+
+    public void savePhotoToGalleryFromPlugin(String base64Data, PluginCall call) {
+        try {
+            byte[] bytes = Base64.decode(base64Data, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            if (bitmap == null) {
+                call.reject("Failed to decode bitmap from base64 data");
+                return;
+            }
+
+            String filename = "Snapceipt_" + System.currentTimeMillis() + "_" + ((int)(Math.random() * 1000)) + ".png";
+            OutputStream fos;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentResolver resolver = getContentResolver();
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename);
+                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/png");
+                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Snapceipt");
+                Uri imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+                if (imageUri == null) {
+                    call.reject("Failed to create MediaStore entry");
+                    return;
+                }
+                fos = resolver.openOutputStream(imageUri);
+            } else {
+                String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/Snapceipt";
+                File file = new File(imagesDir);
+                if (!file.exists()) {
+                    file.mkdirs();
+                }
+                File image = new File(imagesDir, filename);
+                fos = new FileOutputStream(image);
+            }
+
+            if (fos != null) {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+                fos.flush();
+                fos.close();
+                
+                // Trigger media scanner for older Android versions to update the gallery instantly
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                    String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/Snapceipt";
+                    File image = new File(imagesDir, filename);
+                    android.media.MediaScannerConnection.scanFile(this, new String[]{image.toString()}, null, null);
+                }
+                
+                call.resolve();
+            } else {
+                call.reject("OutputStream is null");
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Failed to save photo to gallery", e);
+            call.reject("Failed to save photo to gallery: " + e.getMessage());
         }
     }
 

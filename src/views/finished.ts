@@ -159,25 +159,30 @@ export class FinishedView extends BaseView {
   private showOfflineNotice(): void {
     const downloadLabel = this.element.querySelector('.download-label');
     if (downloadLabel) {
-      downloadLabel.textContent = 'Digital copy unavailable';
+      downloadLabel.textContent = 'Scan to save link (Pending Kiosk Sync)';
     }
     
-    // Hide the QR container
+    // Do NOT hide the QR container. Show it.
     const qrContainer = this.element.querySelector('.finished-qr-container') as HTMLElement;
     if (qrContainer) {
-      qrContainer.style.display = 'none';
+      qrContainer.style.display = 'flex';
+    }
+    const qrImg = this.element.querySelector('#finished-qr-img') as HTMLImageElement;
+    if (qrImg && this.activeSession.metadata?.qrCodeUrl) {
+      qrImg.src = this.activeSession.metadata.qrCodeUrl;
+      qrImg.classList.remove('hidden');
     }
 
     // Cache photo blobs locally in IndexedDB for later manual synchronization
-    if (this.activeSession.bwBlob && this.activeSession.colorBlob && this.activeSession.metadata) {
-      const offlineId = `offline-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    if (this.activeSession.bwBlob && this.activeSession.colorBlob && this.activeSession.metadata && this.activeSession.shareId) {
+      const offlineId = this.activeSession.shareId;
       saveOfflineShare({
         id: offlineId,
         timestamp: this.activeSession.metadata.timestamp,
         bwBlob: this.activeSession.bwBlob,
         colorBlob: this.activeSession.colorBlob
       }).then(() => {
-        console.log(`Saved offline capture locally: ${offlineId}`);
+        console.log(`Saved offline capture locally with ID: ${offlineId}`);
       }).catch((err) => {
         console.error('Failed to save offline capture locally:', err);
       });
@@ -209,7 +214,7 @@ export class FinishedView extends BaseView {
       offlineWarning.innerHTML = `
         <div style="font-size: 15px; margin-bottom: 4px; letter-spacing: 1px;">⚠️ OFFLINE MODE</div>
         <div style="font-weight: normal; color: var(--text-secondary); font-size: 11px;">
-          Upload skipped. Digital copy saved locally.
+          Saved locally. Scan to save link. Photo will load once synced.
         </div>
       `;
 

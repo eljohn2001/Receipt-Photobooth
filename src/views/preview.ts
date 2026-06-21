@@ -6,6 +6,9 @@ import type { AppSession, ReceiptMetadata } from '../types';
 import { loadKioskConfig } from '../services/config';
 import { generateReceiptBlob } from '../services/download';
 import { uploadReceiptPhotos } from '../services/upload';
+import { generateShortId } from '../services/supabase';
+// @ts-ignore - raw loader is supported by Vite
+import quotesRaw from '../Quotes.txt?raw';
 
 export class PreviewView extends BaseView {
   private activeSession: AppSession;
@@ -92,6 +95,7 @@ export class PreviewView extends BaseView {
     // Reset session variables
     this.activeSession.isMirrored = false;
     this.activeSession.copiesCount = 1;
+    this.activeSession.shareId = generateShortId(6);
 
     // Reset options UI defaults
     const mirrorCheckbox = this.element.querySelector('#toggle-mirror') as HTMLInputElement;
@@ -118,6 +122,49 @@ export class PreviewView extends BaseView {
     }
 
     try {
+      // Select surprise quote for Memory Fortune (if enabled)
+      const config = loadKioskConfig();
+      if (config.enableMemoryFortune !== false) {
+        try {
+          const allQuotes = quotesRaw
+            .split('\n')
+            .map((q: string) => q.trim())
+            .filter(Boolean);
+
+          let matchingQuotes: string[] = [];
+
+          // Categorize the 98 quotes into 4 segments corresponding to the 4 templates
+          // classic-solo: 0 to 24 (25 quotes)
+          // duet-grid: 25 to 49 (25 quotes)
+          // film-stack: 50 to 74 (25 quotes)
+          // hex-grid: 75 to 97 (23 quotes)
+          if (template.id === 'classic-solo') {
+            matchingQuotes = allQuotes.slice(0, 25);
+          } else if (template.id === 'duet-grid') {
+            matchingQuotes = allQuotes.slice(25, 50);
+          } else if (template.id === 'film-stack') {
+            matchingQuotes = allQuotes.slice(50, 75);
+          } else if (template.id === 'hex-grid') {
+            matchingQuotes = allQuotes.slice(75, 98);
+          } else {
+            matchingQuotes = allQuotes; // fallback
+          }
+
+          if (matchingQuotes.length > 0) {
+            const randomIndex = Math.floor(Math.random() * matchingQuotes.length);
+            this.activeSession.selectedQuote = matchingQuotes[randomIndex];
+            console.log(`Memory Fortune selected quote [Category: ${template.id}]: "${this.activeSession.selectedQuote}"`);
+          } else {
+            this.activeSession.selectedQuote = undefined;
+          }
+        } catch (e) {
+          console.warn('Failed to select Memory Fortune quote:', e);
+          this.activeSession.selectedQuote = undefined;
+        }
+      } else {
+        this.activeSession.selectedQuote = undefined;
+      }
+
       // 1. Process all images through the high-quality grayscale photo service
       const ditheredPromises = this.activeSession.capturedPhotos.map((photo) =>
         ditherImage(photo, 720) // Target 720px width for sharp, high-quality vintage print style
@@ -139,10 +186,8 @@ export class PreviewView extends BaseView {
 
       // 3. Generate QR code link pointing to our hosted origin
       const baseUrl = 'https://photoreceipt.stoodioph.com';
-      const digitalUrl = `${baseUrl}/`;
+      const digitalUrl = `${baseUrl}/?id=${this.activeSession.shareId}`;
       const qrDataUrl = await generateQRCode(digitalUrl);
-
-      const config = loadKioskConfig();
 
       // Build metadata
       const metadata: ReceiptMetadata = {
@@ -158,7 +203,7 @@ export class PreviewView extends BaseView {
       this.activeSession.metadata = metadata;
 
       // 4. Render template HTML
-      const templateHtml = template.render(this.activeSession.ditheredPhotos, metadata);
+      const templateHtml = template.render(this.activeSession.ditheredPhotos, metadata, this.activeSession);
 
       // 5. Append generated HTML directly (ends right after the location/date footer)
       if (contentTarget) {
@@ -245,7 +290,7 @@ export class PreviewView extends BaseView {
             this.activeSession.bwBlob = bwBlob;
             this.activeSession.colorBlob = colorBlob;
             
-            const shareId = await uploadReceiptPhotos(bwBlob, colorBlob);
+            const shareId = await uploadReceiptPhotos(bwBlob, colorBlob, this.activeSession.shareId);
             
             const baseUrl = 'https://photoreceipt.stoodioph.com';
             const hybridUrl = `${baseUrl}/?id=${shareId}`;

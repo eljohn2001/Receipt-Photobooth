@@ -250,6 +250,13 @@ body {
 
 .attract-logo-container {
   text-align: center;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 15px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
 .kiosk-badge {
@@ -264,6 +271,19 @@ body {
   display: inline-block;
   letter-spacing: 2.5px;
   margin-bottom: 20px;
+}
+
+.attract-top-subtitle {
+  font-family: "SF Pro", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  color: var(--text-home-secondary);
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  text-align: center;
+  opacity: 0.85;
+  display: block;
 }
 
 .brand-title {
@@ -342,26 +362,46 @@ body {
 /* Looping print receipt document */
 .attract-loop-receipt {
   width: 100%;
+  height: 240px;
   background: #ffffff;
-  color: #333333;
-  padding: 14px 12px;
+  color: #000000;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  border-left: 1px solid rgba(0, 0, 0, 0.08);
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-  font-family: var(--font-receipt);
-  text-align: center;
+  justify-content: center;
+  align-items: center;
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
   position: relative;
   transform: translateY(-100%);
   opacity: 0;
   transform-origin: top center;
 }
 
+.receipt-elegant-prompt {
+  font-family: var(--font-vintage);
+  font-style: italic;
+  font-size: 38px;
+  font-weight: 400;
+  line-height: 1.15;
+  text-align: center;
+  color: #000000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  pointer-events: none;
+}
+
 .animate-print {
   animation: attract-print-loop 7s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.tear-off {
+  animation: receipt-tear-off 0.45s cubic-bezier(0.3, 0, 0.2, 1) forwards;
 }
 
 /* Orange Tear Dashed Line */
@@ -542,6 +582,23 @@ body {
   }
 }
 
+@keyframes receipt-tear-off {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  25% {
+    /* Subtle upward tension pull before tearing */
+    transform: translateY(-8px) rotate(1deg);
+    opacity: 1;
+  }
+  100% {
+    /* Tears out off screen rapidly and tilts */
+    transform: translateY(140%) rotate(-6deg);
+    opacity: 0;
+  }
+}
+
 /* -------------------------------------------------------------
    2. TEMPLATE SELECTION
 ------------------------------------------------------------- */
@@ -579,23 +636,42 @@ body {
   box-sizing: border-box;
 }
 
-.btn-tmpl-back-minimal {
-  position: absolute;
-  left: 40px;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: var(--text-primary);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 8px 12px;
-  transition: opacity 0.2s;
+.template-screen-footer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+  margin-bottom: 25px;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
-.btn-tmpl-back-minimal:hover {
-  opacity: 0.7;
+.btn-tmpl-back-minimal-center {
+  font-family: var(--font-ui);
+  padding: 14px 28px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--text-primary);
+  border-radius: 0px;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-tmpl-back-minimal-center:hover {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+.btn-tmpl-back-minimal-center:active {
+  transform: scale(0.96);
+  opacity: 0.8;
 }
 
 .template-choose-title {
@@ -639,12 +715,26 @@ body {
   gap: 32px 50px;
   justify-content: center;
   align-content: center;
+  transition: all 0.3s ease;
 }
 
 .template-selection-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  transition: opacity 0.35s ease, filter 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.templates-static-grid.has-selection .template-selection-item:not(.selected-item) {
+  opacity: 0.25;
+  filter: blur(3px);
+  transform: scale(0.94);
+  pointer-events: none;
+}
+
+.templates-static-grid.has-selection .template-selection-item.selected-item {
+  transform: scale(1.03);
+  z-index: 10;
 }
 
 .template-card-mockup-png-wrapper {
@@ -1270,6 +1360,34 @@ body {
   letter-spacing: 1px;
 }
 
+.receipt-fortune-wrapper {
+  display: none; /* Hide on screen by default for customer surprise */
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.receipt-fortune-block {
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fortune-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.fortune-text {
+  font-size: 10px;
+  line-height: 1.3;
+  padding: 0 4px;
+  font-style: italic;
+}
+
 /* Filmstrip specific styles inside receipt */
 .filmstrip-container {
   background: #000;
@@ -1753,6 +1871,12 @@ body {
     font-size: 8pt;
   }
 
+  /* Hide QR code block in printed output */
+  #print-container .qr-divider,
+  #print-container .receipt-qr-block {
+    display: none !important;
+  }
+
   .receipt-photo-container {
     border: 1px dashed #000000 !important;
     background: #ffffff !important;
@@ -1909,6 +2033,10 @@ body {
   .template-footer-date {
     text-align: right !important;
     max-width: 40% !important;
+  }
+
+  #print-container .receipt-fortune-wrapper {
+    display: block !important;
   }
 }
 
@@ -2410,9 +2538,17 @@ body {
 }
 
 /* Attract view Logo sizing override */
+.logo-image-wrapper {
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
 .attract-cafe-logo {
-  max-height: 240px;
-  max-width: 460px;
+  max-height: 90px;
+  max-width: 100%;
   object-fit: contain;
   margin: 0 auto;
   display: block;
@@ -2422,7 +2558,7 @@ body {
 .idle-footer {
   position: absolute;
   bottom: 24px;
-  font-family: var(--font-ui);
+  font-family: "SF Pro", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 11px;
   color: var(--text-home-secondary);
   text-transform: uppercase;
@@ -2725,10 +2861,13 @@ input:checked+.toggle-slider:before {
     padding: 20px 20px 10px 20px;
   }
   
-  .btn-tmpl-back-minimal {
-    left: 20px;
+  .btn-tmpl-back-minimal-center {
+    padding: 10px 20px;
     font-size: 11px;
-    padding: 6px 10px;
+  }
+  .template-screen-footer {
+    margin-top: 20px;
+    margin-bottom: 15px;
   }
   
   .template-choose-title {
@@ -2985,4 +3124,172 @@ input:checked+.toggle-slider:before {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
   20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+
+/* -------------------------------------------------------------
+   EXPERIENCE MODE SELECTION VIEW
+   ------------------------------------------------------------- */
+.mode-selection-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+}
+
+.mode-options-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.mode-option-card {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 30px 24px;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), 
+              box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
+              background 0.3s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+/* Light theme adaptations for cards */
+body:not(.dark-theme) .mode-option-card {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #000000;
+}
+
+body:not(.dark-theme) .mode-option-card:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.mode-option-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.mode-option-icon {
+  font-size: 56px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  margin-bottom: 6px;
+}
+
+.mode-option-title {
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.mode-option-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  opacity: 0.8;
+  font-weight: 400;
+  max-width: 320px;
+}
+
+.mode-option-btn {
+  pointer-events: none; /* Let the card click handler capture interactions */
+  width: 100%;
+  max-width: 220px;
+  margin-top: 10px;
+}
+
+/* Tablet & Desktop (Landscape) Responsive Layout */
+@media (min-width: 769px) {
+  .mode-options-container {
+    flex-direction: row; /* Side-by-side cards on wider viewports */
+    max-width: 900px;
+    gap: 32px;
+    align-items: stretch;
+  }
+
+  .mode-option-card {
+    flex: 1;
+    min-height: 380px;
+    justify-content: space-between;
+    padding: 40px 30px;
+  }
+
+  .mode-option-icon {
+    font-size: 64px;
+    margin-bottom: 12px;
+  }
+
+  .mode-option-title {
+    font-size: 24px;
+  }
+
+  .mode-option-desc {
+    font-size: 14px;
+  }
+}
+
+/* Comfort Card Printed HTML elements */
+.comfort-card-receipt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 10px;
+}
+
+.comfort-card-illustration-wrapper {
+  margin: 16px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.comfort-card-svg {
+  width: 160px;
+  height: 160px;
+  display: block;
+}
+
+.comfort-card-body {
+  margin: 12px 0;
+  width: 100%;
+}
+
+.comfort-card-title {
+  font-family: var(--font-receipt);
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.comfort-card-text {
+  font-family: var(--font-receipt);
+  font-size: 11px;
+  line-height: 1.4;
+  font-style: italic;
+  padding: 0 8px;
 }

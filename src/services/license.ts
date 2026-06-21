@@ -150,6 +150,9 @@ export async function checkLicenseOnStartup(): Promise<boolean> {
         setCachedLicense(cached);
         console.log('License verification successful!');
         return true;
+      } else if (result.isTransientError) {
+        console.warn('Transient database/network error checking license online. Falling back to offline grace period check:', result.error);
+        // Do NOT wipe license key. Fall through to offline check.
       } else {
         console.error('License key rejected online:', result.error);
         localStorage.removeItem(LICENSE_CACHE_KEY);

@@ -8,6 +8,7 @@ import { PreviewView } from './views/preview';
 import { PrintingView } from './views/printing';
 import { FinishedView } from './views/finished';
 import { BaseView } from './views/base';
+import { ModeSelectionView } from './views/mode-selection';
 import { loadKioskConfig, saveKioskConfig, resetKioskConfig, type KioskConfig } from './services/config';
 import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia, listOfflineShares, deleteOfflineShare } from './services/db';
 import { checkLicenseOnStartup, deactivateLicense } from './services/license';
@@ -309,11 +310,12 @@ if (shareId) {
 const stateIndexMap: Record<AppState, number> = {
   'activation': 0,
   'idle': 1,
-  'template-selection': 2,
-  'camera-capture': 3,
-  'preview': 4,
-  'printing': 5,
-  'finished': 6
+  'mode-selection': 2,
+  'template-selection': 3,
+  'camera-capture': 4,
+  'preview': 5,
+  'printing': 6,
+  'finished': 7
 };
 
 let activeBgObjectUrl: string | null = null;
@@ -427,6 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const views: Record<AppState, BaseView> = {
     'activation': new ActivationView(document.getElementById('view-activation')!, navigateTo),
     'idle': new IdleView(document.getElementById('view-idle')!, navigateTo),
+    'mode-selection': new ModeSelectionView(document.getElementById('view-mode-selection')!, navigateTo, session),
     'template-selection': new TemplateView(document.getElementById('view-template-selection')!, navigateTo, session),
     'camera-capture': new CaptureView(document.getElementById('view-camera-capture')!, navigateTo, session),
     'preview': new PreviewView(document.getElementById('view-preview')!, navigateTo, session),
@@ -468,6 +471,8 @@ document.addEventListener('DOMContentLoaded', () => {
       session.uploadPromise = undefined;
       session.bwBlob = undefined;
       session.colorBlob = undefined;
+      session.shareId = undefined;
+      session.selectedQuote = undefined;
     }
 
     // Slide viewport container to the active slide index
@@ -583,6 +588,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const textColorInput = document.getElementById('input-text-color') as HTMLInputElement;
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
     const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
+    const subtitleTopInput = document.getElementById('input-home-subtitle-top') as HTMLInputElement;
+    const subtitleBottomInput = document.getElementById('input-home-subtitle-bottom') as HTMLInputElement;
+    const adminPinInput = document.getElementById('input-admin-pin') as HTMLInputElement;
     
     if (nameInput) nameInput.value = config.cafeName;
     if (addressInput) addressInput.value = config.cafeAddress;
@@ -593,9 +601,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (textColorInput) textColorInput.value = config.textColor;
     if (textColorHomeInput) textColorHomeInput.value = config.textColorHome || '#000000';
     if (homeModeSelect) homeModeSelect.value = config.homeScreenMode || 'graphic';
+    if (subtitleTopInput) subtitleTopInput.value = config.homeSubtitleTop || '';
+    if (subtitleBottomInput) subtitleBottomInput.value = config.homeSubtitleBottom || '';
+    if (adminPinInput) adminPinInput.value = config.adminPin || '1234';
 
     const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
     if (enableQrInput) enableQrInput.checked = config.enableQrCode !== false;
+
+    const enableFortuneInput = document.getElementById('input-enable-fortune') as HTMLInputElement;
+    if (enableFortuneInput) enableFortuneInput.checked = config.enableMemoryFortune !== false;
+
+    const enableComfortInput = document.getElementById('input-enable-comfort') as HTMLInputElement;
+    if (enableComfortInput) enableComfortInput.checked = config.enableComfortCards !== false;
 
     const imgurClientIdInput = document.getElementById('input-imgur-client-id') as HTMLInputElement;
     if (imgurClientIdInput) imgurClientIdInput.value = config.imgurClientId || '';
@@ -653,7 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let successCount = 0;
     for (const share of shares) {
       try {
-        await uploadReceiptPhotos(share.bwBlob, share.colorBlob);
+        await uploadReceiptPhotos(share.bwBlob, share.colorBlob, share.id);
         await deleteOfflineShare(share.id);
         successCount++;
       } catch (err) {
@@ -730,6 +747,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
     const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
     const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
+    const enableFortuneInput = document.getElementById('input-enable-fortune') as HTMLInputElement;
+    const enableComfortInput = document.getElementById('input-enable-comfort') as HTMLInputElement;
+    const subtitleTopInput = document.getElementById('input-home-subtitle-top') as HTMLInputElement;
+    const subtitleBottomInput = document.getElementById('input-home-subtitle-bottom') as HTMLInputElement;
+    const adminPinInput = document.getElementById('input-admin-pin') as HTMLInputElement;
 
     // Handle background media save
     let resolvedBgType: 'image' | 'video' | null = bgFileType;
@@ -755,7 +777,12 @@ document.addEventListener('DOMContentLoaded', () => {
       imgurClientId: imgurClientIdInput ? imgurClientIdInput.value.trim() : '',
       imgbbApiKey: imgbbApiKeyInput ? imgbbApiKeyInput.value.trim() : '',
       homeScreenMode: homeModeSelect ? (homeModeSelect.value as 'graphic' | 'layout') : 'graphic',
-      enableQrCode: enableQrInput ? enableQrInput.checked : true
+      enableQrCode: enableQrInput ? enableQrInput.checked : true,
+      enableMemoryFortune: enableFortuneInput ? enableFortuneInput.checked : true,
+      enableComfortCards: enableComfortInput ? enableComfortInput.checked : true,
+      homeSubtitleTop: subtitleTopInput ? subtitleTopInput.value.trim() : '',
+      homeSubtitleBottom: subtitleBottomInput ? subtitleBottomInput.value.trim() : '',
+      adminPin: adminPinInput ? adminPinInput.value.trim() : '1234'
     };
 
     saveKioskConfig(newConfig);

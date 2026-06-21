@@ -1,5 +1,6 @@
 import { BaseView } from './base';
 import { loadKioskConfig } from '../services/config';
+import { audioManager } from '../services/audio';
 
 export class IdleView extends BaseView {
   private clickHandler: ((e: MouseEvent) => void) | null = null;
@@ -27,38 +28,10 @@ export class IdleView extends BaseView {
           <!-- Receipt paper delivery feed -->
           <div class="printer-paper-clipper">
             <div class="attract-loop-receipt">
-              <div class="orange-tear-line"></div>
-              
-              <div class="receipt-brand-label">RECEIPT</div>
-              
-              <div class="receipt-abstract-divider">.............................</div>
-              
-              <!-- Printed photo paper mockup -->
-              <div class="receipt-photo-frame">
-                <div class="receipt-halftone-photo">
-                  <div class="photo-emoji">👥✨</div>
-                </div>
-                <div class="photo-caption">♥ VINTAGE MEMORY ♥</div>
+              <div class="receipt-elegant-prompt">
+                <span>Tap to</span>
+                <span>Start</span>
               </div>
-              
-              <div class="receipt-abstract-divider">.............................</div>
-              
-              <div class="receipt-abstract-total">
-                <span class="total-label">Total</span>
-                <span class="total-symbol">$</span>
-              </div>
-              
-              <div class="receipt-abstract-double-divider"></div>
-              
-              <div class="receipt-abstract-divider">.............................</div>
-              
-              <!-- Integrated tactile prompt inside paper -->
-              <div class="receipt-start-prompt">
-                TAP TO START
-              </div>
-              
-              <!-- Jagged receipt tear bottom -->
-              <div class="receipt-jagged-edge"></div>
             </div>
           </div>
         </div>
@@ -72,13 +45,35 @@ export class IdleView extends BaseView {
 
     this.updateBranding();
 
+    let isTransitioning = false;
     this.clickHandler = (e: MouseEvent) => {
+      if (isTransitioning) return;
       // Don't navigate to template selection if they click/tap on the logo/admin area or administrative hotspot
       const target = e.target as HTMLElement;
       if (target.closest('.attract-logo-container') || target.closest('#admin-hotspot')) {
         return;
       }
-      this.navigateTo('template-selection');
+      isTransitioning = true;
+
+      const receipt = this.element.querySelector('.attract-loop-receipt') as HTMLElement;
+      if (receipt) {
+        receipt.classList.remove('animate-print');
+        void receipt.offsetWidth; // Force reflow
+        receipt.classList.add('tear-off');
+      }
+
+      // Play mechanical sound
+      audioManager.playPaperTear();
+
+      setTimeout(() => {
+        isTransitioning = false;
+        const config = loadKioskConfig();
+        if (config.enableComfortCards !== false) {
+          this.navigateTo('mode-selection');
+        } else {
+          this.navigateTo('template-selection');
+        }
+      }, 400);
     };
 
     // Make the entire screen tap-to-start for kiosk convenience, but focus action on CTA
@@ -100,8 +95,10 @@ export class IdleView extends BaseView {
         lastTap = now;
         if (tapCount === 3) {
           tapCount = 0;
+          const config = loadKioskConfig();
+          const expectedPin = config.adminPin || '1234';
           const pin = prompt('Enter Admin PIN to access configuration:');
-          if (pin === '1234') {
+          if (pin === expectedPin) {
             const adminModal = document.getElementById('admin-modal');
             if (adminModal) {
               adminModal.classList.remove('hidden');
@@ -130,8 +127,10 @@ export class IdleView extends BaseView {
         lastTap = now;
         if (tapCount === 3) {
           tapCount = 0;
+          const config = loadKioskConfig();
+          const expectedPin = config.adminPin || '1234';
           const pin = prompt('Enter Admin PIN to access configuration:');
-          if (pin === '1234') {
+          if (pin === expectedPin) {
             const adminModal = document.getElementById('admin-modal');
             if (adminModal) {
               adminModal.classList.remove('hidden');
@@ -149,13 +148,25 @@ export class IdleView extends BaseView {
     const config = loadKioskConfig();
     const container = this.element.querySelector('.attract-logo-container');
     if (container) {
+      const topBadgeText = config.homeSubtitleTop || '';
+      const subtitleText = config.homeSubtitleBottom || '';
+      
+      const topBadge = topBadgeText ? `<div class="attract-top-subtitle">${topBadgeText}</div>` : '';
+      const subtitle = subtitleText ? `<p class="brand-subtitle">${subtitleText}</p>` : '';
+
       if (config.logoDataUrl) {
         container.innerHTML = `
-          <img class="attract-cafe-logo" src="${config.logoDataUrl}" alt="${config.cafeName}" />
+          ${topBadge}
+          <div class="logo-image-wrapper">
+            <img class="attract-cafe-logo" src="${config.logoDataUrl}" alt="${config.cafeName}" />
+          </div>
+          ${subtitle}
         `;
       } else {
         container.innerHTML = `
+          ${topBadge}
           <h1 class="brand-title">${config.cafeName}</h1>
+          ${subtitle}
         `;
       }
     }
@@ -177,6 +188,8 @@ export class IdleView extends BaseView {
 
     const receipt = this.element.querySelector('.attract-loop-receipt') as HTMLElement;
     if (receipt) {
+      receipt.classList.remove('tear-off');
+      void receipt.offsetWidth; // Force reflow
       receipt.classList.add('animate-print');
     }
   }

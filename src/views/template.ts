@@ -2,6 +2,7 @@ import { BaseView } from './base';
 import { TEMPLATES } from '../templates';
 import type { AppSession } from '../types';
 import { loadKioskConfig } from '../services/config';
+import { audioManager } from '../services/audio';
 
 import template1 from '../assets/template 1.png';
 import template2 from '../assets/template 2.png';
@@ -24,7 +25,6 @@ export class TemplateView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="template-screen-header">
-          <button class="btn-tmpl-back-minimal" id="btn-tmpl-back">← BACK</button>
           <h2 class="template-choose-title">CHOOSE A <span class="script-title">Layout</span></h2>
         </div>
 
@@ -33,6 +33,10 @@ export class TemplateView extends BaseView {
           <div class="templates-static-grid">
             <!-- Populated dynamically by renderTemplatesGrid in onEnter -->
           </div>
+        </div>
+
+        <div class="template-screen-footer">
+          <button class="btn-tmpl-back-minimal-center" id="btn-tmpl-back">← BACK TO WELCOME</button>
         </div>
       </div>
     `;
@@ -44,14 +48,28 @@ export class TemplateView extends BaseView {
 
   onEnter(): void {
     this.renderTemplatesGrid();
+    const backBtn = this.element.querySelector('#btn-tmpl-back');
+    if (backBtn) {
+      const config = loadKioskConfig();
+      if (config.enableComfortCards !== false) {
+        backBtn.textContent = '← BACK';
+      } else {
+        backBtn.textContent = '← BACK TO WELCOME';
+      }
+    }
   }
 
   private setupEvents(): void {
-    // Back button to Welcome Screen
+    // Back button to Welcome Screen or Mode Selection Screen
     const backBtn = this.element.querySelector('#btn-tmpl-back');
     backBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.navigateTo('idle');
+      const config = loadKioskConfig();
+      if (config.enableComfortCards !== false) {
+        this.navigateTo('mode-selection');
+      } else {
+        this.navigateTo('idle');
+      }
     });
   }
 
@@ -74,17 +92,33 @@ export class TemplateView extends BaseView {
     `).join('');
 
     // Wire up card clicks
-    const cards = this.element.querySelectorAll('.template-card-mockup-png-wrapper');
-    cards.forEach((card) => {
+    const items = this.element.querySelectorAll('.template-selection-item');
+
+    items.forEach((item) => {
+      const card = item.querySelector('.template-card-mockup-png-wrapper') as HTMLElement;
+      if (!card) return;
+
       card.addEventListener('click', () => {
         const id = card.getAttribute('data-template-id');
         if (id) {
+          // Play click sound
+          audioManager.playBeep();
+
+          // Add transition state classes
+          gridContainer?.classList.add('has-selection');
+          item.classList.add('selected-item');
           card.classList.add('selected-active');
+
           this.currentSession.selectedTemplateId = id;
+
           setTimeout(() => {
+            // Reset state for next entry
+            gridContainer?.classList.remove('has-selection');
+            item.classList.remove('selected-item');
             card.classList.remove('selected-active');
+
             this.navigateTo('camera-capture');
-          }, 150);
+          }, 350);
         }
       });
     });
