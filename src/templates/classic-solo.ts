@@ -23,10 +23,7 @@ export const classicSoloTemplate: ReceiptTemplate = {
       return `
         <div class="collage-receipt-container theme-vintage">
           <div class="vintage-theme-header">
-            <div class="vintage-title-container">
-              <span class="vintage-title-snap">SNAP</span>
-              <span class="vintage-title-script">Reciept</span>
-            </div>
+            ${renderReceiptHeader(metadata)}
             <div class="vintage-divider-line"></div>
           </div>
           
@@ -36,15 +33,11 @@ export const classicSoloTemplate: ReceiptTemplate = {
           
           <div class="vintage-theme-footer">
             <div class="vintage-divider-line"></div>
-            <div class="vintage-event-name">${metadata.customMessage || 'EVENT NAME'}</div>
+            <div class="vintage-event-name">${metadata.homeSubtitleBottom || 'EVENT NAME'}</div>
             <div class="vintage-divider-line"></div>
             <div class="vintage-date">${metadata.timestamp.split(',')[0]}</div>
             
             <div class="theme-footer-scan-section">
-              <div class="theme-qr-container">
-                <img class="receipt-qr-image" src="${metadata.qrCodeUrl || ''}" alt="QR Code" />
-                <div class="theme-qr-label">SCAN SOFTCOPY</div>
-              </div>
               <div class="theme-barcode-container">
                 ${barcodeSvg}
                 <div class="theme-barcode-number">NO. ${metadata.receiptNumber}</div>
@@ -59,8 +52,9 @@ export const classicSoloTemplate: ReceiptTemplate = {
       const barcodeSvg = generateBarcodeSvg();
       return `
         <div class="collage-receipt-container theme-boarding">
-          <div class="boarding-theme-header">
-            <div class="boarding-header-right">
+          <div class="boarding-theme-header" style="width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
+            ${renderReceiptHeader(metadata)}
+            <div style="width: 100%; text-align: right; font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 6px;">
               <span class="boarding-plane-icon">✈</span> POWERED BY BLCKLABS
             </div>
           </div>
@@ -96,10 +90,6 @@ export const classicSoloTemplate: ReceiptTemplate = {
             <div class="boarding-pass-label">BOARDING PASS</div>
             
             <div class="theme-footer-scan-section">
-              <div class="theme-qr-container">
-                <img class="receipt-qr-image" src="${metadata.qrCodeUrl || ''}" alt="QR Code" />
-                <div class="theme-qr-label">SCAN SOFTCOPY</div>
-              </div>
               <div class="theme-barcode-container">
                 ${barcodeSvg}
                 <div class="theme-barcode-number">NO. ${metadata.receiptNumber}</div>

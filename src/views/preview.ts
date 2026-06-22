@@ -203,6 +203,7 @@ export class PreviewView extends BaseView {
         timestamp: timestampString,
         receiptNumber: receiptNumber,
         customMessage: config.customMessage,
+        homeSubtitleBottom: config.homeSubtitleBottom,
         qrCodeUrl: qrDataUrl,
       };
       

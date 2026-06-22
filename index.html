@@ -85,164 +85,299 @@
           <button id="admin-close-x" class="admin-close-x" type="button">&times;</button>
         </div>
         <div class="admin-modal-body">
-          <form id="admin-config-form" class="admin-form">
+          <form id="admin-config-form" class="admin-form-split">
             
-            <div class="form-group">
-              <label for="input-cafe-name">Café Name</label>
-              <input type="text" id="input-cafe-name" placeholder="e.g. BEANS & BITES" required />
+            <!-- Left Sidebar Navigation -->
+            <div class="admin-sidebar">
+              <button type="button" class="admin-tab-btn active" data-tab="branding">
+                🏢 Cafe Details
+              </button>
+              <button type="button" class="admin-tab-btn" data-tab="visuals">
+                🎨 Visual Theme
+              </button>
+              <button type="button" class="admin-tab-btn" data-tab="system">
+                ⚙️ System & APIs
+              </button>
+              <button type="button" class="admin-tab-btn" data-tab="sync">
+                ☁️ Cloud Sync
+              </button>
+              <button type="button" class="admin-tab-btn" data-tab="maintenance">
+                🚨 Maintenance
+              </button>
             </div>
+            
+            <!-- Right Form Pane -->
+            <div class="admin-form-pane">
+              <div class="admin-form-scrollable">
+                
+                <!-- Tab 1: Cafe Details -->
+                <div id="admin-tab-branding" class="admin-tab-content">
+                  <h4 class="admin-tab-section-title">Café Branding Info</h4>
+                  
+                  <div class="form-group">
+                    <label for="input-cafe-name">Café Name</label>
+                    <input type="text" id="input-cafe-name" placeholder="e.g. BEANS & BITES" required />
+                  </div>
 
-            <div class="form-group">
-              <label for="input-admin-pin">Admin Hotspot PIN Passcode</label>
-              <input type="password" id="input-admin-pin" placeholder="e.g. 1234" pattern="[0-9]{4,8}" title="4 to 8 digits PIN code" required />
-            </div>
+                  <div class="form-group">
+                    <label for="input-cafe-address">Location Address</label>
+                    <input type="text" id="input-cafe-address" placeholder="e.g. 128 Espresso Blvd, City" required />
+                  </div>
 
-            <div class="form-group">
-              <label for="input-home-subtitle-top">Home Top Subtitle (e.g. Event Date)</label>
-              <input type="text" id="input-home-subtitle-top" placeholder="e.g. 06.21.2026" />
-            </div>
+                  <div class="form-group">
+                    <label for="input-cafe-phone">Telephone (Receipt Footer)</label>
+                    <input type="text" id="input-cafe-phone" placeholder="e.g. 555-123-4567" required />
+                  </div>
 
-            <div class="form-group">
-              <label for="input-home-subtitle-bottom">Home Bottom Subtitle (e.g. Event Name)</label>
-              <input type="text" id="input-home-subtitle-bottom" placeholder="e.g. Receipt Photo Booth" />
-            </div>
+                  <div class="form-group">
+                    <label for="input-social-tag">Instagram Username / Social Tag</label>
+                    <input type="text" id="input-social-tag" placeholder="e.g. @beansandbites" />
+                  </div>
 
-            <div class="form-group">
-              <label for="input-cafe-address">Location Address</label>
-              <input type="text" id="input-cafe-address" placeholder="e.g. 128 Espresso Blvd, City" required />
-            </div>
-
-            <div class="form-group">
-              <label for="input-cafe-phone">Telephone (Receipt Footer)</label>
-              <input type="text" id="input-cafe-phone" placeholder="e.g. 555-123-4567" required />
-            </div>
-
-            <div class="form-group">
-              <label for="input-custom-message">Receipt Message</label>
-              <textarea id="input-custom-message" rows="2" placeholder="e.g. Keep smiling!"></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="input-social-tag">Instagram Username / Social Tag (Finished Screen)</label>
-              <input type="text" id="input-social-tag" placeholder="e.g. @beansandbites" />
-            </div>
-
-            <div class="form-group inline-checkbox-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-              <input type="checkbox" id="input-enable-qr" style="width: auto; margin: 0; cursor: pointer;" checked />
-              <label for="input-enable-qr" style="margin: 0; cursor: pointer; font-weight: 500; font-size: 13px; text-transform: none; letter-spacing: normal;">Enable Digital Copy QR Code Feature</label>
-            </div>
-
-            <div class="form-group inline-checkbox-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-              <input type="checkbox" id="input-enable-fortune" style="width: auto; margin: 0; cursor: pointer;" checked />
-              <label for="input-enable-fortune" style="margin: 0; cursor: pointer; font-weight: 500; font-size: 13px; text-transform: none; letter-spacing: normal;">Enable "Memory Fortune" Surprise Quotes on Receipts</label>
-            </div>
-
-            <div class="form-group inline-checkbox-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-              <input type="checkbox" id="input-enable-comfort" style="width: auto; margin: 0; cursor: pointer;" checked />
-              <label for="input-enable-comfort" style="margin: 0; cursor: pointer; font-weight: 500; font-size: 13px; text-transform: none; letter-spacing: normal;">Enable "Comfort Cards" Alternative Option</label>
-            </div>
-
-            <div class="form-group">
-              <label for="input-imgur-client-id">Imgur Client ID (For Digital QR Code Download)</label>
-              <input type="text" id="input-imgur-client-id" placeholder="e.g. 6e08c02c63d5ad3" />
-              <p style="font-size: 10px; margin-top: 4px; color: var(--text-secondary); opacity: 0.8; line-height: 1.3;">
-                Required for uploading photos online to scan. Get a free client ID by registering an application at 
-                <a href="https://api.imgur.com/oauth2/addclient" target="_blank" style="color: inherit; text-decoration: underline;">api.imgur.com/oauth2/addclient</a> 
-                (select Anonymous usage without user authorization).
-              </p>
-            </div>
-
-            <div class="form-group">
-              <label for="input-imgbb-api-key">ImgBB API Key (Alternative Digital Download Hosting)</label>
-              <input type="text" id="input-imgbb-api-key" placeholder="e.g. c6b792880a4b31c6d365bd5586f10dc2" />
-              <p style="font-size: 10px; margin-top: 4px; color: var(--text-secondary); opacity: 0.8; line-height: 1.3;">
-                An easier alternative image host. Register at <a href="https://imgbb.com" target="_blank" style="color: inherit; text-decoration: underline;">imgbb.com</a> to sign up, then generate a free API key at <a href="https://api.imgbb.com/" target="_blank" style="color: inherit; text-decoration: underline;">api.imgbb.com</a>.
-              </p>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group half-width">
-                <label for="input-bg-color">Background Color</label>
-                <div class="color-picker-wrapper">
-                  <input type="color" id="input-bg-color" />
+                  <div class="form-group">
+                    <label for="input-custom-message">Custom Receipt Footer Message</label>
+                    <textarea id="input-custom-message" rows="3" placeholder="e.g. Keep smiling! Thank you for visiting."></textarea>
+                  </div>
                 </div>
-              </div>
-              <div class="form-group half-width">
-                <label for="input-text-color">UI Text Color</label>
-                <div class="color-picker-wrapper">
-                  <input type="color" id="input-text-color" />
+
+                <!-- Tab 2: Visual Theme -->
+                <div id="admin-tab-visuals" class="admin-tab-content hidden">
+                  <h4 class="admin-tab-section-title">Visual Styling & Custom Media</h4>
+
+                  <div class="form-row">
+                    <div class="form-group half-width">
+                      <label for="input-bg-color">UI Background Color</label>
+                      <div class="color-picker-wrapper">
+                        <input type="color" id="input-bg-color" />
+                      </div>
+                    </div>
+                    <div class="form-group half-width">
+                      <label for="input-text-color">UI Text Color</label>
+                      <div class="color-picker-wrapper">
+                        <input type="color" id="input-text-color" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group half-width">
+                      <label for="input-text-home-color">Home Screen Text Color</label>
+                      <div class="color-picker-wrapper">
+                        <input type="color" id="input-text-home-color" />
+                      </div>
+                    </div>
+                    <div class="form-group half-width">
+                      <!-- Spacer -->
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-home-mode">Home Screen Layout Style</label>
+                    <select id="input-home-mode">
+                      <option value="graphic">Full Screen Welcome Graphic (Touch anywhere to start)</option>
+                      <option value="layout">Interactive Theme Layout (Logo, Printer Animation)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-home-subtitle-top">Home Top Subtitle (e.g. Event Date)</label>
+                    <input type="text" id="input-home-subtitle-top" placeholder="e.g. 06.21.2026" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-home-subtitle-bottom">Home Bottom Subtitle (e.g. Event Name)</label>
+                    <input type="text" id="input-home-subtitle-bottom" placeholder="e.g. Receipt Photo Booth" />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Café Logo (PNG/SVG recommended)</label>
+                    <div class="file-uploader-box">
+                      <input type="file" id="input-logo-file" accept="image/*" class="file-input-hidden" />
+                      <label for="input-logo-file" class="file-uploader-label">
+                        <span>📤</span> Click to upload logo image
+                      </label>
+                      <div id="preview-logo-container" class="uploader-preview-img hidden"></div>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Home Screen Background Media (Photo/Video)</label>
+                    <div class="file-uploader-box">
+                      <input type="file" id="input-bg-file" accept="image/*,video/*" class="file-input-hidden" />
+                      <label for="input-bg-file" class="file-uploader-label">
+                        <span>🎬</span> Click to upload image or video
+                      </label>
+                      <div id="preview-bg-container" class="uploader-preview-img hidden"></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div class="form-row">
-              <div class="form-group half-width">
-                <label for="input-text-home-color">Home Screen Text Color</label>
-                <div class="color-picker-wrapper">
-                  <input type="color" id="input-text-home-color" />
+                <!-- Tab 3: System & Hardware -->
+                <div id="admin-tab-system" class="admin-tab-content hidden">
+                  <h4 class="admin-tab-section-title">Hardware & Device Options</h4>
+
+                  <div class="form-group">
+                    <label for="input-admin-pin">Admin Hotspot PIN Passcode</label>
+                    <input type="password" id="input-admin-pin" placeholder="e.g. 1234" pattern="[0-9]{4,8}" title="4 to 8 digits PIN code" required />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-print-contrast">Thermal Print Contrast Tuning</label>
+                    <select id="input-print-contrast">
+                      <option value="light">Light (Less heat, faster printing)</option>
+                      <option value="medium">Medium (Standard default contrast)</option>
+                      <option value="dark">Dark (Deep highlights, high definition)</option>
+                      <option value="deep">Deep Black (Maximum heat, stark contrast)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group inline-checkbox-group">
+                    <input type="checkbox" id="input-enable-qr" checked />
+                    <label for="input-enable-qr">Enable Digital Copy QR Code Feature</label>
+                  </div>
+
+                  <div class="form-group inline-checkbox-group">
+                    <input type="checkbox" id="input-enable-fortune" checked />
+                    <label for="input-enable-fortune">Enable "Memory Fortune" Surprise Quotes on Receipts</label>
+                  </div>
+
+                  <div class="form-group inline-checkbox-group">
+                    <input type="checkbox" id="input-enable-comfort" checked />
+                    <label for="input-enable-comfort">Enable "Comfort Cards" Alternative Option</label>
+                  </div>
+
+                  <div class="form-group" style="margin-top: 10px;">
+                    <label for="input-imgur-client-id">Imgur Client ID (Digital Copy QR Code)</label>
+                    <input type="text" id="input-imgur-client-id" placeholder="e.g. 6e08c02c63d5ad3" />
+                    <p style="font-size: 11px; margin-top: 4px; color: var(--text-secondary); opacity: 0.8; line-height: 1.3;">
+                      Required for uploading photos online to scan. Get a free client ID by registering an application at 
+                      <a href="https://api.imgur.com/oauth2/addclient" target="_blank" style="color: inherit; text-decoration: underline;">api.imgur.com/oauth2/addclient</a>.
+                    </p>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-imgbb-api-key">ImgBB API Key (Alternative Image Hosting)</label>
+                    <input type="text" id="input-imgbb-api-key" placeholder="e.g. c6b792880a4b31c6d365bd5586f10dc2" />
+                    <p style="font-size: 11px; margin-top: 4px; color: var(--text-secondary); opacity: 0.8; line-height: 1.3;">
+                      An easier alternative image host. Register at <a href="https://imgbb.com" target="_blank" style="color: inherit; text-decoration: underline;">imgbb.com</a> to generate a free API key at <a href="https://api.imgbb.com/" target="_blank" style="color: inherit; text-decoration: underline;">api.imgbb.com</a>.
+                    </p>
+                  </div>
                 </div>
+
+                <!-- Tab 4: Cloud Sync -->
+                <div id="admin-tab-sync" class="admin-tab-content hidden">
+                  <h4 class="admin-tab-section-title">Offline Cloud Sync Manager</h4>
+                  
+                  <p style="font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 10px;">
+                    If the device captures photos while offline, they are safely cached in local storage. Sync them to the cloud database once an active internet connection is restored.
+                  </p>
+
+                  <div class="offline-sync-card">
+                    <div class="offline-sync-header">Storage Status</div>
+                    <div class="offline-sync-row">
+                      <span class="offline-sync-count" id="offline-captures-count">0 captures saved offline</span>
+                      <button type="button" id="admin-sync-btn" class="btn-admin btn-admin-primary" style="min-width: 100px; padding: 8px 16px;" disabled>Sync Now</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab 5: Maintenance -->
+                <div id="admin-tab-maintenance" class="admin-tab-content hidden">
+                  <h4 class="admin-tab-section-title">License & System Reset</h4>
+                  
+                  <p style="font-size: 13px; color: #ff3333; font-weight: 500; line-height: 1.5; margin-bottom: 15px;">
+                    Warning: These options are destructive. Make sure you understand the consequences before initiating these actions.
+                  </p>
+
+                  <div class="form-group" style="border: 1px dashed rgba(255, 51, 51, 0.3); padding: 15px; margin-bottom: 10px;">
+                    <label style="color: #ff3333; font-size: 12px; margin-bottom: 8px; display: block;">Reset Customizations</label>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.4;">
+                      Clears all custom cafe branding, colors, logos, and settings back to factory defaults.
+                    </p>
+                    <button type="button" id="admin-reset-btn" class="btn-admin btn-admin-danger" style="width: auto;">Reset stock</button>
+                  </div>
+
+                  <div class="form-group" style="border: 1px dashed rgba(230, 149, 0, 0.3); padding: 15px;">
+                    <label style="color: #e69500; font-size: 12px; margin-bottom: 8px; display: block;">Deactivate License</label>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.4;">
+                      Unlocks the device license from this kiosk instance. The device will return to the Activation screen on reload.
+                    </p>
+                    <button type="button" id="admin-deactivate-btn" class="btn-admin btn-admin-warning" style="width: auto;">Deactivate License</button>
+                  </div>
+                </div>
+
               </div>
-              <div class="form-group half-width">
-                <!-- Spacer -->
+
+              <!-- Pinned Footer Actions -->
+              <div class="form-actions">
+                <button type="button" id="admin-cancel-btn" class="btn-admin btn-admin-secondary">Cancel</button>
+                <button type="submit" class="btn-admin btn-admin-primary">Save setup</button>
               </div>
-            </div>
-
-            <div class="form-group">
-              <label for="input-home-mode">Home Screen Mode</label>
-              <select id="input-home-mode">
-                <option value="graphic">Full Screen Welcome Graphic (Touch anywhere to start)</option>
-                <option value="layout">Interactive Theme Layout (Logo, Printer Animation)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="input-print-contrast">Thermal Print Contrast Tuning</label>
-              <select id="input-print-contrast">
-                <option value="light">Light (Less heat, faster printing)</option>
-                <option value="medium">Medium (Standard default contrast)</option>
-                <option value="dark">Dark (Deep highlights, high definition)</option>
-                <option value="deep">Deep Black (Maximum heat, stark contrast)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Café Logo (PNG/SVG recommended)</label>
-              <div class="file-uploader-box">
-                <input type="file" id="input-logo-file" accept="image/*" class="file-input-hidden" />
-                <label for="input-logo-file" class="file-uploader-label">Choose Logo Image</label>
-                <div id="preview-logo-container" class="uploader-preview-img hidden"></div>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Home Screen Background Media (Photo/Video)</label>
-              <div class="file-uploader-box">
-                <input type="file" id="input-bg-file" accept="image/*,video/*" class="file-input-hidden" />
-                <label for="input-bg-file" class="file-uploader-label">Choose Background Media</label>
-                <div id="preview-bg-container" class="uploader-preview-img hidden"></div>
-              </div>
-            </div>
-
-            <!-- Offline Captures Sync Manager -->
-            <div class="form-group" style="border: 1px dashed rgba(255, 255, 255, 0.15); padding: 15px; margin-bottom: 20px;">
-              <label style="margin-top: 0; text-transform: uppercase; letter-spacing: 1px; font-size: 11px;">Offline Captures Sync</label>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                <span style="font-size: 12px; color: var(--text-secondary);" id="offline-captures-count">0 captures saved offline</span>
-                <button type="button" id="admin-sync-btn" class="btn-admin btn-admin-primary" style="margin: 0; padding: 6px 12px; font-size: 11px; width: auto; min-width: 90px;" disabled>Sync Now</button>
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button type="button" id="admin-deactivate-btn" class="btn-admin btn-admin-warning">Deactivate License</button>
-              <button type="button" id="admin-reset-btn" class="btn-admin btn-admin-danger">Reset stock</button>
-              <button type="button" id="admin-cancel-btn" class="btn-admin btn-admin-secondary">Cancel</button>
-              <button type="submit" class="btn-admin btn-admin-primary">Save setup</button>
             </div>
 
           </form>
         </div>
       </div>
     </div>
+
+    <script>
+      // Tab switching controller for the Admin Setup modal
+      function setupAdminTabs() {
+        const sidebar = document.querySelector('.admin-sidebar');
+        if (!sidebar) return;
+        
+        const tabs = sidebar.querySelectorAll('.admin-tab-btn');
+        tabs.forEach(tab => {
+          tab.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const targetTab = tab.getAttribute('data-tab');
+            if (!targetTab) return;
+            
+            // Set active button
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Show corresponding content pane
+            const contentPanes = document.querySelectorAll('.admin-tab-content');
+            contentPanes.forEach(pane => {
+              if (pane.id === `admin-tab-${targetTab}`) {
+                pane.classList.remove('hidden');
+              } else {
+                pane.classList.add('hidden');
+              }
+            });
+          });
+        });
+      }
+
+      // Initialize tabs once DOM is loaded
+      document.addEventListener('DOMContentLoaded', () => {
+        setupAdminTabs();
+        
+        // Also listen on modal show events to reset to the first tab (branding)
+        const adminModal = document.getElementById('admin-modal');
+        if (adminModal) {
+          adminModal.addEventListener('open-admin', () => {
+            const firstTab = document.querySelector('.admin-tab-btn[data-tab="branding"]');
+            if (firstTab) {
+              // Trigger click
+              const tabs = document.querySelectorAll('.admin-sidebar .admin-tab-btn');
+              tabs.forEach(t => t.classList.remove('active'));
+              firstTab.classList.add('active');
+              
+              const contentPanes = document.querySelectorAll('.admin-tab-content');
+              contentPanes.forEach(pane => {
+                if (pane.id === 'admin-tab-branding') {
+                  pane.classList.remove('hidden');
+                } else {
+                  pane.classList.add('hidden');
+                }
+              });
+            }
+          });
+        }
+      });
+    </script>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

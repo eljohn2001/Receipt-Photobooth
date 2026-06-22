@@ -88,8 +88,8 @@ export async function renderReceiptToCanvas(
   const templateId = session.selectedTemplateId || '';
   
   let gridHeight = 0;
-  const margin = 24; // Standard receipt margin matching CSS
-  const printWidth = width - margin * 2; // 336px
+  const margin = 8; // Standard receipt margin matching CSS
+  const printWidth = width - margin * 2; // 368px
 
   let comfortHeight = 0;
   let comfortLines: string[] = [];
@@ -185,11 +185,11 @@ export async function renderReceiptToCanvas(
   const themeId = session.selectedThemeId || 'default';
   let totalHeight = height;
   if (themeId === 'classic-1' || themeId === 'duet-1') {
-    totalHeight = 681;
+    totalHeight = 666;
   } else if (themeId === 'classic-2') {
-    totalHeight = 701;
+    totalHeight = 771;
   } else if (themeId === 'film-1') {
-    totalHeight = 1048;
+    totalHeight = 1033;
   }
   
   canvas.height = totalHeight;
@@ -226,25 +226,20 @@ export async function renderReceiptToCanvas(
     }
 
     if (themeId === 'classic-1' || themeId === 'duet-1') {
-      // Draw SNAP Reciept Header
-      ctx.save();
-      ctx.textAlign = 'left';
-      ctx.font = '900 24px "Space Grotesk", sans-serif';
-      const snapW = ctx.measureText('SNAP').width;
-      
-      ctx.font = 'italic 36px "Italianno", "Pinyon Script", cursive';
-      const recieptW = ctx.measureText('Reciept').width;
-      
-      const totalW = snapW + 8 + recieptW;
-      const startX = (width - totalW) / 2;
-      
-      ctx.font = '900 24px "Space Grotesk", sans-serif';
-      ctx.fillText('SNAP', startX, y + 24);
-      
-      ctx.font = 'italic 36px "Italianno", "Pinyon Script", cursive';
-      ctx.fillText('Reciept', startX + snapW + 8, y + 28);
-      ctx.restore();
-      y += 34;
+      // Draw standard logo header
+      if (logoImg) {
+        const logoW = logoImg.width * (logoH / logoImg.height);
+        ctx.drawImage(logoImg, (width - logoW) / 2, y, logoW, logoH);
+        y += logoH;
+      } else {
+        ctx.save();
+        ctx.font = 'bold 22px "Playfair Display", Georgia, serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + 18);
+        ctx.restore();
+        y += 26;
+      }
+      y += 10;
 
       ctx.fillRect(margin, y, printWidth, 2);
       y += 12;
@@ -285,7 +280,7 @@ export async function renderReceiptToCanvas(
       ctx.save();
       ctx.font = '900 32px "Space Grotesk", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText((metadata.customMessage || 'EVENT NAME').toUpperCase(), width / 2, y + 28);
+      ctx.fillText((metadata.homeSubtitleBottom || 'EVENT NAME').toUpperCase(), width / 2, y + 28);
       ctx.restore();
       y += 36;
 
@@ -299,7 +294,7 @@ export async function renderReceiptToCanvas(
       ctx.restore();
       y += 18;
 
-      // Draw Scan Section (QR + Barcode)
+      // Draw Scan Section (Barcode only)
       ctx.save();
       ctx.font = 'bold 12px "Courier Prime", monospace';
       ctx.textAlign = 'center';
@@ -307,27 +302,32 @@ export async function renderReceiptToCanvas(
       ctx.restore();
       y += 18;
 
-      if (qrImg) {
-        ctx.drawImage(qrImg, margin + 4, y, 80, 80);
-        ctx.strokeRect(margin + 4, y, 80, 80);
-      }
-      ctx.save();
-      ctx.font = '900 7px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('SCAN SOFTCOPY', margin + 44, y + 90);
-      ctx.restore();
-
-      const barcodeX = margin + 110;
-      const barcodeW = printWidth - 114;
-      drawBarcode(ctx, barcodeX, y + 10, barcodeW, 45);
+      const barcodeW = 240;
+      const barcodeX = (width - barcodeW) / 2;
+      drawBarcode(ctx, barcodeX, y, barcodeW, 45);
 
       ctx.save();
       ctx.font = 'bold 9px "Courier Prime", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(`NO. ${metadata.receiptNumber}`, barcodeX + barcodeW / 2, y + 68);
+      ctx.fillText(`NO. ${metadata.receiptNumber}`, width / 2, y + 58);
       ctx.restore();
       
     } else if (themeId === 'classic-2') {
+      // Draw standard logo header
+      if (logoImg) {
+        const logoW = logoImg.width * (logoH / logoImg.height);
+        ctx.drawImage(logoImg, (width - logoW) / 2, y, logoW, logoH);
+        y += logoH;
+      } else {
+        ctx.save();
+        ctx.font = 'bold 22px "Playfair Display", Georgia, serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + 18);
+        ctx.restore();
+        y += 26;
+      }
+      y += 6;
+
       // Draw Header
       ctx.save();
       ctx.font = 'bold 10px "Space Grotesk", sans-serif';
@@ -378,47 +378,32 @@ export async function renderReceiptToCanvas(
       ctx.restore();
       y += 56;
 
-      // Draw Scan Section (QR + Barcode)
-      if (qrImg) {
-        ctx.drawImage(qrImg, margin + 4, y, 80, 80);
-        ctx.strokeRect(margin + 4, y, 80, 80);
-      }
-      ctx.save();
-      ctx.font = '900 7px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('SCAN SOFTCOPY', margin + 44, y + 90);
-      ctx.restore();
-
-      const barcodeX = margin + 110;
-      const barcodeW = printWidth - 114;
-      drawBarcode(ctx, barcodeX, y + 10, barcodeW, 45);
+      // Draw Scan Section (Barcode only)
+      const barcodeW = 240;
+      const barcodeX = (width - barcodeW) / 2;
+      drawBarcode(ctx, barcodeX, y, barcodeW, 45);
 
       ctx.save();
       ctx.font = 'bold 9px "Courier Prime", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(`NO. ${metadata.receiptNumber}`, barcodeX + barcodeW / 2, y + 68);
+      ctx.fillText(`NO. ${metadata.receiptNumber}`, width / 2, y + 58);
       ctx.restore();
       
     } else if (themeId === 'film-1') {
-      // Draw SNAP Reciept Header
-      ctx.save();
-      ctx.textAlign = 'left';
-      ctx.font = '900 24px "Space Grotesk", sans-serif';
-      const snapW = ctx.measureText('SNAP').width;
-      
-      ctx.font = 'italic 36px "Italianno", "Pinyon Script", cursive';
-      const recieptW = ctx.measureText('Reciept').width;
-      
-      const totalW = snapW + 8 + recieptW;
-      const startX = (width - totalW) / 2;
-      
-      ctx.font = '900 24px "Space Grotesk", sans-serif';
-      ctx.fillText('SNAP', startX, y + 24);
-      
-      ctx.font = 'italic 36px "Italianno", "Pinyon Script", cursive';
-      ctx.fillText('Reciept', startX + snapW + 8, y + 28);
-      ctx.restore();
-      y += 34;
+      // Draw standard logo header
+      if (logoImg) {
+        const logoW = logoImg.width * (logoH / logoImg.height);
+        ctx.drawImage(logoImg, (width - logoW) / 2, y, logoW, logoH);
+        y += logoH;
+      } else {
+        ctx.save();
+        ctx.font = 'bold 22px "Playfair Display", Georgia, serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + 18);
+        ctx.restore();
+        y += 26;
+      }
+      y += 10;
 
       ctx.fillRect(margin, y, printWidth, 2);
       y += 12;
@@ -453,7 +438,7 @@ export async function renderReceiptToCanvas(
       ctx.save();
       ctx.font = '900 32px "Space Grotesk", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText((metadata.customMessage || 'EVENT NAME').toUpperCase(), width / 2, y + 28);
+      ctx.fillText((metadata.homeSubtitleBottom || 'EVENT NAME').toUpperCase(), width / 2, y + 28);
       ctx.restore();
       y += 36;
 
@@ -467,7 +452,7 @@ export async function renderReceiptToCanvas(
       ctx.restore();
       y += 18;
 
-      // Draw Scan Section (QR + Barcode)
+      // Draw Scan Section (Barcode only)
       ctx.save();
       ctx.font = 'bold 12px "Courier Prime", monospace';
       ctx.textAlign = 'center';
@@ -475,24 +460,14 @@ export async function renderReceiptToCanvas(
       ctx.restore();
       y += 18;
 
-      if (qrImg) {
-        ctx.drawImage(qrImg, margin + 4, y, 80, 80);
-        ctx.strokeRect(margin + 4, y, 80, 80);
-      }
-      ctx.save();
-      ctx.font = '900 7px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('SCAN SOFTCOPY', margin + 44, y + 90);
-      ctx.restore();
-
-      const barcodeX = margin + 110;
-      const barcodeW = printWidth - 114;
-      drawBarcode(ctx, barcodeX, y + 10, barcodeW, 45);
+      const barcodeW = 240;
+      const barcodeX = (width - barcodeW) / 2;
+      drawBarcode(ctx, barcodeX, y, barcodeW, 45);
 
       ctx.save();
       ctx.font = 'bold 9px "Courier Prime", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(`NO. ${metadata.receiptNumber}`, barcodeX + barcodeW / 2, y + 68);
+      ctx.fillText(`NO. ${metadata.receiptNumber}`, width / 2, y + 58);
       ctx.restore();
     }
 

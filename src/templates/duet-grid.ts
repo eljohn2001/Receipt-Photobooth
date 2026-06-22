@@ -35,10 +35,7 @@ export const duetGridTemplate: ReceiptTemplate = {
       return `
         <div class="collage-receipt-container theme-vintage">
           <div class="vintage-theme-header">
-            <div class="vintage-title-container">
-              <span class="vintage-title-snap">SNAP</span>
-              <span class="vintage-title-script">Reciept</span>
-            </div>
+            ${renderReceiptHeader(metadata)}
             <div class="vintage-divider-line"></div>
           </div>
           
@@ -51,15 +48,11 @@ export const duetGridTemplate: ReceiptTemplate = {
           
           <div class="vintage-theme-footer">
             <div class="vintage-divider-line"></div>
-            <div class="vintage-event-name">${metadata.customMessage || 'EVENT NAME'}</div>
+            <div class="vintage-event-name">${metadata.homeSubtitleBottom || 'EVENT NAME'}</div>
             <div class="vintage-divider-line"></div>
             <div class="vintage-date">${metadata.timestamp.split(',')[0]}</div>
             
             <div class="theme-footer-scan-section">
-              <div class="theme-qr-container">
-                <img class="receipt-qr-image" src="${metadata.qrCodeUrl || ''}" alt="QR Code" />
-                <div class="theme-qr-label">SCAN SOFTCOPY</div>
-              </div>
               <div class="theme-barcode-container">
                 ${barcodeSvg}
                 <div class="theme-barcode-number">NO. ${metadata.receiptNumber}</div>

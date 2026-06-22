@@ -21,6 +21,7 @@ export interface ReceiptMetadata {
   timestamp: string;
   receiptNumber: string;
   customMessage?: string;
+  homeSubtitleBottom?: string;
   qrCodeUrl?: string;
   items?: OrderItem[];
 }
