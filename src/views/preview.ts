@@ -9,6 +9,8 @@ import { uploadReceiptPhotos } from '../services/upload';
 import { generateShortId } from '../services/supabase';
 // @ts-ignore - raw loader is supported by Vite
 import quotesRaw from '../Quotes.txt?raw';
+import { THEMES_BY_TEMPLATE } from '../themes';
+import { audioManager } from '../services/audio';
 
 export class PreviewView extends BaseView {
   private activeSession: AppSession;
@@ -50,6 +52,9 @@ export class PreviewView extends BaseView {
             </div>
           </div>
         </div>
+
+        <!-- Theme selector container will go here -->
+        <div id="theme-selector-wrapper"></div>
 
         <!-- Print Configuration Options Panel -->
         <div class="preview-options-panel">
@@ -96,6 +101,7 @@ export class PreviewView extends BaseView {
     this.activeSession.isMirrored = false;
     this.activeSession.copiesCount = 1;
     this.activeSession.shareId = generateShortId(6);
+    this.activeSession.selectedThemeId = 'default';
 
     // Reset options UI defaults
     const mirrorCheckbox = this.element.querySelector('#toggle-mirror') as HTMLInputElement;
@@ -201,6 +207,9 @@ export class PreviewView extends BaseView {
       };
       
       this.activeSession.metadata = metadata;
+
+      // Render theme selector UI
+      this.renderThemeSelector(template.id);
 
       // 4. Render template HTML
       const templateHtml = template.render(this.activeSession.ditheredPhotos, metadata, this.activeSession);
@@ -332,5 +341,68 @@ export class PreviewView extends BaseView {
         this.navigateTo('printing');
       }
     });
+  }
+
+  private renderThemeSelector(templateId: string): void {
+    const wrapper = this.element.querySelector('#theme-selector-wrapper');
+    if (!wrapper) return;
+
+    const themes = THEMES_BY_TEMPLATE[templateId] || [];
+    if (themes.length <= 1) {
+      wrapper.innerHTML = '';
+      wrapper.classList.add('hidden');
+      return;
+    }
+
+    wrapper.classList.remove('hidden');
+    wrapper.innerHTML = `
+      <div class="theme-selector-container">
+        <span class="theme-selector-label">✨ Choose Frame Template</span>
+        <div class="theme-options-list">
+          ${themes.map(theme => `
+            <button class="theme-option-item ${theme.id === (this.activeSession.selectedThemeId || 'default') ? 'active' : ''}" data-theme-id="${theme.id}">
+              <span class="theme-option-indicator"></span>
+              <span class="theme-option-name">${theme.name}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Add click listeners to theme option items
+    const optionBtns = wrapper.querySelectorAll('.theme-option-item');
+    optionBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        const themeId = target.getAttribute('data-theme-id');
+        if (!themeId) return;
+
+        // Play beep sound
+        audioManager.playBeep();
+
+        // Update session theme id
+        this.activeSession.selectedThemeId = themeId;
+
+        // Update active class on buttons
+        optionBtns.forEach(b => b.classList.remove('active'));
+        target.classList.add('active');
+
+        // Re-render preview HTML
+        this.updateReceiptPreview();
+      });
+    });
+  }
+
+  private updateReceiptPreview(): void {
+    const template = getTemplateById(this.activeSession.selectedTemplateId || '');
+    const contentTarget = this.element.querySelector('#receipt-content-target');
+    if (template && contentTarget && this.activeSession.metadata) {
+      const templateHtml = template.render(
+        this.activeSession.ditheredPhotos || [],
+        this.activeSession.metadata,
+        this.activeSession
+      );
+      contentTarget.innerHTML = templateHtml;
+    }
   }
 }

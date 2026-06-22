@@ -34,7 +34,7 @@ export class ModeSelectionView extends BaseView {
           <div class="mode-option-card" id="mode-option-photo">
             <div class="mode-option-icon">📸</div>
             <h3 class="mode-option-title">Photo Receipt</h3>
-            <p class="mode-option-desc">Capture a vintage photo collage printed instantly.</p>
+            <p class="mode-option-desc">Vintage photo collage.</p>
             <button class="btn btn-primary mode-option-btn" type="button">START PHOTO BOOTH</button>
           </div>
 
@@ -42,7 +42,7 @@ export class ModeSelectionView extends BaseView {
           <div class="mode-option-card" id="mode-option-comfort">
             <div class="mode-option-icon">☕</div>
             <h3 class="mode-option-title">Comfort Card</h3>
-            <p class="mode-option-desc">Print a warm, deep self-care affirmation.</p>
+            <p class="mode-option-desc">Self-care affirmation.</p>
             <button class="btn btn-primary mode-option-btn" type="button">GET COMFORT CARD</button>
           </div>
         </div>
@@ -58,25 +58,48 @@ export class ModeSelectionView extends BaseView {
 
   unmount(): void {}
 
+  onEnter(): void {
+    const photoCard = this.element.querySelector('#mode-option-photo') as HTMLElement;
+    const comfortCard = this.element.querySelector('#mode-option-comfort') as HTMLElement;
+    
+    photoCard?.classList.remove('selected', 'fade-out');
+    comfortCard?.classList.remove('selected', 'fade-out');
+  }
+
   private setupEvents(): void {
     const backBtn = this.element.querySelector('#btn-mode-back');
     backBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
+      audioManager.playBeep();
       this.navigateTo('idle');
     });
 
-    const photoCard = this.element.querySelector('#mode-option-photo');
+    const photoCard = this.element.querySelector('#mode-option-photo') as HTMLElement;
+    const comfortCard = this.element.querySelector('#mode-option-comfort') as HTMLElement;
+
     photoCard?.addEventListener('click', (e) => {
       e.stopPropagation();
       audioManager.playBeep();
-      this.navigateTo('template-selection');
+
+      // Add selection animations
+      photoCard.classList.add('selected');
+      comfortCard?.classList.add('fade-out');
+
+      setTimeout(() => {
+        this.navigateTo('template-selection');
+      }, 400);
     });
 
-    const comfortCard = this.element.querySelector('#mode-option-comfort');
     comfortCard?.addEventListener('click', async (e) => {
       e.stopPropagation();
       audioManager.playBeep();
-      
+
+      // Add selection animations
+      comfortCard.classList.add('selected');
+      photoCard?.classList.add('fade-out');
+
+      const startTime = Date.now();
+
       // Select random Comfort Quote and random illustration, prepare session
       await this.prepareComfortCardSession();
 
@@ -86,8 +109,14 @@ export class ModeSelectionView extends BaseView {
         contentTarget.innerHTML = renderComfortCard(this.activeSession, this.activeSession.metadata!);
       }
 
-      // Proceed straight to printing state
-      this.navigateTo('printing');
+      // Ensure at least 400ms has elapsed since click to let animation play
+      const elapsed = Date.now() - startTime;
+      const delay = Math.max(0, 400 - elapsed);
+
+      setTimeout(() => {
+        // Proceed straight to printing state
+        this.navigateTo('printing');
+      }, delay);
     });
   }
 

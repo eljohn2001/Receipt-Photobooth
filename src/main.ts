@@ -588,6 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const textColorInput = document.getElementById('input-text-color') as HTMLInputElement;
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
     const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
+    const printContrastSelect = document.getElementById('input-print-contrast') as HTMLSelectElement;
     const subtitleTopInput = document.getElementById('input-home-subtitle-top') as HTMLInputElement;
     const subtitleBottomInput = document.getElementById('input-home-subtitle-bottom') as HTMLInputElement;
     const adminPinInput = document.getElementById('input-admin-pin') as HTMLInputElement;
@@ -601,6 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (textColorInput) textColorInput.value = config.textColor;
     if (textColorHomeInput) textColorHomeInput.value = config.textColorHome || '#000000';
     if (homeModeSelect) homeModeSelect.value = config.homeScreenMode || 'graphic';
+    if (printContrastSelect) printContrastSelect.value = config.printContrast || 'medium';
     if (subtitleTopInput) subtitleTopInput.value = config.homeSubtitleTop || '';
     if (subtitleBottomInput) subtitleBottomInput.value = config.homeSubtitleBottom || '';
     if (adminPinInput) adminPinInput.value = config.adminPin || '1234';
@@ -746,6 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const textColorInput = document.getElementById('input-text-color') as HTMLInputElement;
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
     const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
+    const printContrastSelect = document.getElementById('input-print-contrast') as HTMLSelectElement;
     const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
     const enableFortuneInput = document.getElementById('input-enable-fortune') as HTMLInputElement;
     const enableComfortInput = document.getElementById('input-enable-comfort') as HTMLInputElement;
@@ -780,6 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
       enableQrCode: enableQrInput ? enableQrInput.checked : true,
       enableMemoryFortune: enableFortuneInput ? enableFortuneInput.checked : true,
       enableComfortCards: enableComfortInput ? enableComfortInput.checked : true,
+      printContrast: printContrastSelect ? (printContrastSelect.value as 'light' | 'medium' | 'dark' | 'deep') : 'medium',
       homeSubtitleTop: subtitleTopInput ? subtitleTopInput.value.trim() : '',
       homeSubtitleBottom: subtitleBottomInput ? subtitleBottomInput.value.trim() : '',
       adminPin: adminPinInput ? adminPinInput.value.trim() : '1234'

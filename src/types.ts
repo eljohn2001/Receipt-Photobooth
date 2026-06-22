@@ -37,6 +37,7 @@ export interface ReceiptTemplate {
 
 export interface AppSession {
   selectedTemplateId: string | null;
+  selectedThemeId?: string; // Selected theme overlay ID (e.g. 'default', 'theme-1', 'theme-2')
   capturedPhotos: string[]; // Base64 or ObjectURLs of original pictures
   ditheredPhotos: string[]; // Dithered canvas data URLs
   metadata: ReceiptMetadata | null;

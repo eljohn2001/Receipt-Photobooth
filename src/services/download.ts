@@ -32,6 +32,36 @@ function wrapText(
   return lines;
 }
 
+function drawBarcode(
+  ctx: CanvasRenderingContext2D,
+  xStart: number,
+  yStart: number,
+  totalWidth: number,
+  height: number
+) {
+  const pattern = [
+    2,1,3,1,1,2,4,1,1,3,2,1,1,2,2,3,1,1,4,1,2,2,1,3,1,2,1,4,1,1,2,3,1,2,2,1,1,3,2,2,1,1,4,1,2,1
+  ];
+  let totalUnits = 0;
+  for (let i = 0; i < pattern.length; i++) {
+    totalUnits += pattern[i] * 2 + 2;
+  }
+  
+  const scale = totalWidth / totalUnits;
+  let x = xStart;
+  ctx.save();
+  ctx.fillStyle = '#000000';
+  for (let i = 0; i < pattern.length; i++) {
+    const width = pattern[i] * 2 * scale;
+    const gap = 2 * scale;
+    if (i % 2 === 0) {
+      ctx.fillRect(x, yStart, width, height);
+    }
+    x += width + gap;
+  }
+  ctx.restore();
+}
+
 /**
  * Draws the receipt contents onto an HTML5 canvas element with high quality,
  * strictly matching the screen preview layout (only logo/header, photos, and footer).
@@ -49,6 +79,7 @@ export async function renderReceiptToCanvas(
   if (!metadata) throw new Error('Missing session metadata');
 
   const config = loadKioskConfig();
+  const themeImg = null;
 
   // Standard canvas width of 384px (58mm printer standard width)
   const width = 384;
@@ -66,11 +97,11 @@ export async function renderReceiptToCanvas(
   if (templateId === 'comfort-card') {
     gridHeight = 0;
     ctx.save();
-    ctx.font = 'italic 11px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = 'bold 15px "Courier Prime", "Courier New", Courier, monospace';
     const quoteText = `"${session.selectedQuote || ''}"`;
-    comfortLines = wrapText(ctx, quoteText, printWidth - 24);
+    comfortLines = wrapText(ctx, quoteText, printWidth - 16);
     ctx.restore();
-    comfortHeight = 160 + 16 + 18 + 16 + (comfortLines.length * 15) + 10;
+    comfortHeight = 90 + 16 + 18 + 20 + (comfortLines.length * 19) + 10;
   } else if (templateId === 'classic-solo') {
     gridHeight = printWidth; // 336px
   } else if (templateId === 'duet-grid') {
@@ -89,16 +120,16 @@ export async function renderReceiptToCanvas(
 
   let fortuneHeight = 0;
   let fortuneLines: string[] = [];
-  const hasFortune = config.enableMemoryFortune !== false && !!session.selectedQuote;
+  const hasFortune = config.enableMemoryFortune !== false && !!session.selectedQuote && templateId !== 'comfort-card';
 
   if (hasFortune) {
     ctx.save();
-    ctx.font = 'italic 10px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = 'bold 14px "Courier Prime", "Courier New", Courier, monospace';
     const quoteText = `"${session.selectedQuote}"`;
     fortuneLines = wrapText(ctx, quoteText, printWidth - 16);
     ctx.restore();
 
-    fortuneHeight = 18 + 16 + (fortuneLines.length * 14) + 10;
+    fortuneHeight = 18 + 20 + (fortuneLines.length * 18) + 10;
   }
 
   // Helper to load image securely
@@ -150,15 +181,324 @@ export async function renderReceiptToCanvas(
   const padding = 25; // padding top and bottom
 
   const height = padding * 2 + headerHeight + spacingAfterHeader + gridHeight + spacingAfterGrid + qrHeight + footerHeight + fortuneHeight + comfortHeight;
-  canvas.height = height;
+
+  const themeId = session.selectedThemeId || 'default';
+  let totalHeight = height;
+  if (themeId === 'classic-1' || themeId === 'duet-1') {
+    totalHeight = 681;
+  } else if (themeId === 'classic-2') {
+    totalHeight = 701;
+  } else if (themeId === 'film-1') {
+    totalHeight = 1048;
+  }
+  
+  canvas.height = totalHeight;
 
   // Fill canvas with solid white
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(0, 0, width, totalHeight);
 
   ctx.fillStyle = '#000000';
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 1.5;
+
+  const isMirrored = session.isMirrored || false;
+
+  const drawPhotoWithMirror = (img: HTMLImageElement, px: number, py: number, w: number, h: number) => {
+    ctx.save();
+    if (isMirrored) {
+      ctx.translate(px + w / 2, py + h / 2);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, -w / 2, -h / 2, w, h);
+    } else {
+      ctx.drawImage(img, px, py, w, h);
+    }
+    ctx.restore();
+    ctx.strokeRect(px, py, w, h);
+  };
+
+  if (themeId !== 'default') {
+    let y = padding;
+    if (mode === 'bw') {
+      ctx.filter = 'grayscale(100%)';
+    } else {
+      ctx.filter = 'none';
+    }
+
+    if (themeId === 'classic-1' || themeId === 'duet-1') {
+      // Draw SNAP Reciept Header
+      ctx.save();
+      ctx.textAlign = 'left';
+      ctx.font = '900 24px "Space Grotesk", sans-serif';
+      const snapW = ctx.measureText('SNAP').width;
+      
+      ctx.font = 'italic 36px "Italianno", "Pinyon Script", cursive';
+      const recieptW = ctx.measureText('Reciept').width;
+      
+      const totalW = snapW + 8 + recieptW;
+      const startX = (width - totalW) / 2;
+      
+      ctx.font = '900 24px "Space Grotesk", sans-serif';
+      ctx.fillText('SNAP', startX, y + 24);
+      
+      ctx.font = 'italic 36px "Italianno", "Pinyon Script", cursive';
+      ctx.fillText('Reciept', startX + snapW + 8, y + 28);
+      ctx.restore();
+      y += 34;
+
+      ctx.fillRect(margin, y, printWidth, 2);
+      y += 12;
+
+      // Draw Photos
+      if (themeId === 'classic-1' && loadedPhotos[0]) {
+        drawPhotoWithMirror(loadedPhotos[0], margin, y, printWidth, printWidth);
+      } else if (themeId === 'duet-1') {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(margin, y, printWidth, printWidth);
+        const size = (printWidth - 6) / 2;
+        for (let i = 0; i < 4; i++) {
+          const img = loadedPhotos[i];
+          if (img) {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            const px = margin + col * (size + 6);
+            const py = y + row * (size + 6);
+            ctx.save();
+            if (isMirrored) {
+              ctx.translate(px + size / 2, py + size / 2);
+              ctx.scale(-1, 1);
+              ctx.drawImage(img, -size / 2, -size / 2, size, size);
+            } else {
+              ctx.drawImage(img, px, py, size, size);
+            }
+            ctx.restore();
+          }
+        }
+      }
+      y += printWidth + 20;
+
+      // Draw Footer
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(margin, y, printWidth, 2);
+      y += 6;
+
+      ctx.save();
+      ctx.font = '900 32px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText((metadata.customMessage || 'EVENT NAME').toUpperCase(), width / 2, y + 28);
+      ctx.restore();
+      y += 36;
+
+      ctx.fillRect(margin, y, printWidth, 2);
+      y += 12;
+
+      ctx.save();
+      ctx.font = 'bold 13px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(metadata.timestamp.split(',')[0], width / 2, y + 10);
+      ctx.restore();
+      y += 18;
+
+      // Draw Scan Section (QR + Barcode)
+      ctx.save();
+      ctx.font = 'bold 12px "Courier Prime", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('- - - - - - - - - - - - - - - - - - - -', width / 2, y + 10);
+      ctx.restore();
+      y += 18;
+
+      if (qrImg) {
+        ctx.drawImage(qrImg, margin + 4, y, 80, 80);
+        ctx.strokeRect(margin + 4, y, 80, 80);
+      }
+      ctx.save();
+      ctx.font = '900 7px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCAN SOFTCOPY', margin + 44, y + 90);
+      ctx.restore();
+
+      const barcodeX = margin + 110;
+      const barcodeW = printWidth - 114;
+      drawBarcode(ctx, barcodeX, y + 10, barcodeW, 45);
+
+      ctx.save();
+      ctx.font = 'bold 9px "Courier Prime", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`NO. ${metadata.receiptNumber}`, barcodeX + barcodeW / 2, y + 68);
+      ctx.restore();
+      
+    } else if (themeId === 'classic-2') {
+      // Draw Header
+      ctx.save();
+      ctx.font = 'bold 10px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('✈ POWERED BY BLCKLABS', width - margin, y + 10);
+      ctx.restore();
+      y += 16;
+
+      // Draw Photo
+      if (loadedPhotos[0]) {
+        drawPhotoWithMirror(loadedPhotos[0], margin, y, printWidth, printWidth);
+      }
+      y += printWidth + 20;
+
+      // Draw Info Grid
+      ctx.save();
+      ctx.font = 'bold 8px "Space Grotesk", sans-serif';
+      ctx.fillStyle = '#666666';
+      ctx.textAlign = 'left';
+      ctx.fillText('DATE', margin, y + 8);
+      ctx.fillText('GATE', margin + 115, y + 8);
+      ctx.fillText('TIME', margin + 250, y + 8);
+      
+      ctx.font = '900 11px "Space Grotesk", sans-serif';
+      ctx.fillStyle = '#000000';
+      ctx.fillText(metadata.timestamp.split(',')[0], margin, y + 22);
+      ctx.fillText(metadata.cafeAddress.split(',')[0] || 'PASTORAL', margin + 115, y + 22);
+      ctx.fillText(metadata.timestamp.split(',')[1]?.trim().slice(0, 5) || '15:40', margin + 250, y + 22);
+      ctx.restore();
+      y += 30;
+
+      // Dashed separator line
+      ctx.save();
+      ctx.font = 'bold 12px "Courier Prime", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('- - - - - - - - - - - - - - - - - - - -', width / 2, y + 10);
+      ctx.restore();
+      y += 16;
+
+      // Flight Codes
+      ctx.save();
+      ctx.font = '900 36px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('DXB  ✈  HKG', width / 2, y + 32);
+      
+      ctx.font = 'bold 10px "Space Grotesk", sans-serif';
+      ctx.fillText('B O A R D I N G   P A S S', width / 2, y + 48);
+      ctx.restore();
+      y += 56;
+
+      // Draw Scan Section (QR + Barcode)
+      if (qrImg) {
+        ctx.drawImage(qrImg, margin + 4, y, 80, 80);
+        ctx.strokeRect(margin + 4, y, 80, 80);
+      }
+      ctx.save();
+      ctx.font = '900 7px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCAN SOFTCOPY', margin + 44, y + 90);
+      ctx.restore();
+
+      const barcodeX = margin + 110;
+      const barcodeW = printWidth - 114;
+      drawBarcode(ctx, barcodeX, y + 10, barcodeW, 45);
+
+      ctx.save();
+      ctx.font = 'bold 9px "Courier Prime", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`NO. ${metadata.receiptNumber}`, barcodeX + barcodeW / 2, y + 68);
+      ctx.restore();
+      
+    } else if (themeId === 'film-1') {
+      // Draw SNAP Reciept Header
+      ctx.save();
+      ctx.textAlign = 'left';
+      ctx.font = '900 24px "Space Grotesk", sans-serif';
+      const snapW = ctx.measureText('SNAP').width;
+      
+      ctx.font = 'italic 36px "Italianno", "Pinyon Script", cursive';
+      const recieptW = ctx.measureText('Reciept').width;
+      
+      const totalW = snapW + 8 + recieptW;
+      const startX = (width - totalW) / 2;
+      
+      ctx.font = '900 24px "Space Grotesk", sans-serif';
+      ctx.fillText('SNAP', startX, y + 24);
+      
+      ctx.font = 'italic 36px "Italianno", "Pinyon Script", cursive';
+      ctx.fillText('Reciept', startX + snapW + 8, y + 28);
+      ctx.restore();
+      y += 34;
+
+      ctx.fillRect(margin, y, printWidth, 2);
+      y += 12;
+
+      // Draw stacked 3 landscape photos
+      ctx.fillStyle = '#000000';
+      const pHeight = Math.round(printWidth / 1.5); // 224px
+      const stackHeight = (pHeight + 6) * 3 - 6; // 684px
+      ctx.fillRect(margin, y, printWidth, stackHeight);
+      for (let i = 0; i < 3; i++) {
+        const img = loadedPhotos[i];
+        if (img) {
+          const py = y + i * (pHeight + 6);
+          ctx.save();
+          if (isMirrored) {
+            ctx.translate(margin + printWidth / 2, py + pHeight / 2);
+            ctx.scale(-1, 1);
+            ctx.drawImage(img, -printWidth / 2, -pHeight / 2, printWidth, pHeight);
+          } else {
+            ctx.drawImage(img, margin, py, printWidth, pHeight);
+          }
+          ctx.restore();
+        }
+      }
+      y += stackHeight + 20;
+
+      // Draw Footer
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(margin, y, printWidth, 2);
+      y += 6;
+
+      ctx.save();
+      ctx.font = '900 32px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText((metadata.customMessage || 'EVENT NAME').toUpperCase(), width / 2, y + 28);
+      ctx.restore();
+      y += 36;
+
+      ctx.fillRect(margin, y, printWidth, 2);
+      y += 12;
+
+      ctx.save();
+      ctx.font = 'bold 13px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(metadata.timestamp.split(',')[0], width / 2, y + 10);
+      ctx.restore();
+      y += 18;
+
+      // Draw Scan Section (QR + Barcode)
+      ctx.save();
+      ctx.font = 'bold 12px "Courier Prime", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('- - - - - - - - - - - - - - - - - - - -', width / 2, y + 10);
+      ctx.restore();
+      y += 18;
+
+      if (qrImg) {
+        ctx.drawImage(qrImg, margin + 4, y, 80, 80);
+        ctx.strokeRect(margin + 4, y, 80, 80);
+      }
+      ctx.save();
+      ctx.font = '900 7px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCAN SOFTCOPY', margin + 44, y + 90);
+      ctx.restore();
+
+      const barcodeX = margin + 110;
+      const barcodeW = printWidth - 114;
+      drawBarcode(ctx, barcodeX, y + 10, barcodeW, 45);
+
+      ctx.save();
+      ctx.font = 'bold 9px "Courier Prime", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`NO. ${metadata.receiptNumber}`, barcodeX + barcodeW / 2, y + 68);
+      ctx.restore();
+    }
+
+    ctx.filter = 'none';
+    return;
+  }
 
   let y = padding;
 
@@ -183,33 +523,17 @@ export async function renderReceiptToCanvas(
     ctx.filter = 'none';
   }
 
-  const isMirrored = session.isMirrored || false;
-
-  const drawPhotoWithMirror = (img: HTMLImageElement, px: number, py: number, w: number, h: number) => {
-    ctx.save();
-    if (isMirrored) {
-      // Move context origin to the center of the image area to flip horizontally
-      ctx.translate(px + w / 2, py + h / 2);
-      ctx.scale(-1, 1);
-      ctx.drawImage(img, -w / 2, -h / 2, w, h);
-    } else {
-      ctx.drawImage(img, px, py, w, h);
-    }
-    ctx.restore();
-    ctx.strokeRect(px, py, w, h);
-  };
-
   if (templateId === 'comfort-card') {
     const svgString = getIllustrationSvgById(session.selectedIllustration || 'coffee');
     const svgDataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgString);
     try {
       const svgImg = await loadImage(svgDataUrl);
-      const size = 160;
+      const size = 90;
       ctx.drawImage(svgImg, (width - size) / 2, y, size, size);
       y += size + 16;
     } catch (e) {
       console.warn('Failed to load comfort card SVG:', e);
-      y += 160 + 16;
+      y += 90 + 16;
     }
 
     ctx.font = 'bold 12px "Courier Prime", "Courier New", Courier, monospace';
@@ -217,18 +541,21 @@ export async function renderReceiptToCanvas(
     ctx.fillText('.............................', width / 2, y + 10);
     y += 18;
 
-    ctx.font = 'bold 11px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = 'bold 15px "Courier Prime", "Courier New", Courier, monospace';
     ctx.fillText('COMFORT CARD', width / 2, y + 10);
-    y += 16;
+    y += 20;
 
-    ctx.font = 'italic 11px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = 'bold 15px "Courier Prime", "Courier New", Courier, monospace';
     for (const line of comfortLines) {
       ctx.fillText(line, width / 2, y + 10);
-      y += 15;
+      y += 19;
     }
     y += 10;
   } else if (templateId === 'classic-solo' && loadedPhotos[0]) {
     drawPhotoWithMirror(loadedPhotos[0], margin, y, printWidth, printWidth);
+    if (themeImg) {
+      ctx.drawImage(themeImg, margin, y, printWidth, printWidth);
+    }
     y += printWidth;
   } else if (templateId === 'duet-grid') {
     const size = (printWidth - 8) / 2;
@@ -242,9 +569,13 @@ export async function renderReceiptToCanvas(
         drawPhotoWithMirror(img, px, py, size, size);
       }
     }
+    if (themeImg) {
+      ctx.drawImage(themeImg, margin, y, printWidth, printWidth);
+    }
     y += size * 2 + 8;
   } else if (templateId === 'film-stack') {
     const pHeight = Math.round(printWidth / 1.5);
+    const stackHeight = (pHeight + 8) * 3 - 8;
     for (let i = 0; i < 3; i++) {
       const img = loadedPhotos[i];
       if (img) {
@@ -252,7 +583,10 @@ export async function renderReceiptToCanvas(
         drawPhotoWithMirror(img, margin, py, printWidth, pHeight);
       }
     }
-    y += (pHeight + 8) * 3 - 8;
+    if (themeImg) {
+      ctx.drawImage(themeImg, margin, y, printWidth, stackHeight);
+    }
+    y += stackHeight;
   } else if (templateId === 'hex-grid') {
     const sizeW = (printWidth - 8) / 2;
     const sizeH = Math.round(sizeW / 1.5);
@@ -312,7 +646,7 @@ export async function renderReceiptToCanvas(
 
   const formattedDate = getFormattedDate(metadata.timestamp);
 
-  ctx.font = 'bold 11px "Courier Prime", "Courier New", Courier, monospace';
+  ctx.font = 'bold 13px "Courier Prime", "Courier New", Courier, monospace';
   ctx.textAlign = 'left';
   ctx.fillText(metadata.cafeAddress.toUpperCase(), margin, y + 10);
   ctx.textAlign = 'right';
@@ -330,15 +664,15 @@ export async function renderReceiptToCanvas(
     y += 18;
 
     // 2. Title "MEMORY FORTUNE"
-    ctx.font = 'bold 11px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = 'bold 14px "Courier Prime", "Courier New", Courier, monospace';
     ctx.fillText('MEMORY FORTUNE', width / 2, y + 10);
-    y += 16;
+    y += 20;
 
     // 3. Quote text lines
-    ctx.font = 'italic 10px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = 'bold 14px "Courier Prime", "Courier New", Courier, monospace';
     for (const line of fortuneLines) {
       ctx.fillText(line, width / 2, y + 10);
-      y += 14;
+      y += 18;
     }
   }
 }
@@ -350,6 +684,18 @@ export async function renderReceiptToCanvas(
 export function ditherCanvas(canvas: HTMLCanvasElement): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
+
+  const config = loadKioskConfig();
+  const contrast = config.printContrast || 'medium';
+  let threshold = 128;
+  if (contrast === 'light') {
+    threshold = 95;
+  } else if (contrast === 'dark') {
+    threshold = 150;
+  } else if (contrast === 'deep') {
+    threshold = 175;
+  }
+
   const width = canvas.width;
   const height = canvas.height;
   const imgData = ctx.getImageData(0, 0, width, height);
@@ -373,7 +719,7 @@ export function ditherCanvas(canvas: HTMLCanvasElement): void {
     for (let x = 0; x < width; x++) {
       const idx = y * width + x;
       const oldVal = grayBuffer[idx];
-      const newVal = oldVal < 128 ? 0 : 255;
+      const newVal = oldVal < threshold ? 0 : 255;
       grayBuffer[idx] = newVal;
 
       const error = oldVal - newVal;

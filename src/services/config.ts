@@ -23,6 +23,7 @@ export interface KioskConfig {
   adminPin?: string;
   enableMemoryFortune?: boolean;
   enableComfortCards?: boolean;
+  printContrast?: 'light' | 'medium' | 'dark' | 'deep';
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -44,7 +45,8 @@ export const DEFAULT_CONFIG: KioskConfig = {
   homeSubtitleBottom: 'Receipt Photo Booth',
   adminPin: '1234',
   enableMemoryFortune: true,
-  enableComfortCards: true
+  enableComfortCards: true,
+  printContrast: 'medium'
 };
 
 const STORAGE_KEY = 'receipt_booth_kiosk_config';

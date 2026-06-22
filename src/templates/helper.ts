@@ -146,3 +146,19 @@ export function renderComfortCard(session: AppSession, metadata: ReceiptMetadata
     </div>
   `;
 }
+
+export function generateBarcodeSvg(): string {
+  const pattern = [
+    2,1,3,1,1,2,4,1,1,3,2,1,1,2,2,3,1,1,4,1,2,2,1,3,1,2,1,4,1,1,2,3,1,2,2,1,1,3,2,2,1,1,4,1,2,1
+  ];
+  let x = 10;
+  let svgPaths = '';
+  for (let i = 0; i < pattern.length; i++) {
+    const width = pattern[i];
+    if (i % 2 === 0) {
+      svgPaths += `<rect x="${x}" y="5" width="${width * 2}" height="60" fill="black" />`;
+    }
+    x += width * 2 + 2;
+  }
+  return `<svg width="100%" height="70" viewBox="0 0 ${x + 10} 70" xmlns="http://www.w3.org/2000/svg">${svgPaths}</svg>`;
+}

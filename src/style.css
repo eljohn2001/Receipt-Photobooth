@@ -1375,17 +1375,17 @@ body {
 }
 
 .fortune-title {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: bold;
   letter-spacing: 1px;
   margin-bottom: 4px;
 }
 
 .fortune-text {
-  font-size: 10px;
-  line-height: 1.3;
+  font-size: 14px;
+  line-height: 1.45;
   padding: 0 4px;
-  font-style: italic;
+  font-weight: bold;
 }
 
 /* Filmstrip specific styles inside receipt */
@@ -1868,7 +1868,58 @@ body {
     background: #ffffff !important;
     color: #000000 !important;
     font-family: 'Courier Prime', Courier, monospace;
-    font-size: 8pt;
+    font-size: 9.5pt;
+  }
+
+  /* Force pure solid black text color and 100% opacity to prevent printer dithering */
+  #print-container * {
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    opacity: 1 !important;
+    text-shadow: none !important;
+  }
+
+  /* Make printed texts bolder and larger for clean legibility */
+  .fortune-text {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.45 !important;
+    font-style: normal !important;
+  }
+
+  .fortune-title {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+  }
+
+  .template-footer {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+  }
+
+  .comfort-card-title {
+    font-size: 19px !important;
+    font-weight: 800 !important;
+  }
+
+  .comfort-card-text {
+    font-size: 18.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.55 !important;
+    font-style: normal !important;
+  }
+
+  .comfort-card-svg {
+    width: 90px !important;
+    height: 90px !important;
+  }
+
+  .receipt-info-block,
+  .receipt-itemized-header,
+  .receipt-item-row {
+    font-size: 12px !important;
+    font-weight: 700 !important;
   }
 
   /* Hide QR code block in printed output */
@@ -2690,8 +2741,9 @@ body {
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-receipt);
-  font-size: 9px;
-  color: #333333;
+  font-size: 12px;
+  font-weight: bold;
+  color: #000000;
   margin-top: 12px;
 }
 
@@ -2709,6 +2761,82 @@ body {
   text-align: right;
   font-weight: 700;
   letter-spacing: 0.5px;
+}
+
+/* -------------------------------------------------------------
+   THEME / TEMPLATE FRAME SELECTOR
+   ------------------------------------------------------------- */
+.theme-selector-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 400px;
+  margin: 12px auto 0 auto;
+  box-sizing: border-box;
+}
+
+.theme-selector-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.theme-options-list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: none; /* Firefox */
+}
+
+.theme-options-list::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.theme-option-item {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.theme-option-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.theme-option-item.active {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+}
+
+.theme-option-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--text-primary);
+  background: transparent;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.theme-option-item.active .theme-option-indicator {
+  border-color: var(--bg-primary);
+  background: var(--bg-primary);
 }
 
 /* -------------------------------------------------------------
@@ -2833,7 +2961,7 @@ input:checked+.toggle-slider:before {
 }
 
 /* Responsive adjustments for mobile/narrow viewports */
-@media (max-width: 500px) {
+@media (max-width: 768px) {
   .view-panel {
     padding: 16px;
   }
@@ -2868,6 +2996,67 @@ input:checked+.toggle-slider:before {
   .template-screen-footer {
     margin-top: 20px;
     margin-bottom: 15px;
+  }
+
+  /* Mode selection screen overrides for mobile/portrait */
+  .mode-selection-screen {
+    padding: 8px 16px 12px 16px;
+  }
+
+  .mode-selection-screen .template-screen-header {
+    padding: 0 10px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+
+  .mode-selection-screen .template-screen-footer {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
+  .mode-options-container {
+    gap: 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    max-height: calc(100vh - 150px);
+  }
+
+  .mode-option-card {
+    padding: 10px 16px;
+    gap: 4px;
+    border-radius: 12px;
+    flex: 1;
+    min-height: 0;
+    max-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .mode-option-icon {
+    font-size: 32px;
+    margin-bottom: 0px;
+  }
+
+  .mode-option-title {
+    font-size: 16px;
+  }
+
+  .mode-option-desc {
+    font-size: 11px;
+    line-height: 1.3;
+    max-width: 240px;
+  }
+
+  .mode-option-btn {
+    margin-top: 2px;
+    padding: 6px 12px;
+    font-size: 11px;
+    max-width: 180px;
   }
   
   .template-choose-title {
@@ -2927,6 +3116,16 @@ input:checked+.toggle-slider:before {
     margin: 8px auto 4px auto;
     padding: 8px 12px;
     gap: 10px;
+  }
+
+  .theme-selector-container {
+    margin: 8px auto 0 auto;
+    gap: 6px;
+  }
+
+  .theme-option-item {
+    padding: 6px 12px;
+    font-size: 11px;
   }
 
   .preview-actions-bar {
@@ -3135,7 +3334,16 @@ input:checked+.toggle-slider:before {
   height: 100%;
   width: 100%;
   box-sizing: border-box;
-  padding: 24px;
+  padding: 12px 24px 24px 24px;
+}
+
+.mode-selection-screen .template-screen-header {
+  padding: 0px 40px 10px 40px;
+}
+
+.mode-selection-screen .template-screen-footer {
+  margin-top: 15px;
+  margin-bottom: 15px;
 }
 
 .mode-options-container {
@@ -3143,9 +3351,9 @@ input:checked+.toggle-slider:before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
   flex: 1;
-  max-width: 500px;
+  max-width: 480px;
   margin: 0 auto;
   width: 100%;
 }
@@ -3155,19 +3363,21 @@ input:checked+.toggle-slider:before {
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
-  padding: 30px 24px;
+  border-radius: 16px;
+  padding: 16px 20px;
   cursor: pointer;
   transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), 
               box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
-              background 0.3s ease;
+              background 0.3s ease,
+              opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 14px;
+  gap: 8px;
 }
 
 /* Light theme adaptations for cards */
@@ -3184,44 +3394,76 @@ body:not(.dark-theme) .mode-option-card:hover {
 }
 
 .mode-option-card:hover {
-  transform: translateY(-6px) scale(1.02);
+  transform: translateY(-4px) scale(1.01);
   background: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
   border-color: rgba(255, 255, 255, 0.3);
 }
 
 .mode-option-icon {
-  font-size: 56px;
+  font-size: 40px;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .mode-option-title {
   font-family: var(--font-title);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   margin: 0;
   letter-spacing: 0.5px;
 }
 
 .mode-option-desc {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.4;
   margin: 0;
   opacity: 0.8;
   font-weight: 400;
-  max-width: 320px;
+  max-width: 280px;
 }
 
 .mode-option-btn {
   pointer-events: none; /* Let the card click handler capture interactions */
   width: 100%;
-  max-width: 220px;
-  margin-top: 10px;
+  max-width: 200px;
+  margin-top: 4px;
+  padding: 8px 16px;
+  font-size: 12px;
+}
+
+/* Card Selection Animations */
+.mode-option-card.selected {
+  transform: scale(1.04) translateY(-4px) !important;
+  border-color: var(--text-primary) !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  z-index: 10;
+}
+
+body:not(.dark-theme) .mode-option-card.selected {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15) !important;
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+
+.mode-option-card.fade-out {
+  opacity: 0.25;
+  transform: scale(0.95);
+  filter: blur(1px);
+  pointer-events: none;
 }
 
 /* Tablet & Desktop (Landscape) Responsive Layout */
 @media (min-width: 769px) {
+  .mode-selection-screen .template-screen-header {
+    padding: 30px 40px 10px 40px;
+  }
+
+  .mode-selection-screen .template-screen-footer {
+    margin-top: 30px;
+    margin-bottom: 25px;
+  }
+
   .mode-options-container {
     flex-direction: row; /* Side-by-side cards on wider viewports */
     max-width: 900px;
@@ -3231,22 +3473,30 @@ body:not(.dark-theme) .mode-option-card:hover {
 
   .mode-option-card {
     flex: 1;
-    min-height: 380px;
+    min-height: 320px;
     justify-content: space-between;
-    padding: 40px 30px;
+    padding: 32px 24px;
+    gap: 12px;
   }
 
   .mode-option-icon {
-    font-size: 64px;
-    margin-bottom: 12px;
+    font-size: 56px;
+    margin-bottom: 8px;
   }
 
   .mode-option-title {
-    font-size: 24px;
+    font-size: 22px;
   }
 
   .mode-option-desc {
-    font-size: 14px;
+    font-size: 13px;
+    max-width: 320px;
+  }
+
+  .mode-option-btn {
+    margin-top: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
   }
 }
 
@@ -3268,8 +3518,8 @@ body:not(.dark-theme) .mode-option-card:hover {
 }
 
 .comfort-card-svg {
-  width: 160px;
-  height: 160px;
+  width: 90px;
+  height: 90px;
   display: block;
 }
 
@@ -3280,7 +3530,7 @@ body:not(.dark-theme) .mode-option-card:hover {
 
 .comfort-card-title {
   font-family: var(--font-receipt);
-  font-size: 13px;
+  font-size: 18px;
   font-weight: bold;
   letter-spacing: 1px;
   margin-bottom: 6px;
@@ -3288,8 +3538,311 @@ body:not(.dark-theme) .mode-option-card:hover {
 
 .comfort-card-text {
   font-family: var(--font-receipt);
-  font-size: 11px;
-  line-height: 1.4;
-  font-style: italic;
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: bold;
   padding: 0 8px;
+}
+
+/* -------------------------------------------------------------
+   RECREATED THEMING ENGINE - VINTAGE & BOARDING PASS STYLES
+   ------------------------------------------------------------- */
+.collage-receipt-container.theme-vintage {
+  background: #ffffff;
+  color: #000000;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.vintage-theme-header {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.vintage-title-container {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.vintage-title-snap {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 2px;
+}
+
+.vintage-title-script {
+  font-family: var(--font-script);
+  font-size: 38px;
+  font-weight: 400;
+  transform: rotate(-5deg);
+  display: inline-block;
+}
+
+.vintage-divider-line {
+  width: 100%;
+  height: 2px;
+  background-color: #000000;
+  margin: 6px 0;
+}
+
+.vintage-photo-container-solo {
+  width: 100%;
+  aspect-ratio: 1.0;
+  border: 2px solid #000000;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.vintage-photo-container-solo .photo-item {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vintage-photo-container-grid-4 {
+  width: 100%;
+  aspect-ratio: 1.0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+  background-color: #000000;
+  border: 2px solid #000000;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.vintage-photo-container-grid-4 .photo-item {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vintage-photo-container-grid-3 {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: #000000;
+  border: 2px solid #000000;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.vintage-photo-container-grid-3 .photo-item {
+  width: 100%;
+  aspect-ratio: 1.5;
+  object-fit: cover;
+}
+
+.vintage-theme-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vintage-event-name {
+  font-family: var(--font-ui);
+  font-weight: 900;
+  font-size: 34px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 4px 0;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vintage-date {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 8px 0;
+}
+
+/* Boarding Pass Theme */
+.collage-receipt-container.theme-boarding {
+  background: #ffffff;
+  color: #000000;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.boarding-theme-header {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.boarding-header-right {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.boarding-plane-icon {
+  font-size: 12px;
+}
+
+.boarding-photo-container-solo {
+  width: 100%;
+  aspect-ratio: 1.0;
+  border: 2px solid #000000;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.boarding-photo-container-solo .photo-item {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.boarding-theme-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.boarding-info-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 0.8fr;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.boarding-info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.boarding-info-label {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  color: #666666;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.boarding-info-value {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.boarding-dashed-line {
+  width: 100%;
+  border-top: 1.5px dashed #000000;
+  margin: 8px 0 12px 0;
+}
+
+.boarding-pass-codes {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.boarding-code {
+  font-family: var(--font-ui);
+  font-weight: 900;
+  font-size: 38px;
+  letter-spacing: 1px;
+}
+
+.boarding-plane-divider {
+  font-size: 28px;
+}
+
+.boarding-pass-label {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 4px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+/* Scan / Footer Side-by-Side Sections */
+.theme-footer-scan-section {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  gap: 16px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.15);
+  padding-top: 12px;
+}
+
+.theme-qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 90px;
+}
+
+.theme-qr-container img {
+  width: 80px;
+  height: 80px;
+  border: 1px solid #000;
+  padding: 2px;
+  background: #fff;
+}
+
+.theme-qr-label {
+  font-family: var(--font-ui);
+  font-size: 7px;
+  font-weight: 700;
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.theme-barcode-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.theme-barcode-container svg {
+  width: 100%;
+  max-width: 180px;
+  height: 50px;
+}
+
+.theme-barcode-number {
+  font-family: var(--font-receipt);
+  font-size: 9px;
+  font-weight: 700;
+  margin-top: 4px;
+  letter-spacing: 1px;
 }
