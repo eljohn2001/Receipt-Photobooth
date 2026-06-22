@@ -54,7 +54,7 @@ export const classicSoloTemplate: ReceiptTemplate = {
         <div class="collage-receipt-container theme-boarding">
           <div class="boarding-theme-header" style="width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
             ${renderReceiptHeader(metadata)}
-            <div style="width: 100%; text-align: right; font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-top: 6px;">
+            <div style="width: 100%; text-align: right; font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-top: 6px;">
               <span class="boarding-plane-icon">✈</span> POWERED BY BLCKLABS
             </div>
           </div>

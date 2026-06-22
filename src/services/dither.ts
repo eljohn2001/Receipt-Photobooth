@@ -32,7 +32,7 @@ export function ditherImage(
       const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
       const data = imageData.data;
 
-      // Convert to smooth grayscale and apply contrast adjustment for crisp prints
+      // Convert to smooth grayscale and apply contrast, brightness, and gamma correction for premium thermal prints
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
         const g = data[i + 1];
@@ -41,9 +41,15 @@ export function ditherImage(
         // Standard luminance weights
         let gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
-        // Boost contrast (push midtones slightly out to make it print crisp on thermal paper)
-        const contrastFactor = 1.2;
+        // Lift shadows and midtones using gamma correction (makes faces much lighter and clearer)
+        gray = Math.pow(gray / 255, 0.72) * 255;
+
+        // Boost contrast slightly (keeps details crisp)
+        const contrastFactor = 1.15;
         gray = (gray - 128) * contrastFactor + 128;
+
+        // Brightness offset to wash out solid black areas slightly
+        gray = gray + 15;
         gray = Math.max(0, Math.min(255, gray));
 
         data[i] = gray;

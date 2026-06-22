@@ -1375,14 +1375,14 @@ body {
 }
 
 .fortune-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   letter-spacing: 1px;
   margin-bottom: 4px;
 }
 
 .fortune-text {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.45;
   padding: 0 4px;
   font-weight: bold;
@@ -1443,7 +1443,7 @@ body {
 
 /* Date theme borders */
 .hearts-border {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 2.2px;
   white-space: nowrap;
   overflow: hidden;
@@ -1480,7 +1480,7 @@ body {
 }
 
 .receipt-chemistry {
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .chem-title {
@@ -1497,7 +1497,7 @@ body {
 
 /* Journal design */
 .journal-quote {
-  font-size: 11px;
+  font-size: 13px;
   text-align: center;
 }
 
@@ -1510,7 +1510,7 @@ body {
 }
 
 .journal-lines-header {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   margin-bottom: 5px;
 }
@@ -1523,7 +1523,7 @@ body {
 
 /* Seasonal receipt */
 .seasonal-border {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 1.5px;
   white-space: nowrap;
   overflow: hidden;
@@ -1538,23 +1538,23 @@ body {
 
 .coupon-title {
   font-weight: 700;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .coupon-desc {
-  font-size: 10px;
+  font-size: 12px;
   margin: 4px 0;
 }
 
 .coupon-discount {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: 1px;
   margin: 6px 0;
 }
 
 .coupon-fineprint {
-  font-size: 8px;
+  font-size: 10px;
   color: #555;
 }
 
@@ -1882,29 +1882,29 @@ body {
 
   /* Make printed texts bolder and larger for clean legibility */
   .fortune-text {
-    font-size: 15px !important;
+    font-size: 17px !important;
     font-weight: 700 !important;
     line-height: 1.45 !important;
     font-style: normal !important;
   }
 
   .fortune-title {
-    font-size: 14px !important;
+    font-size: 16px !important;
     font-weight: 800 !important;
   }
 
   .template-footer {
-    font-size: 13px !important;
+    font-size: 15px !important;
     font-weight: 700 !important;
   }
 
   .comfort-card-title {
-    font-size: 19px !important;
+    font-size: 22px !important;
     font-weight: 800 !important;
   }
 
   .comfort-card-text {
-    font-size: 18.5px !important;
+    font-size: 21px !important;
     font-weight: 700 !important;
     line-height: 1.55 !important;
     font-style: normal !important;
@@ -2017,7 +2017,7 @@ body {
 
   .template-header-name {
     font-family: 'Playfair Display', Georgia, serif !important;
-    font-size: 20px !important;
+    font-size: 24px !important;
     font-weight: bold !important;
     text-transform: uppercase !important;
     text-align: center !important;
@@ -2067,7 +2067,7 @@ body {
     justify-content: space-between !important;
     align-items: center !important;
     font-family: 'Courier Prime', 'Courier New', Courier, monospace !important;
-    font-size: 9px !important;
+    font-size: 15px !important;
     font-weight: bold !important;
     margin-top: 12px !important;
   }
@@ -2956,7 +2956,7 @@ body {
 
 .template-header-name {
   font-family: var(--font-vintage);
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -3049,7 +3049,7 @@ body {
   justify-content: space-between;
   align-items: center;
   font-family: var(--font-receipt);
-  font-size: 12px;
+  font-size: 15px;
   font-weight: bold;
   color: #000000;
   margin-top: 12px;
@@ -3838,7 +3838,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .comfort-card-title {
   font-family: var(--font-receipt);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: bold;
   letter-spacing: 1px;
   margin-bottom: 6px;
@@ -3846,7 +3846,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .comfort-card-text {
   font-family: var(--font-receipt);
-  font-size: 18px;
+  font-size: 21px;
   line-height: 1.5;
   font-weight: bold;
   padding: 0 8px;
@@ -3882,13 +3882,13 @@ body:not(.dark-theme) .mode-option-card.selected {
 .vintage-title-snap {
   font-family: var(--font-ui);
   font-weight: 800;
-  font-size: 26px;
+  font-size: 30px;
   letter-spacing: 2px;
 }
 
 .vintage-title-script {
   font-family: var(--font-script);
-  font-size: 38px;
+  font-size: 44px;
   font-weight: 400;
   transform: rotate(-5deg);
   display: inline-block;
@@ -3964,7 +3964,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 .vintage-event-name {
   font-family: var(--font-ui);
   font-weight: 900;
-  font-size: 34px;
+  font-size: 38px;
   letter-spacing: 1px;
   text-transform: uppercase;
   text-align: center;
@@ -3978,7 +3978,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 .vintage-date {
   font-family: var(--font-ui);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 1px;
   text-transform: uppercase;
   margin: 8px 0;
@@ -4004,7 +4004,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .boarding-header-right {
   font-family: var(--font-ui);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 1px;
 }
@@ -4050,7 +4050,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .boarding-info-label {
   font-family: var(--font-ui);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   color: #666666;
   letter-spacing: 0.5px;
@@ -4059,7 +4059,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .boarding-info-value {
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -4081,18 +4081,18 @@ body:not(.dark-theme) .mode-option-card.selected {
 .boarding-code {
   font-family: var(--font-ui);
   font-weight: 900;
-  font-size: 38px;
+  font-size: 44px;
   letter-spacing: 1px;
 }
 
 .boarding-plane-divider {
-  font-size: 28px;
+  font-size: 32px;
 }
 
 .boarding-pass-label {
   font-family: var(--font-ui);
   font-weight: 700;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 4px;
   margin-bottom: 12px;
   text-transform: uppercase;
@@ -4127,7 +4127,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .theme-qr-label {
   font-family: var(--font-ui);
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 700;
   margin-top: 4px;
   letter-spacing: 0.5px;
@@ -4149,7 +4149,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .theme-barcode-number {
   font-family: var(--font-receipt);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   margin-top: 4px;
   letter-spacing: 1px;
