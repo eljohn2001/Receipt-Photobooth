@@ -72,6 +72,17 @@
         <!-- 6. Finished & Digital Download -->
         <div class="view-panel" id="view-finished"></div>
       </div>
+      
+      <!-- Global Curtain Panels for Welcome Screen Transition -->
+      <div id="global-curtain-container" class="global-curtain-container hidden">
+        <!-- Hidden hotspot for admin panel when curtains are closed -->
+        <div class="admin-hotspot" id="admin-curtain-hotspot"></div>
+        <div class="curtain-container">
+          <div class="curtain-panel curtain-left"></div>
+          <div class="curtain-panel curtain-right"></div>
+        </div>
+        <div class="curtain-overlay-panel" id="curtain-overlay-panel"></div>
+      </div>
     </div>
 
     <!-- Hidden printing queue container (rendered at 58mm via CSS media print query) -->
@@ -96,7 +107,7 @@
                 🎨 Visual Theme
               </button>
               <button type="button" class="admin-tab-btn" data-tab="system">
-                ⚙️ System & APIs
+                ⚙️ System & Hardware
               </button>
               <button type="button" class="admin-tab-btn" data-tab="sync">
                 ☁️ Cloud Sync
@@ -176,6 +187,7 @@
                     <select id="input-home-mode">
                       <option value="graphic">Full Screen Welcome Graphic (Touch anywhere to start)</option>
                       <option value="layout">Interactive Theme Layout (Logo, Printer Animation)</option>
+                      <option value="curtain">Theatre Curtain Transition (Closed until tap)</option>
                     </select>
                   </div>
 
@@ -197,6 +209,24 @@
                         <span>📤</span> Click to upload logo image
                       </label>
                       <div id="preview-logo-container" class="uploader-preview-img hidden"></div>
+                    </div>
+                  </div>
+
+                  <div class="form-group" id="curtain-overlay-group">
+                    <label>Curtain Overlay Graphic (Transparent PNG recommended)</label>
+                    <div class="file-uploader-box">
+                      <input type="file" id="input-curtain-overlay-file" accept="image/png" class="file-input-hidden" />
+                      <label for="input-curtain-overlay-file" class="file-uploader-label">
+                        <span>📤</span> Click to upload overlay graphic
+                      </label>
+                      <div id="preview-curtain-overlay-container" class="uploader-preview-img hidden"></div>
+                    </div>
+                  </div>
+
+                  <div class="form-group" id="curtain-color-group">
+                    <label for="input-curtain-color">Curtain Base Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="input-curtain-color" />
                     </div>
                   </div>
 
@@ -228,6 +258,14 @@
                       <option value="medium">Medium (Standard default contrast)</option>
                       <option value="dark">Dark (Deep highlights, high definition)</option>
                       <option value="deep">Deep Black (Maximum heat, stark contrast)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-print-mode">Printer Connection Mode</label>
+                    <select id="input-print-mode">
+                      <option value="usb">USB Direct Connection (OTG)</option>
+                      <option value="bluetooth">Bluetooth Direct Connection (Wireless)</option>
                     </select>
                   </div>
 

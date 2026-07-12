@@ -25,6 +25,22 @@ public class DirectPrinterPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void printRawBluetooth(PluginCall call) {
+        String base64Data = call.getString("base64Data");
+        if (base64Data == null || base64Data.isEmpty()) {
+            call.reject("base64Data parameter is missing or empty");
+            return;
+        }
+
+        MainActivity activity = (MainActivity) getActivity();
+        if (activity != null) {
+            activity.printToBluetoothPrinterFromPlugin(base64Data, call);
+        } else {
+            call.reject("MainActivity activity instance is null");
+        }
+    }
+
+    @PluginMethod
     public void savePhotoToGallery(PluginCall call) {
         String base64Data = call.getString("base64Data");
         if (base64Data == null || base64Data.isEmpty()) {

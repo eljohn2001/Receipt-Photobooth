@@ -32,11 +32,23 @@ import android.provider.MediaStore;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import java.util.UUID;
+import java.io.IOException;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import android.Manifest;
+import android.view.WindowManager;
 
 public class MainActivity extends BridgeActivity {
     private static final String ACTION_USB_PERMISSION = "com.receiptbooth.app.USB_PERMISSION";
+    private static final int REQUEST_BT_PERMISSION = 1001;
     private byte[] pendingBytesToPrint = null;
     private PluginCall pendingPluginCall = null;
+    private byte[] pendingBluetoothBytesToPrint = null;
+    private PluginCall pendingBluetoothPluginCall = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -72,6 +84,10 @@ public class MainActivity extends BridgeActivity {
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
         getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode = 
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         if (controller != null) {
             controller.hide(WindowInsetsCompat.Type.systemBars());
@@ -86,6 +102,229 @@ public class MainActivity extends BridgeActivity {
             unregisterReceiver(usbReceiver);
         } catch (Exception e) {
             // Ignore if not registered
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_BT_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (pendingBluetoothBytesToPrint != null) {
+                    printToBluetoothPrinter(pendingBluetoothBytesToPrint);
+                }
+            } else {
+                Log.e("MainActivity", "Bluetooth connect permission denied");
+                if (pendingBluetoothPluginCall != null) {
+                    pendingBluetoothPluginCall.reject("Bluetooth connection permission denied by user");
+                    pendingBluetoothPluginCall = null;
+                }
+            }
+            pendingBluetoothBytesToPrint = null;
+        }
+    }
+
+    public void printToBluetoothPrinterFromPlugin(String base64Data, PluginCall call) {
+        try {
+            byte[] bytes = Base64.decode(base64Data, Base64.DEFAULT);
+            pendingBluetoothPluginCall = call;
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    pendingBluetoothBytesToPrint = bytes;
+                    ActivityCompat.requestPermissions(
+                        this, 
+                        new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 
+                        REQUEST_BT_PERMISSION
+                    );
+                } else {
+                    printToBluetoothPrinter(bytes);
+                }
+            } else {
+                printToBluetoothPrinter(bytes);
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Failed to decode base64 print data", e);
+            call.reject("Failed to decode base64 print data: " + e.getMessage());
+        }
+    }
+
+    private void printToBluetoothPrinter(byte[] bytes) {
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter == null) {
+            Log.e("MainActivity", "Bluetooth is not supported on this device");
+            if (pendingBluetoothPluginCall != null) {
+                pendingBluetoothPluginCall.reject("Bluetooth is not supported on this device");
+                pendingBluetoothPluginCall = null;
+            }
+            return;
+        }
+
+        if (!bluetoothAdapter.isEnabled()) {
+            Log.e("MainActivity", "Bluetooth is turned off");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this, "Please enable Bluetooth in your device settings.", Toast.LENGTH_LONG).show();
+                }
+            });
+            if (pendingBluetoothPluginCall != null) {
+                pendingBluetoothPluginCall.reject("Bluetooth is turned off");
+                pendingBluetoothPluginCall = null;
+            }
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && 
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            if (pendingBluetoothPluginCall != null) {
+                pendingBluetoothPluginCall.reject("Bluetooth connect permission is missing");
+                pendingBluetoothPluginCall = null;
+            }
+            return;
+        }
+
+        java.util.Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+        BluetoothDevice printerDevice = null;
+
+        if (pairedDevices != null && pairedDevices.size() > 0) {
+            for (BluetoothDevice device : pairedDevices) {
+                String name = device.getName();
+                if (name != null) {
+                    String lowerName = name.toLowerCase();
+                    if (lowerName.contains("printer") || 
+                        lowerName.contains("pos") || 
+                        lowerName.contains("thermal") || 
+                        lowerName.contains("mtp") || 
+                        lowerName.contains("rpp") || 
+                        lowerName.contains("rongta") || 
+                        lowerName.contains("innerprinter") ||
+                        lowerName.contains("58") ||
+                        lowerName.contains("80")) {
+                        printerDevice = device;
+                        Log.i("MainActivity", "Found paired printer device by name: " + name);
+                        break;
+                    }
+                }
+            }
+
+            if (printerDevice == null) {
+                for (BluetoothDevice device : pairedDevices) {
+                    if (device.getBluetoothClass() != null) {
+                        int majorClass = device.getBluetoothClass().getMajorDeviceClass();
+                        if (majorClass == android.bluetooth.BluetoothClass.Device.Major.IMAGING ||
+                            majorClass == android.bluetooth.BluetoothClass.Device.Major.UNCATEGORIZED) {
+                            printerDevice = device;
+                            Log.i("MainActivity", "Found fallback paired device by class: " + device.getName());
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (printerDevice == null && pairedDevices.size() == 1) {
+                printerDevice = pairedDevices.iterator().next();
+                Log.i("MainActivity", "Found only one paired device, using it: " + printerDevice.getName());
+            }
+        }
+
+        if (printerDevice == null) {
+            Log.e("MainActivity", "No paired Bluetooth printer device found");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this, "No paired Bluetooth printer found! Pair your printer in settings first.", Toast.LENGTH_LONG).show();
+                }
+            });
+            if (pendingBluetoothPluginCall != null) {
+                pendingBluetoothPluginCall.reject("No paired Bluetooth printer device found");
+                pendingBluetoothPluginCall = null;
+            }
+            return;
+        }
+
+        final BluetoothDevice targetDevice = printerDevice;
+        final byte[] bytesToPrint = bytes;
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                sendBytesToBluetoothDevice(targetDevice, bytesToPrint);
+            }
+        }).start();
+    }
+
+    private void sendBytesToBluetoothDevice(BluetoothDevice device, byte[] bytes) {
+        UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+        BluetoothSocket socket = null;
+        OutputStream outputStream = null;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && 
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            if (pendingBluetoothPluginCall != null) {
+                pendingBluetoothPluginCall.reject("Bluetooth connection permission denied in thread");
+                pendingBluetoothPluginCall = null;
+            }
+            return;
+        }
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, "Connecting to Bluetooth printer...", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        try {
+            socket = device.createRfcommSocketToServiceRecord(SPP_UUID);
+            socket.connect();
+            outputStream = socket.getOutputStream();
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this, "Sending photo to Bluetooth printer...", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            int chunkSize = 2048;
+            int offset = 0;
+            while (offset < bytes.length) {
+                int len = Math.min(chunkSize, bytes.length - offset);
+                outputStream.write(bytes, offset, len);
+                outputStream.flush();
+                offset += len;
+                Thread.sleep(50);
+            }
+
+            Log.i("MainActivity", "Successfully printed " + offset + " bytes to Bluetooth device");
+            Thread.sleep(500);
+
+            if (pendingBluetoothPluginCall != null) {
+                pendingBluetoothPluginCall.resolve();
+                pendingBluetoothPluginCall = null;
+            }
+
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error during Bluetooth print socket transfer", e);
+            final String errMsg = e.getMessage();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this, "Bluetooth printing failed: " + errMsg, Toast.LENGTH_LONG).show();
+                }
+            });
+            if (pendingBluetoothPluginCall != null) {
+                pendingBluetoothPluginCall.reject("Error during Bluetooth print: " + errMsg);
+                pendingBluetoothPluginCall = null;
+            }
+        } finally {
+            if (outputStream != null) {
+                try { outputStream.close(); } catch (IOException e) {}
+            }
+            if (socket != null) {
+                try { socket.close(); } catch (IOException e) {}
+            }
         }
     }
 

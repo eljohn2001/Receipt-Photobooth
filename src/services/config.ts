@@ -15,7 +15,8 @@ export interface KioskConfig {
   customMessage: string;
   imgurClientId?: string;
   imgbbApiKey?: string;
-  homeScreenMode?: 'graphic' | 'layout';
+  homeScreenMode?: 'graphic' | 'layout' | 'curtain';
+  curtainOverlayDataUrl?: string | null; // base64 PNG
   socialTag?: string;
   enableQrCode?: boolean;
   homeSubtitleTop?: string;
@@ -24,6 +25,8 @@ export interface KioskConfig {
   enableMemoryFortune?: boolean;
   enableComfortCards?: boolean;
   printContrast?: 'light' | 'medium' | 'dark' | 'deep';
+  curtainColor?: string;
+  printerMode?: 'usb' | 'bluetooth';
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -39,6 +42,8 @@ export const DEFAULT_CONFIG: KioskConfig = {
   imgurClientId: '6e08c02c63d5ad3',
   imgbbApiKey: 'c6b792880a4b31c6d365bd5586f10dc2',
   homeScreenMode: 'graphic',
+  curtainOverlayDataUrl: null,
+  curtainColor: '#111111',
   socialTag: 'beansandbites',
   enableQrCode: true,
   homeSubtitleTop: '06.21.2026',
@@ -46,7 +51,8 @@ export const DEFAULT_CONFIG: KioskConfig = {
   adminPin: '1234',
   enableMemoryFortune: true,
   enableComfortCards: true,
-  printContrast: 'medium'
+  printContrast: 'medium',
+  printerMode: 'usb'
 };
 
 const STORAGE_KEY = 'receipt_booth_kiosk_config';

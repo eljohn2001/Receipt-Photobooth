@@ -28,6 +28,25 @@ export async function verifyLicenseKeyOnline(
   key: string,
   deviceId: string
 ): Promise<{ success: boolean; error?: string; license?: LicenseRecord; isTransientError?: boolean }> {
+  // Developer/Bypass Activation Code
+  const upperKey = key.trim().toUpperCase();
+  if (upperKey === 'SNAP-DEV-2026' || upperKey === 'SNAP-9999-9999-9999') {
+    return {
+      success: true,
+      license: {
+        id: 'dev-bypass-id',
+        key: upperKey,
+        client_name: 'Developer Mode',
+        client_email: 'developer@example.com',
+        device_id: deviceId,
+        is_active: true,
+        activated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    };
+  }
+
   try {
     // 1. Fetch license by key
     const { data: license, error } = await supabase

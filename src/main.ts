@@ -13,6 +13,7 @@ import { loadKioskConfig, saveKioskConfig, resetKioskConfig, type KioskConfig } 
 import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia, listOfflineShares, deleteOfflineShare } from './services/db';
 import { checkLicenseOnStartup, deactivateLicense } from './services/license';
 import { uploadReceiptPhotos } from './services/upload';
+import { audioManager } from './services/audio';
 import { getShareRecord, getPublicStorageUrl } from './services/supabase';
 import defaultSnapHome from './assets/Snap Home.png';
 
@@ -328,6 +329,7 @@ async function applyTheme(config: KioskConfig) {
   root.style.setProperty('--text-primary', config.textColor);
   root.style.setProperty('--accent-color', config.textColor);
   root.style.setProperty('--accent-secondary', config.textColor);
+  root.style.setProperty('--curtain-color', config.curtainColor || '#111111');
 
   // Set home screen split typography colors
   const textHome = config.textColorHome || '#000000';
@@ -442,6 +444,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. Navigation State Machine
   function navigateTo(nextState: AppState, params?: any) {
+    const config = loadKioskConfig();
+    const isCurtainMode = config.homeScreenMode === 'curtain';
+
+    // If returning to the welcome screen in curtain mode, close the curtains first
+    if (nextState === 'idle' && currentActiveState !== 'idle' && isCurtainMode) {
+      const globalCurtain = document.getElementById('global-curtain-container');
+      if (globalCurtain) {
+        // Show the global curtain and start it as open/parted
+        globalCurtain.classList.remove('hidden');
+        globalCurtain.classList.add('curtains-parted');
+        const overlayPanel = globalCurtain.querySelector('#curtain-overlay-panel');
+        if (overlayPanel) {
+          (overlayPanel as HTMLElement).style.opacity = '0';
+          overlayPanel.classList.remove('hidden');
+        }
+
+        // Force browser layout reflow to register the starting layout state
+        void globalCurtain.offsetHeight;
+
+        // Close the curtains smoothly
+        globalCurtain.classList.remove('curtains-parted');
+        if (overlayPanel) {
+          setTimeout(() => {
+            (overlayPanel as HTMLElement).style.opacity = '1';
+          }, 200);
+        }
+
+        // Play the curtain close sound
+        audioManager.playPaperTear();
+
+        // Perform actual state transition behind the closed curtains after transition duration (1.2s)
+        setTimeout(() => {
+          performNavigation(nextState, params, true);
+        }, 1200);
+        return;
+      }
+    }
+
+    // Otherwise, perform the navigation normally
+    performNavigation(nextState, params, false);
+  }
+
+  function performNavigation(nextState: AppState, params?: any, forceInstant?: boolean) {
     const prevView = views[currentActiveState];
     const nextView = views[nextState];
 
@@ -476,6 +521,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Slide viewport container to the active slide index
+    const config = loadKioskConfig();
+    const isCurtainMode = config.homeScreenMode === 'curtain';
+    const isInstant = forceInstant || (isCurtainMode && (nextState === 'idle' || currentActiveState === 'idle'));
+
+    if (isInstant) {
+      slider!.classList.add('no-transition');
+    } else {
+      slider!.classList.remove('no-transition');
+    }
+
     const slideIndex = stateIndexMap[nextState];
     slider!.style.transform = `translateX(-${slideIndex * 100}vw)`;
 
@@ -540,6 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminModal = document.getElementById('admin-modal');
   const configForm = document.getElementById('admin-config-form') as HTMLFormElement;
   const logoFileInput = document.getElementById('input-logo-file') as HTMLInputElement;
+  const curtainOverlayInput = document.getElementById('input-curtain-overlay-file') as HTMLInputElement;
   const bgFileInput = document.getElementById('input-bg-file') as HTMLInputElement;
   const closeBtn = document.getElementById('admin-close-x');
   const cancelBtn = document.getElementById('admin-cancel-btn');
@@ -547,6 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const deactivateBtn = document.getElementById('admin-deactivate-btn');
 
   let currentLogoDataUrl: string | null = null;
+  let currentCurtainOverlayDataUrl: string | null = null;
   let pendingBgFile: File | null = null;
   let bgFileType: 'image' | 'video' | null = null;
 
@@ -555,6 +612,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!container) return;
     if (dataUrl) {
       container.innerHTML = `<img src="${dataUrl}" alt="Logo Preview" />`;
+      container.classList.remove('hidden');
+    } else {
+      container.innerHTML = '';
+      container.classList.add('hidden');
+    }
+  }
+
+  function updateCurtainOverlayPreview(dataUrl: string | null) {
+    const container = document.getElementById('preview-curtain-overlay-container');
+    if (!container) return;
+    if (dataUrl) {
+      container.innerHTML = `<img src="${dataUrl}" alt="Overlay Preview" />`;
       container.classList.remove('hidden');
     } else {
       container.innerHTML = '';
@@ -589,9 +658,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
     const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
     const printContrastSelect = document.getElementById('input-print-contrast') as HTMLSelectElement;
+    const printModeSelect = document.getElementById('input-print-mode') as HTMLSelectElement;
     const subtitleTopInput = document.getElementById('input-home-subtitle-top') as HTMLInputElement;
     const subtitleBottomInput = document.getElementById('input-home-subtitle-bottom') as HTMLInputElement;
     const adminPinInput = document.getElementById('input-admin-pin') as HTMLInputElement;
+    const curtainColorInput = document.getElementById('input-curtain-color') as HTMLInputElement;
     
     if (nameInput) nameInput.value = config.cafeName;
     if (addressInput) addressInput.value = config.cafeAddress;
@@ -603,9 +674,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (textColorHomeInput) textColorHomeInput.value = config.textColorHome || '#000000';
     if (homeModeSelect) homeModeSelect.value = config.homeScreenMode || 'graphic';
     if (printContrastSelect) printContrastSelect.value = config.printContrast || 'medium';
+    if (printModeSelect) printModeSelect.value = config.printerMode || 'usb';
     if (subtitleTopInput) subtitleTopInput.value = config.homeSubtitleTop || '';
     if (subtitleBottomInput) subtitleBottomInput.value = config.homeSubtitleBottom || '';
     if (adminPinInput) adminPinInput.value = config.adminPin || '1234';
+    if (curtainColorInput) curtainColorInput.value = config.curtainColor || '#111111';
 
     const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
     if (enableQrInput) enableQrInput.checked = config.enableQrCode !== false;
@@ -623,6 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (imgbbApiKeyInput) imgbbApiKeyInput.value = config.imgbbApiKey || '';
 
     updateLogoPreview(config.logoDataUrl);
+    updateCurtainOverlayPreview(config.curtainOverlayDataUrl || null);
 
     if (config.backgroundType) {
       const blob = await getBackgroundMedia();
@@ -643,6 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = loadKioskConfig();
     await populateAdminForm(config);
     currentLogoDataUrl = config.logoDataUrl;
+    currentCurtainOverlayDataUrl = config.curtainOverlayDataUrl || null;
     pendingBgFile = null;
     bgFileType = config.backgroundType;
 
@@ -703,6 +778,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  curtainOverlayInput?.addEventListener('change', () => {
+    const file = curtainOverlayInput.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        currentCurtainOverlayDataUrl = result;
+        updateCurtainOverlayPreview(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
   bgFileInput?.addEventListener('change', () => {
     const file = bgFileInput.files?.[0];
     if (file) {
@@ -721,6 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModal = () => {
     adminModal?.classList.add('hidden');
     if (logoFileInput) logoFileInput.value = '';
+    if (curtainOverlayInput) curtainOverlayInput.value = '';
     if (bgFileInput) bgFileInput.value = '';
     pendingBgFile = null;
     bgFileType = null;
@@ -749,12 +838,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const textColorHomeInput = document.getElementById('input-text-home-color') as HTMLInputElement;
     const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
     const printContrastSelect = document.getElementById('input-print-contrast') as HTMLSelectElement;
+    const printModeSelect = document.getElementById('input-print-mode') as HTMLSelectElement;
     const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
     const enableFortuneInput = document.getElementById('input-enable-fortune') as HTMLInputElement;
     const enableComfortInput = document.getElementById('input-enable-comfort') as HTMLInputElement;
     const subtitleTopInput = document.getElementById('input-home-subtitle-top') as HTMLInputElement;
     const subtitleBottomInput = document.getElementById('input-home-subtitle-bottom') as HTMLInputElement;
     const adminPinInput = document.getElementById('input-admin-pin') as HTMLInputElement;
+    const curtainColorInput = document.getElementById('input-curtain-color') as HTMLInputElement;
 
     // Handle background media save
     let resolvedBgType: 'image' | 'video' | null = bgFileType;
@@ -779,11 +870,14 @@ document.addEventListener('DOMContentLoaded', () => {
       backgroundType: resolvedBgType,
       imgurClientId: imgurClientIdInput ? imgurClientIdInput.value.trim() : '',
       imgbbApiKey: imgbbApiKeyInput ? imgbbApiKeyInput.value.trim() : '',
-      homeScreenMode: homeModeSelect ? (homeModeSelect.value as 'graphic' | 'layout') : 'graphic',
+      homeScreenMode: homeModeSelect ? (homeModeSelect.value as 'graphic' | 'layout' | 'curtain') : 'graphic',
+      curtainOverlayDataUrl: currentCurtainOverlayDataUrl,
+      curtainColor: curtainColorInput ? curtainColorInput.value : '#111111',
       enableQrCode: enableQrInput ? enableQrInput.checked : true,
       enableMemoryFortune: enableFortuneInput ? enableFortuneInput.checked : true,
       enableComfortCards: enableComfortInput ? enableComfortInput.checked : true,
       printContrast: printContrastSelect ? (printContrastSelect.value as 'light' | 'medium' | 'dark' | 'deep') : 'medium',
+      printerMode: printModeSelect ? (printModeSelect.value as 'usb' | 'bluetooth') : 'usb',
       homeSubtitleTop: subtitleTopInput ? subtitleTopInput.value.trim() : '',
       homeSubtitleBottom: subtitleBottomInput ? subtitleBottomInput.value.trim() : '',
       adminPin: adminPinInput ? adminPinInput.value.trim() : '1234'
@@ -810,6 +904,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await applyTheme(config);
       await populateAdminForm(config);
       currentLogoDataUrl = config.logoDataUrl;
+      currentCurtainOverlayDataUrl = config.curtainOverlayDataUrl || null;
       pendingBgFile = null;
       bgFileType = null;
 

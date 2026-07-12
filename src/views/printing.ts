@@ -3,9 +3,11 @@ import { audioManager } from '../services/audio';
 import type { AppSession } from '../types';
 import { generateReceiptEscPos } from '../services/download';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { loadKioskConfig } from '../services/config';
 
 interface DirectPrinterPlugin {
   printRawUsb(options: { base64Data: string }): Promise<void>;
+  printRawBluetooth(options: { base64Data: string }): Promise<void>;
   savePhotoToGallery(options: { base64Data: string }): Promise<void>;
 }
 
@@ -145,13 +147,20 @@ export class PrintingView extends BaseView {
           }
           const base64Data = btoa(binaryString);
           
+          const config = loadKioskConfig();
+          const isBluetooth = config.printerMode === 'bluetooth';
+
           if (headlineEl) {
             headlineEl.textContent = copies > 1
               ? `SENDING COPY ${i + 1} OF ${copies}...`
-              : 'SENDING TO USB PRINTER...';
+              : (isBluetooth ? 'SENDING TO BLUETOOTH PRINTER...' : 'SENDING TO USB PRINTER...');
           }
           
-          await DirectPrinter.printRawUsb({ base64Data });
+          if (isBluetooth) {
+            await DirectPrinter.printRawBluetooth({ base64Data });
+          } else {
+            await DirectPrinter.printRawUsb({ base64Data });
+          }
           
           audioManager.stopDispenser();
           if (i < copies - 1) {
@@ -159,8 +168,10 @@ export class PrintingView extends BaseView {
           }
         }
       } catch (e: any) {
-        console.error('Direct USB print failed:', e);
-        alert('Direct USB print failed: ' + (e.message || e));
+        const config = loadKioskConfig();
+        const isBluetooth = config.printerMode === 'bluetooth';
+        console.error('Direct print failed:', e);
+        alert((isBluetooth ? 'Direct Bluetooth print failed: ' : 'Direct USB print failed: ') + (e.message || e));
         audioManager.stopDispenser();
       }
     } else {
