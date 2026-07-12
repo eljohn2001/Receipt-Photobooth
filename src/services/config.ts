@@ -1,7 +1,4 @@
-/**
- * Kiosk configuration storage service for branding customisation.
- * Stores values locally in browser's localStorage.
- */
+import type { PrintPackage } from '../types';
 
 export interface KioskConfig {
   cafeName: string;
@@ -27,6 +24,12 @@ export interface KioskConfig {
   printContrast?: 'light' | 'medium' | 'dark' | 'deep';
   curtainColor?: string;
   printerMode?: 'usb' | 'bluetooth';
+  sessionPrice?: number;
+  profitSharePercent?: number;
+  packages?: PrintPackage[];
+  maxPrintsAllowed?: number;
+  currencySymbol?: string;
+  welcomeMessage?: string;
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -52,7 +55,18 @@ export const DEFAULT_CONFIG: KioskConfig = {
   enableMemoryFortune: true,
   enableComfortCards: true,
   printContrast: 'medium',
-  printerMode: 'usb'
+  printerMode: 'usb',
+  sessionPrice: 30.00,
+  profitSharePercent: 60.00,
+  maxPrintsAllowed: 4,
+  currencySymbol: '₱',
+  welcomeMessage: 'Welcome to Snapceipt!',
+  packages: [
+    { id: 'pkg-1', name: '1 Print', printsCount: 1, price: 30, isEnabled: true },
+    { id: 'pkg-2', name: '2 Prints', printsCount: 2, price: 40, isEnabled: true },
+    { id: 'pkg-3', name: '3 Prints', printsCount: 3, price: 50, isEnabled: true },
+    { id: 'pkg-4', name: '4 Prints', printsCount: 4, price: 60, isEnabled: true }
+  ]
 };
 
 const STORAGE_KEY = 'receipt_booth_kiosk_config';

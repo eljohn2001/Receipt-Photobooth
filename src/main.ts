@@ -1,20 +1,24 @@
 import './style.css';
-import type { AppSession, AppState } from './types';
+import type { AppSession, AppState, PrintPackage } from './types';
 import { ActivationView } from './views/activation';
 import { IdleView } from './views/idle';
 import { TemplateView } from './views/template';
+import { PackageSelectionView } from './views/package-selection';
+import { OrderSummaryView } from './views/order-summary';
 import { CaptureView } from './views/capture';
 import { PreviewView } from './views/preview';
 import { PrintingView } from './views/printing';
 import { FinishedView } from './views/finished';
 import { BaseView } from './views/base';
 import { ModeSelectionView } from './views/mode-selection';
+import { AdminPanelView } from './views/admin-panel';
 import { loadKioskConfig, saveKioskConfig, resetKioskConfig, type KioskConfig } from './services/config';
-import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia, listOfflineShares, deleteOfflineShare } from './services/db';
-import { checkLicenseOnStartup, deactivateLicense } from './services/license';
+import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia, listOfflineShares, deleteOfflineShare, listLocalSessions } from './services/db';
+import { checkLicenseOnStartup, deactivateLicense, getDeviceUUID } from './services/license';
 import { uploadReceiptPhotos } from './services/upload';
 import { audioManager } from './services/audio';
-import { getShareRecord, getPublicStorageUrl } from './services/supabase';
+import { getShareRecord, getPublicStorageUrl, supabase } from './services/supabase';
+import { syncPendingSessions, updateBoothTelemetry } from './services/sync';
 import defaultSnapHome from './assets/Snap Home.png';
 
 function renderDownloadPage(
@@ -239,14 +243,24 @@ function renderDownloadPage(
   }
 }
 
-// 1. Check for hybrid download page parameter on startup
+// 1. Check for routing parameters on startup (admin page or download page)
 const urlParams = new URLSearchParams(window.location.search);
 const shareId = urlParams.get('id');
 const photoUrl = urlParams.get('photo');
 const photoBw = urlParams.get('photo_bw');
 const photoColor = urlParams.get('photo_color');
+const isAdminRoute = window.location.pathname.startsWith('/admin') || urlParams.has('admin');
 
-if (shareId) {
+if (isAdminRoute) {
+  // Clear the page structure and render the Admin Dashboard
+  const adminContainer = document.createElement('div');
+  adminContainer.id = 'admin-portal-root';
+  document.body.innerHTML = '';
+  document.body.appendChild(adminContainer);
+  
+  const adminView = new AdminPanelView(adminContainer);
+  adminView.init().catch(err => console.error('Failed to initialize Admin Panel:', err));
+} else if (shareId) {
   // Show a premium loading state first while we fetch from Supabase
   document.body.innerHTML = `
     <div class="download-page-container">
@@ -313,10 +327,12 @@ const stateIndexMap: Record<AppState, number> = {
   'idle': 1,
   'mode-selection': 2,
   'template-selection': 3,
-  'camera-capture': 4,
-  'preview': 5,
-  'printing': 6,
-  'finished': 7
+  'package-selection': 4,
+  'order-summary': 5,
+  'camera-capture': 6,
+  'preview': 7,
+  'printing': 8,
+  'finished': 9
 };
 
 let activeBgObjectUrl: string | null = null;
@@ -433,6 +449,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'idle': new IdleView(document.getElementById('view-idle')!, navigateTo),
     'mode-selection': new ModeSelectionView(document.getElementById('view-mode-selection')!, navigateTo, session),
     'template-selection': new TemplateView(document.getElementById('view-template-selection')!, navigateTo, session),
+    'package-selection': new PackageSelectionView(document.getElementById('view-package-selection')!, navigateTo, session),
+    'order-summary': new OrderSummaryView(document.getElementById('view-order-summary')!, navigateTo, session),
     'camera-capture': new CaptureView(document.getElementById('view-camera-capture')!, navigateTo, session),
     'preview': new PreviewView(document.getElementById('view-preview')!, navigateTo, session),
     'printing': new PrintingView(document.getElementById('view-printing')!, navigateTo, session),
@@ -606,6 +624,81 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentCurtainOverlayDataUrl: string | null = null;
   let pendingBgFile: File | null = null;
   let bgFileType: 'image' | 'video' | null = null;
+  let tempPackages: PrintPackage[] = [];
+
+  function renderAdminPackagesTable(config: KioskConfig) {
+    const tbody = document.getElementById('packages-editor-tbody');
+    if (!tbody) return;
+
+    if (tempPackages.length === 0 && config.packages) {
+      tempPackages = JSON.parse(JSON.stringify(config.packages));
+    }
+
+    const currencyInput = document.getElementById('input-currency-symbol') as HTMLInputElement;
+    const currency = currencyInput ? currencyInput.value.trim() || '₱' : (config.currencySymbol || '₱');
+
+    tbody.innerHTML = tempPackages.map((pkg) => {
+      const statusBadge = pkg.isEnabled 
+        ? `<span class="status-badge online" style="cursor: pointer;" data-action="toggle" data-id="${pkg.id}">Enabled</span>`
+        : `<span class="status-badge offline" style="cursor: pointer; background: #e03131;" data-action="toggle" data-id="${pkg.id}">Disabled</span>`;
+        
+      return `
+        <tr style="border-bottom: 1px solid var(--border-primary);">
+          <td style="padding: 10px; font-weight: 600;">${pkg.name}</td>
+          <td style="padding: 10px; text-align: center;">${pkg.printsCount}</td>
+          <td style="padding: 10px; text-align: right; font-family: monospace;">${currency}${pkg.price.toFixed(2)}</td>
+          <td style="padding: 10px; text-align: center;">${statusBadge}</td>
+          <td style="padding: 10px; text-align: center; display: flex; gap: 5px; justify-content: center;">
+            <button type="button" class="btn-admin" data-action="edit" data-id="${pkg.id}" style="padding: 2px 6px; font-size: 10px; border-radius: 4px;">Edit</button>
+            <button type="button" class="btn-admin" data-action="delete" data-id="${pkg.id}" style="padding: 2px 6px; font-size: 10px; border-radius: 4px; background: #e03131; color: white;">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Wire up events in the table
+    tbody.querySelectorAll('[data-action]').forEach((el) => {
+      const action = el.getAttribute('data-action');
+      const id = el.getAttribute('data-id');
+      if (!id) return;
+
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (action === 'toggle') {
+          const pkg = tempPackages.find(p => p.id === id);
+          if (pkg) {
+            pkg.isEnabled = !pkg.isEnabled;
+            renderAdminPackagesTable(config);
+          }
+        } else if (action === 'edit') {
+          const pkg = tempPackages.find(p => p.id === id);
+          if (pkg) {
+            const formTitle = document.getElementById('package-form-title');
+            const editorId = document.getElementById('editor-package-id') as HTMLInputElement;
+            const editorName = document.getElementById('editor-package-name') as HTMLInputElement;
+            const editorPrints = document.getElementById('editor-package-prints') as HTMLInputElement;
+            const editorPrice = document.getElementById('editor-package-price') as HTMLInputElement;
+            const cancelBtn = document.getElementById('btn-package-cancel');
+            const saveBtn = document.getElementById('btn-package-save');
+
+            if (formTitle) formTitle.textContent = 'EDIT PRINT PACKAGE';
+            if (editorId) editorId.value = pkg.id;
+            if (editorName) editorName.value = pkg.name;
+            if (editorPrints) editorPrints.value = pkg.printsCount.toString();
+            if (editorPrice) editorPrice.value = pkg.price.toString();
+            if (cancelBtn) cancelBtn.style.display = 'inline-block';
+            if (saveBtn) saveBtn.textContent = 'Update Package';
+          }
+        } else if (action === 'delete') {
+          if (confirm('Are you sure you want to delete this package?')) {
+            tempPackages = tempPackages.filter(p => p.id !== id);
+            renderAdminPackagesTable(config);
+          }
+        }
+      });
+    });
+  }
 
   function updateLogoPreview(dataUrl: string | null) {
     const container = document.getElementById('preview-logo-container');
@@ -680,6 +773,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (adminPinInput) adminPinInput.value = config.adminPin || '1234';
     if (curtainColorInput) curtainColorInput.value = config.curtainColor || '#111111';
 
+    const sessionPriceInput = document.getElementById('input-session-price') as HTMLInputElement;
+    const profitShareInput = document.getElementById('input-profit-share') as HTMLInputElement;
+    if (sessionPriceInput) sessionPriceInput.value = (config.sessionPrice !== undefined ? config.sessionPrice : 5.00).toFixed(2);
+    if (profitShareInput) profitShareInput.value = (config.profitSharePercent !== undefined ? config.profitSharePercent : 60.00).toString();
+
     const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
     if (enableQrInput) enableQrInput.checked = config.enableQrCode !== false;
 
@@ -710,6 +808,19 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       updateBgPreview(null);
     }
+
+    // Populate print packages config
+    const currencyInput = document.getElementById('input-currency-symbol') as HTMLInputElement;
+    const maxPrintsInput = document.getElementById('input-max-prints') as HTMLInputElement;
+    const welcomeMsgInput = document.getElementById('input-welcome-msg') as HTMLInputElement;
+
+    if (currencyInput) currencyInput.value = config.currencySymbol || '₱';
+    if (maxPrintsInput) maxPrintsInput.value = (config.maxPrintsAllowed || 4).toString();
+    if (welcomeMsgInput) welcomeMsgInput.value = config.welcomeMessage || '';
+
+    // Render print packages list
+    tempPackages = config.packages ? JSON.parse(JSON.stringify(config.packages)) : [];
+    renderAdminPackagesTable(config);
   }
 
   // Open modal handler
@@ -729,7 +840,256 @@ document.addEventListener('DOMContentLoaded', () => {
       countText.textContent = `${offlineShares.length} captures saved offline`;
       syncBtn.disabled = offlineShares.length === 0;
     }
+
+    // Load statistics on modal open
+    loadAdminStatistics();
   });
+
+  // Bind statistics tab controls
+  const statsTabBtn = document.querySelector('.admin-tab-btn[data-tab="statistics"]');
+  statsTabBtn?.addEventListener('click', () => {
+    loadAdminStatistics();
+  });
+
+  const refreshStatsBtn = document.getElementById('admin-refresh-stats-btn');
+  refreshStatsBtn?.addEventListener('click', () => {
+    loadAdminStatistics();
+  });
+
+  const forceSyncBtn = document.getElementById('admin-force-sync-btn');
+  forceSyncBtn?.addEventListener('click', async () => {
+    const forceSyncBtnEl = forceSyncBtn as HTMLButtonElement;
+    forceSyncBtnEl.disabled = true;
+    forceSyncBtnEl.textContent = 'Syncing...';
+    try {
+      const { successCount, failedCount } = await syncPendingSessions();
+      alert(`Sync completed: ${successCount} sessions uploaded. Failed: ${failedCount}.`);
+      await loadAdminStatistics();
+    } catch (err) {
+      console.error('[Force Sync Exception]', err);
+      alert('Force sync operation failed.');
+    } finally {
+      forceSyncBtnEl.disabled = false;
+      forceSyncBtnEl.textContent = 'Force Resync All';
+    }
+  });
+
+  // Bind packages tab controls
+  const packagesTabBtn = document.querySelector('.admin-tab-btn[data-tab="packages"]');
+  packagesTabBtn?.addEventListener('click', () => {
+    const config = loadKioskConfig();
+    renderAdminPackagesTable(config);
+  });
+
+  const packageSaveBtn = document.getElementById('btn-package-save');
+  const packageCancelBtn = document.getElementById('btn-package-cancel');
+  
+  packageSaveBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const editorId = document.getElementById('editor-package-id') as HTMLInputElement;
+    const editorName = document.getElementById('editor-package-name') as HTMLInputElement;
+    const editorPrints = document.getElementById('editor-package-prints') as HTMLInputElement;
+    const editorPrice = document.getElementById('editor-package-price') as HTMLInputElement;
+
+    if (!editorName || !editorPrints || !editorPrice) return;
+
+    const name = editorName.value.trim();
+    const prints = parseInt(editorPrints.value);
+    const price = parseFloat(editorPrice.value);
+
+    if (!name || isNaN(prints) || isNaN(price)) {
+      alert('Please fill out all package fields with valid values.');
+      return;
+    }
+
+    const config = loadKioskConfig();
+
+    if (editorId && editorId.value) {
+      // Edit existing package
+      const pkg = tempPackages.find(p => p.id === editorId.value);
+      if (pkg) {
+        pkg.name = name;
+        pkg.printsCount = prints;
+        pkg.price = price;
+      }
+    } else {
+      // Add new package
+      const newPkg = {
+        id: 'pkg-' + Date.now(),
+        name: name,
+        printsCount: prints,
+        price: price,
+        isEnabled: true
+      };
+      tempPackages.push(newPkg);
+    }
+
+    // Reset Form
+    resetPackageForm();
+    renderAdminPackagesTable(config);
+  });
+
+  packageCancelBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    resetPackageForm();
+  });
+
+  function resetPackageForm() {
+    const formTitle = document.getElementById('package-form-title');
+    const editorId = document.getElementById('editor-package-id') as HTMLInputElement;
+    const editorName = document.getElementById('editor-package-name') as HTMLInputElement;
+    const editorPrints = document.getElementById('editor-package-prints') as HTMLInputElement;
+    const editorPrice = document.getElementById('editor-package-price') as HTMLInputElement;
+    const cancelBtn = document.getElementById('btn-package-cancel');
+    const saveBtn = document.getElementById('btn-package-save');
+
+    if (formTitle) formTitle.textContent = 'ADD NEW PACKAGE';
+    if (editorId) editorId.value = '';
+    if (editorName) editorName.value = '';
+    if (editorPrints) editorPrints.value = '';
+    if (editorPrice) editorPrice.value = '';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (saveBtn) saveBtn.textContent = 'Add Package';
+  }
+
+  async function loadAdminStatistics() {
+    console.log('[Admin Stats] Loading statistics...');
+    const localSessions = await listLocalSessions();
+    const config = loadKioskConfig();
+    const currency = config.currencySymbol || '₱';
+    
+    // Calculate stats
+    const totalSessions = localSessions.length;
+    const totalPrints = localSessions.reduce((sum, s) => sum + s.printsCount + s.additionalPrints, 0);
+    const totalRevenue = localSessions.reduce((sum, s) => sum + s.totalAmount, 0);
+    const pendingSync = localSessions.filter(s => s.syncStatus === 'pending').length;
+
+    // Update Local Stats in UI
+    const localSessionsEl = document.getElementById('stats-local-sessions');
+    const localRevenueEl = document.getElementById('stats-local-revenue');
+    const localPrintsEl = document.getElementById('stats-local-prints');
+    const localPendingEl = document.getElementById('stats-local-pending');
+
+    if (localSessionsEl) localSessionsEl.textContent = totalSessions.toString();
+    if (localRevenueEl) localRevenueEl.textContent = `${currency}${totalRevenue.toFixed(2)}`;
+    if (localPrintsEl) localPrintsEl.textContent = totalPrints.toString();
+    if (localPendingEl) {
+      localPendingEl.textContent = pendingSync.toString();
+      if (pendingSync > 0) {
+        localPendingEl.style.color = '#e69500'; // Warning gold
+      } else {
+        localPendingEl.style.color = '#2f9e44'; // Success green
+      }
+    }
+
+    // Date breakdowns
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(startOfToday.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(startOfToday.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const todaySessions = localSessions.filter(s => new Date(s.createdAt) >= startOfToday);
+    const weekSessions = localSessions.filter(s => new Date(s.createdAt) >= startOfWeek);
+    const monthSessions = localSessions.filter(s => new Date(s.createdAt) >= startOfMonth);
+
+    const todayRev = todaySessions.reduce((sum, s) => sum + s.totalAmount, 0);
+    const weekRev = weekSessions.reduce((sum, s) => sum + s.totalAmount, 0);
+    const monthRev = monthSessions.reduce((sum, s) => sum + s.totalAmount, 0);
+
+    const todayTxt = document.getElementById('stats-breakdown-today');
+    const weekTxt = document.getElementById('stats-breakdown-week');
+    const monthTxt = document.getElementById('stats-breakdown-month');
+
+    if (todayTxt) todayTxt.textContent = `${todaySessions.length} sessions (${currency}${todayRev.toFixed(2)})`;
+    if (weekTxt) weekTxt.textContent = `${weekSessions.length} sessions (${currency}${weekRev.toFixed(2)})`;
+    if (monthTxt) monthTxt.textContent = `${monthSessions.length} sessions (${currency}${monthRev.toFixed(2)})`;
+
+    // Reconciliation
+    const reconLoading = document.getElementById('recon-loading');
+    const reconData = document.getElementById('recon-data');
+    if (reconLoading) {
+      reconLoading.classList.remove('hidden');
+      reconLoading.style.display = 'block';
+    }
+    if (reconData) reconData.classList.add('hidden');
+
+    if (!navigator.onLine) {
+      if (reconLoading) reconLoading.textContent = '🔌 Reconciliation unavailable offline';
+      return;
+    }
+
+    if (reconLoading) reconLoading.textContent = '⏳ Loading cloud stats...';
+
+    try {
+      const deviceId = await getDeviceUUID();
+      const { data: cloudData, error } = await supabase
+        .from('sessions')
+        .select('prints_count, additional_prints, total_amount')
+        .eq('booth_id', deviceId);
+
+      if (error) {
+        throw error;
+      }
+
+      const cloudSessionsCount = cloudData ? cloudData.length : 0;
+      const cloudPrintsCount = cloudData ? cloudData.reduce((sum, s) => sum + (s.prints_count || 0) + (s.additional_prints || 0), 0) : 0;
+      const cloudRevenueVal = cloudData ? cloudData.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0) : 0;
+
+      // Render Reconciliation table values
+      const devSessionsEl = document.getElementById('recon-device-sessions');
+      const cloudSessionsEl = document.getElementById('recon-cloud-sessions');
+      const statusSessionsEl = document.getElementById('recon-status-sessions');
+
+      const devPrintsEl = document.getElementById('recon-device-prints');
+      const cloudPrintsEl = document.getElementById('recon-cloud-prints');
+      const statusPrintsEl = document.getElementById('recon-status-prints');
+
+      const devRevEl = document.getElementById('recon-device-revenue');
+      const cloudRevEl = document.getElementById('recon-cloud-revenue');
+      const statusRevEl = document.getElementById('recon-status-revenue');
+
+      if (devSessionsEl) devSessionsEl.textContent = totalSessions.toString();
+      if (cloudSessionsEl) cloudSessionsEl.textContent = cloudSessionsCount.toString();
+      if (statusSessionsEl) {
+        if (totalSessions === cloudSessionsCount) {
+          statusSessionsEl.innerHTML = '<span style="color: #2f9e44; font-weight: bold;">✅ Matched</span>';
+        } else {
+          statusSessionsEl.innerHTML = `<span style="color: #e69500; font-weight: bold;">⚠️ Diff: ${totalSessions - cloudSessionsCount}</span>`;
+        }
+      }
+
+      if (devPrintsEl) devPrintsEl.textContent = totalPrints.toString();
+      if (cloudPrintsEl) cloudPrintsEl.textContent = cloudPrintsCount.toString();
+      if (statusPrintsEl) {
+        if (totalPrints === cloudPrintsCount) {
+          statusPrintsEl.innerHTML = '<span style="color: #2f9e44; font-weight: bold;">✅ Matched</span>';
+        } else {
+          statusPrintsEl.innerHTML = `<span style="color: #e69500; font-weight: bold;">⚠️ Diff: ${totalPrints - cloudPrintsCount}</span>`;
+        }
+      }
+
+      if (devRevEl) devRevEl.textContent = `₱${totalRevenue.toFixed(2)}`;
+      if (cloudRevEl) cloudRevEl.textContent = `₱${cloudRevenueVal.toFixed(2)}`;
+      if (statusRevEl) {
+        const revDiff = parseFloat((totalRevenue - cloudRevenueVal).toFixed(2));
+        if (revDiff === 0) {
+          statusRevEl.innerHTML = '<span style="color: #2f9e44; font-weight: bold;">✅ Matched</span>';
+        } else {
+          statusRevEl.innerHTML = `<span style="color: #e69500; font-weight: bold;">⚠️ Diff: ₱${revDiff.toFixed(2)}</span>`;
+        }
+      }
+
+      if (reconLoading) {
+        reconLoading.classList.add('hidden');
+        reconLoading.style.display = 'none';
+      }
+      if (reconData) reconData.classList.remove('hidden');
+
+    } catch (err) {
+      console.error('[Reconciliation Error]', err);
+      if (reconLoading) reconLoading.textContent = '❌ Failed to connect to cloud reconciliation';
+    }
+  }
 
   // Sync offline captures to Supabase
   const syncBtn = document.getElementById('admin-sync-btn');
@@ -857,6 +1217,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    const sessionPriceInput = document.getElementById('input-session-price') as HTMLInputElement;
+    const profitShareInput = document.getElementById('input-profit-share') as HTMLInputElement;
+
     const newConfig: KioskConfig = {
       cafeName: nameInput.value.trim().toUpperCase(),
       cafeAddress: addressInput.value.trim().toUpperCase(),
@@ -880,10 +1243,21 @@ document.addEventListener('DOMContentLoaded', () => {
       printerMode: printModeSelect ? (printModeSelect.value as 'usb' | 'bluetooth') : 'usb',
       homeSubtitleTop: subtitleTopInput ? subtitleTopInput.value.trim() : '',
       homeSubtitleBottom: subtitleBottomInput ? subtitleBottomInput.value.trim() : '',
-      adminPin: adminPinInput ? adminPinInput.value.trim() : '1234'
+      adminPin: adminPinInput ? adminPinInput.value.trim() : '1234',
+      sessionPrice: sessionPriceInput ? parseFloat(sessionPriceInput.value) : 5.00,
+      profitSharePercent: profitShareInput ? parseFloat(profitShareInput.value) : 60.00,
+      packages: tempPackages,
+      maxPrintsAllowed: document.getElementById('input-max-prints') ? parseInt((document.getElementById('input-max-prints') as HTMLInputElement).value) : 4,
+      currencySymbol: document.getElementById('input-currency-symbol') ? (document.getElementById('input-currency-symbol') as HTMLInputElement).value.trim() : '₱',
+      welcomeMessage: document.getElementById('input-welcome-msg') ? (document.getElementById('input-welcome-msg') as HTMLInputElement).value.trim() : ''
     };
 
     saveKioskConfig(newConfig);
+    
+    // Trigger telemetry update to push name and pricing configuration changes online immediately
+    const deviceId = await getDeviceUUID();
+    await updateBoothTelemetry(deviceId).catch(err => console.error('[Config] Telemetry update failed:', err));
+
     await applyTheme(newConfig);
     
     const idleView = views['idle'] as IdleView;

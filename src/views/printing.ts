@@ -4,6 +4,10 @@ import type { AppSession } from '../types';
 import { generateReceiptEscPos } from '../services/download';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { loadKioskConfig } from '../services/config';
+import { saveLocalSession } from '../services/db';
+import { getDeviceUUID } from '../services/license';
+import { syncPendingSessions } from '../services/sync';
+import { generateShortId } from '../services/supabase';
 
 interface DirectPrinterPlugin {
   printRawUsb(options: { base64Data: string }): Promise<void>;
@@ -196,6 +200,61 @@ export class PrintingView extends BaseView {
     }
 
     // --- Print loop is finished ---
+    // Record session transaction locally in IndexedDB (Offline-First)
+    try {
+      const config = loadKioskConfig();
+      const deviceId = await getDeviceUUID();
+      const pkg = this.activeSession.selectedPackage;
+      const copies = this.activeSession.copiesCount || (pkg ? pkg.printsCount : 1);
+      
+      let totalAmount = 0;
+      let packageName = null;
+      let packagePrice = null;
+      
+      if (this.activeSession.selectedTemplateId === 'comfort-card') {
+        totalAmount = 0; // Comfort Affirmations are free
+        packageName = 'Comfort Card';
+        packagePrice = 0;
+      } else if (pkg) {
+        totalAmount = pkg.price;
+        packageName = pkg.name;
+        packagePrice = pkg.price;
+      } else {
+        // Fallback for older sessions or custom setups
+        totalAmount = config.sessionPrice !== undefined ? config.sessionPrice : 30.00;
+        packageName = 'Standard Package';
+        packagePrice = totalAmount;
+      }
+      
+      const newSessionRecord = {
+        id: this.activeSession.shareId || generateShortId(6),
+        boothId: deviceId,
+        createdAt: new Date().toISOString(),
+        layoutType: this.activeSession.selectedTemplateId === 'comfort-card' ? 'comfort-card' : 'photo',
+        templateId: this.activeSession.selectedTemplateId || 'unknown',
+        printsCount: copies,
+        additionalPrints: 0,
+        totalAmount: totalAmount,
+        shareId: this.activeSession.shareId || null,
+        syncStatus: 'pending' as const,
+        packageName: packageName,
+        packagePrice: packagePrice,
+        completionStatus: 'completed' as const
+      };
+      
+      await saveLocalSession(newSessionRecord);
+      console.log('[Printing] Transaction logged locally:', newSessionRecord);
+      
+      // Fire background sync asynchronously
+      syncPendingSessions().then(({ successCount }) => {
+        console.log(`[Printing] Auto-sync completed. Synced ${successCount} sessions.`);
+      }).catch(err => {
+        console.error('[Printing] Auto-sync background error:', err);
+      });
+    } catch (err) {
+      console.error('[Printing] Failed to log transaction locally:', err);
+    }
+
     // Now trigger the screen eject animation and physical tear guidelines!
     if (headlineEl) headlineEl.textContent = 'EJECTING RECEIPT...';
     if (sublineEl) sublineEl.textContent = 'Virtually feeding thermal paper';

@@ -3,10 +3,20 @@ export type AppState =
   | 'idle'
   | 'mode-selection'
   | 'template-selection'
+  | 'package-selection'
+  | 'order-summary'
   | 'camera-capture'
   | 'preview'
   | 'printing'
   | 'finished';
+
+export interface PrintPackage {
+  id: string;
+  name: string;
+  printsCount: number;
+  price: number;
+  isEnabled: boolean;
+}
 
 export interface OrderItem {
   name: string;
@@ -50,4 +60,5 @@ export interface AppSession {
   shareId?: string;
   selectedQuote?: string;
   selectedIllustration?: string;
+  selectedPackage?: PrintPackage;
 }

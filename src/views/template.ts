@@ -117,7 +117,7 @@ export class TemplateView extends BaseView {
             item.classList.remove('selected-item');
             card.classList.remove('selected-active');
 
-            this.navigateTo('camera-capture');
+            this.navigateTo('package-selection');
           }, 350);
         }
       });

@@ -99,16 +99,28 @@ export class PreviewView extends BaseView {
     
     // Reset session variables
     this.activeSession.isMirrored = false;
-    this.activeSession.copiesCount = 1;
+    const pkg = this.activeSession.selectedPackage;
+    this.activeSession.copiesCount = pkg ? pkg.printsCount : 1;
     this.activeSession.shareId = generateShortId(6);
     this.activeSession.selectedThemeId = 'default';
+
+    // Hide quantity adjustment buttons to enforce package locks
+    const qtyMinusBtn = this.element.querySelector('#btn-qty-minus') as HTMLElement;
+    const qtyPlusBtn = this.element.querySelector('#btn-qty-plus') as HTMLElement;
+    if (qtyMinusBtn && qtyPlusBtn) {
+      qtyMinusBtn.style.display = 'none';
+      qtyPlusBtn.style.display = 'none';
+    }
 
     // Reset options UI defaults
     const mirrorCheckbox = this.element.querySelector('#toggle-mirror') as HTMLInputElement;
     if (mirrorCheckbox) mirrorCheckbox.checked = false;
     
     const qtyValEl = this.element.querySelector('#qty-val');
-    if (qtyValEl) qtyValEl.textContent = '1';
+    if (qtyValEl) {
+      const count = this.activeSession.copiesCount || 1;
+      qtyValEl.textContent = `${count} Cop${count > 1 ? 'ies' : 'y'} 🔒`;
+    }
 
     // Reset slide-down exit animation states
     paper?.classList.remove('slide-down-exit');

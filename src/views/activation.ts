@@ -1,5 +1,7 @@
 import { BaseView } from './base';
-import { activateLicense, getDeviceUUID } from '../services/license';
+import { activateLicense, getDeviceUUID, getCachedLicense } from '../services/license';
+import { loadKioskConfig, saveKioskConfig } from '../services/config';
+import { updateBoothTelemetry } from '../services/sync';
 import { audioManager } from '../services/audio';
 
 export class ActivationView extends BaseView {
@@ -132,6 +134,18 @@ export class ActivationView extends BaseView {
       const result = await activateLicense(key);
 
       if (result.success) {
+        // Sync local config with cafe name from license
+        const license = getCachedLicense();
+        if (license && license.clientName) {
+          const config = loadKioskConfig();
+          config.cafeName = license.clientName;
+          saveKioskConfig(config);
+        }
+
+        // Trigger telemetry update to register the booth on Supabase under the cafe name
+        const deviceId = await getDeviceUUID();
+        await updateBoothTelemetry(deviceId).catch(err => console.error('[Activation] Telemetry update failed:', err));
+
         statusMsg.className = 'activation-status-message status-success';
         statusMsg.innerHTML = `✓ Device Activated Successfully! Launching booth...`;
         submitBtn.textContent = '✓ ACTIVATED';
