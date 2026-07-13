@@ -3,6 +3,7 @@ import { CameraService } from '../services/camera';
 import { getTemplateById } from '../templates';
 import type { AppSession } from '../types';
 import { audioManager } from '../services/audio';
+import { hapticService } from '../services/haptics';
 
 export class CaptureView extends BaseView {
   private cameraService: CameraService;
@@ -249,6 +250,12 @@ export class CaptureView extends BaseView {
       void (this.countdownText as HTMLElement).offsetWidth; // reflow trigger
       this.countdownText.classList.add('scale-pulse');
 
+      // Add expanding ring
+      const ring1 = document.createElement('div');
+      ring1.className = 'countdown-ring';
+      this.countdownOverlay.appendChild(ring1);
+      setTimeout(() => ring1.remove(), 1000);
+
       let current = seconds;
 
       this.countdownIntervalId = window.setInterval(() => {
@@ -277,6 +284,12 @@ export class CaptureView extends BaseView {
           this.countdownText!.classList.remove('scale-pulse');
           void (this.countdownText as HTMLElement).offsetWidth; // reflow trigger
           this.countdownText!.classList.add('scale-pulse');
+
+          // Add expanding ring
+          const ring2 = document.createElement('div');
+          ring2.className = 'countdown-ring';
+          this.countdownOverlay!.appendChild(ring2);
+          setTimeout(() => ring2.remove(), 1000);
         }
       }, 1000);
     });
@@ -292,8 +305,9 @@ export class CaptureView extends BaseView {
       void flash.offsetWidth; // reflow
       flash.classList.add('active');
       
-      // Play our high-quality synthesized mechanical shutter sound!
+      // Play our high-quality synthesized mechanical shutter sound and heavy haptic!
       audioManager.playShutter();
+      hapticService.impactHeavy();
     }
   }
 }

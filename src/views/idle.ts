@@ -47,6 +47,19 @@ export class IdleView extends BaseView {
         ) {
           return;
         }
+
+        // Check paper roll remaining count
+        const freshConfig = loadKioskConfig();
+        const remaining = freshConfig.paperPrintsRemaining !== undefined ? freshConfig.paperPrintsRemaining : 150;
+        if (remaining <= 0) {
+          alert("⚠️ Out of Paper: Kiosk is currently out of printing paper. Please contact café staff to refill the roll.");
+          return;
+        }
+        if (remaining <= 5) {
+          const proceed = confirm(`⚠️ Paper Roll Low: This kiosk only has ${remaining} prints remaining. Would you like to proceed anyway?`);
+          if (!proceed) return;
+        }
+
         isTransitioning = true;
 
         if (globalCurtain) {
@@ -60,7 +73,6 @@ export class IdleView extends BaseView {
         audioManager.playPaperTear();
 
         // Load fresh config dynamically to check if comfort cards are enabled
-        const freshConfig = loadKioskConfig();
         const nextState = freshConfig.enableComfortCards !== false ? 'mode-selection' : 'template-selection';
         this.navigateTo(nextState);
 
@@ -146,6 +158,19 @@ export class IdleView extends BaseView {
         if (target.closest('.attract-logo-container') || target.closest('#admin-hotspot')) {
           return;
         }
+
+        // Check paper roll remaining count
+        const config = loadKioskConfig();
+        const remaining = config.paperPrintsRemaining !== undefined ? config.paperPrintsRemaining : 150;
+        if (remaining <= 0) {
+          alert("⚠️ Out of Paper: Kiosk is currently out of printing paper. Please contact café staff to refill the roll.");
+          return;
+        }
+        if (remaining <= 5) {
+          const proceed = confirm(`⚠️ Paper Roll Low: This kiosk only has ${remaining} prints remaining. Would you like to proceed anyway?`);
+          if (!proceed) return;
+        }
+
         isTransitioning = true;
 
         const receipt = this.element.querySelector('.attract-loop-receipt') as HTMLElement;

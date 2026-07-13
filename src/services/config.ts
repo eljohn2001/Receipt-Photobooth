@@ -30,6 +30,10 @@ export interface KioskConfig {
   maxPrintsAllowed?: number;
   currencySymbol?: string;
   welcomeMessage?: string;
+  paperMaxPrints?: number;
+  paperPrintsRemaining?: number;
+  paperRefilledAt?: string;
+  accentColor?: string;
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -66,7 +70,11 @@ export const DEFAULT_CONFIG: KioskConfig = {
     { id: 'pkg-2', name: '2 Prints', printsCount: 2, price: 40, isEnabled: true },
     { id: 'pkg-3', name: '3 Prints', printsCount: 3, price: 50, isEnabled: true },
     { id: 'pkg-4', name: '4 Prints', printsCount: 4, price: 60, isEnabled: true }
-  ]
+  ],
+  paperMaxPrints: 150,
+  paperPrintsRemaining: 150,
+  paperRefilledAt: new Date(2026, 0, 1).toISOString(),
+  accentColor: '#007aff'
 };
 
 const STORAGE_KEY = 'receipt_booth_kiosk_config';

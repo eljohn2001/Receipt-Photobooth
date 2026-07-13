@@ -202,7 +202,10 @@
                       </div>
                     </div>
                     <div class="form-group half-width">
-                      <!-- Spacer -->
+                      <label for="input-accent-color">UI Brand / Accent Color</label>
+                      <div class="color-picker-wrapper">
+                        <input type="color" id="input-accent-color" />
+                      </div>
                     </div>
                   </div>
 
@@ -486,6 +489,35 @@
                       <span>This Month's Sessions</span>
                       <strong id="stats-breakdown-month">0 sessions (₱0.00)</strong>
                     </div>
+                  </div>
+
+                  <h5 style="font-size: 12px; text-transform: uppercase; margin: 20px 0 8px 0; letter-spacing: 0.5px; color: var(--text-primary);">💰 Local Revenue Collection</h5>
+                  <div style="border: 1px solid var(--border-primary); padding: 15px; background: rgba(47, 158, 68, 0.05); margin-bottom: 20px; font-size: 13px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <span style="color: var(--text-secondary);">Last Collection Date:</span>
+                      <strong id="kiosk-last-collected-label">Never</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                      <span style="color: var(--text-secondary);">Uncollected Balance:</span>
+                      <strong id="kiosk-uncollected-balance" style="font-size: 16px; color: #2f9e44; font-family: monospace;">₱0.00</strong>
+                    </div>
+                    <button type="button" id="admin-confirm-collected-btn" class="btn-admin" style="width: 100%; background: #2f9e44; color: white; border: none; font-weight: bold; border-radius: 6px; padding: 10px; cursor: pointer; transition: background-color 0.2s;">
+                      💰 Confirm Cash Collected (Audit)
+                    </button>
+                  </div>
+
+                  <h5 style="font-size: 12px; text-transform: uppercase; margin: 20px 0 8px 0; letter-spacing: 0.5px; color: var(--text-primary);">🔋 Kiosk Printer Paper Roll</h5>
+                  <div style="border: 1px solid var(--border-primary); padding: 15px; background: rgba(28, 126, 214, 0.05); margin-bottom: 20px; font-size: 13px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <span style="color: var(--text-secondary);">Prints Remaining:</span>
+                      <strong id="kiosk-paper-remaining-label" style="font-size: 15px;">150 / 150 prints</strong>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.05); border-radius: 4px; height: 10px; width: 100%; overflow: hidden; margin-bottom: 15px; position: relative;">
+                      <div id="kiosk-paper-bar" style="background: #1c7ed6; height: 100%; width: 100%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <button type="button" id="admin-refill-paper-btn" class="btn-admin" style="width: 100%; background: #1c7ed6; color: white; border: none; font-weight: bold; border-radius: 6px; padding: 10px; cursor: pointer; transition: background-color 0.2s;">
+                      🔋 Refill Paper Roll (Reset Counter)
+                    </button>
                   </div>
 
                   <div style="margin-top: 20px; display: flex; gap: 10px;">

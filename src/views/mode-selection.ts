@@ -48,7 +48,12 @@ export class ModeSelectionView extends BaseView {
         </div>
 
         <div class="template-screen-footer">
-          <button class="btn-tmpl-back-minimal-center" id="btn-mode-back">← BACK TO WELCOME</button>
+          <div class="swipe-back-track" id="swipe-back-mode">
+            <span class="swipe-back-label">← SWIPE TO GO BACK</span>
+            <div class="swipe-back-thumb hint" id="swipe-back-mode-thumb">
+              <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -64,12 +69,20 @@ export class ModeSelectionView extends BaseView {
     
     photoCard?.classList.remove('selected', 'fade-out');
     comfortCard?.classList.remove('selected', 'fade-out');
+
+    // Reset thumb position
+    const thumb = this.element.querySelector('#swipe-back-mode-thumb') as HTMLElement;
+    if (thumb) {
+      thumb.style.left = '5px';
+      thumb.classList.add('hint');
+    }
+    const track = this.element.querySelector('#swipe-back-mode') as HTMLElement;
+    if (track) track.classList.remove('swiped');
   }
 
   private setupEvents(): void {
-    const backBtn = this.element.querySelector('#btn-mode-back');
-    backBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
+    // Swipe-to-go-back interaction
+    this.setupSwipeBack('swipe-back-mode', () => {
       audioManager.playBeep();
       this.navigateTo('idle');
     });
@@ -79,6 +92,14 @@ export class ModeSelectionView extends BaseView {
 
     photoCard?.addEventListener('click', (e) => {
       e.stopPropagation();
+      
+      const config = loadKioskConfig();
+      const paperRemaining = config.paperPrintsRemaining !== undefined ? config.paperPrintsRemaining : 150;
+      if (paperRemaining <= 0) {
+        alert("⚠️ Out of Paper: Kiosk is currently out of printing paper. Please contact café staff to refill the roll.");
+        return;
+      }
+
       audioManager.playBeep();
 
       // Add selection animations
@@ -92,6 +113,14 @@ export class ModeSelectionView extends BaseView {
 
     comfortCard?.addEventListener('click', async (e) => {
       e.stopPropagation();
+
+      const config = loadKioskConfig();
+      const paperRemaining = config.paperPrintsRemaining !== undefined ? config.paperPrintsRemaining : 150;
+      if (paperRemaining <= 0) {
+        alert("⚠️ Out of Paper: Kiosk is currently out of printing paper. Please contact café staff to refill the roll.");
+        return;
+      }
+
       audioManager.playBeep();
 
       // Add selection animations
@@ -211,5 +240,75 @@ export class ModeSelectionView extends BaseView {
     } else {
       this.activeSession.uploadPromise = undefined;
     }
+  }
+
+  private setupSwipeBack(trackId: string, onComplete: () => void): void {
+    const track = this.element.querySelector(`#${trackId}`) as HTMLElement;
+    const thumb = this.element.querySelector(`#${trackId}-thumb`) as HTMLElement;
+    if (!track || !thumb) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let thumbStart = 5;
+    const maxLeft = () => track.clientWidth - thumb.clientWidth - 10;
+
+    const onStart = (clientX: number) => {
+      isDragging = true;
+      startX = clientX;
+      thumbStart = parseInt(thumb.style.left || '5', 10);
+      thumb.classList.remove('hint');
+      thumb.style.transition = 'none';
+    };
+
+    const onMove = (clientX: number) => {
+      if (!isDragging) return;
+      const dx = clientX - startX;
+      const newLeft = Math.max(5, Math.min(thumbStart + dx, maxLeft()));
+      thumb.style.left = newLeft + 'px';
+    };
+
+    const onEnd = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      thumb.style.transition = 'left 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+      const currentLeft = parseInt(thumb.style.left || '5', 10);
+      const progress = currentLeft / maxLeft();
+
+      if (progress > 0.6) {
+        thumb.style.left = maxLeft() + 'px';
+        track.classList.add('swiped');
+        setTimeout(() => onComplete(), 250);
+      } else {
+        thumb.style.left = '5px';
+        setTimeout(() => thumb.classList.add('hint'), 400);
+      }
+    };
+
+    track.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      const thumbRect = thumb.getBoundingClientRect();
+      const touchInThumb = touch.clientX >= thumbRect.left - 10 && touch.clientX <= thumbRect.right + 10
+                        && touch.clientY >= thumbRect.top - 10 && touch.clientY <= thumbRect.bottom + 10;
+      if (touchInThumb) onStart(touch.clientX);
+    }, { passive: true });
+
+    track.addEventListener('touchmove', (e) => {
+      if (isDragging) onMove(e.touches[0].clientX);
+    }, { passive: true });
+
+    track.addEventListener('touchend', () => onEnd());
+    track.addEventListener('touchcancel', () => onEnd());
+
+    track.addEventListener('mousedown', (e) => {
+      const thumbRect = thumb.getBoundingClientRect();
+      const inThumb = e.clientX >= thumbRect.left - 10 && e.clientX <= thumbRect.right + 10;
+      if (inThumb) onStart(e.clientX);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) onMove(e.clientX);
+    });
+
+    document.addEventListener('mouseup', () => onEnd());
   }
 }

@@ -3,7 +3,7 @@ import { audioManager } from '../services/audio';
 import type { AppSession } from '../types';
 import { generateReceiptEscPos } from '../services/download';
 import { Capacitor, registerPlugin } from '@capacitor/core';
-import { loadKioskConfig } from '../services/config';
+import { loadKioskConfig, saveKioskConfig } from '../services/config';
 import { saveLocalSession } from '../services/db';
 import { getDeviceUUID } from '../services/license';
 import { syncPendingSessions } from '../services/sync';
@@ -206,6 +206,11 @@ export class PrintingView extends BaseView {
       const deviceId = await getDeviceUUID();
       const pkg = this.activeSession.selectedPackage;
       const copies = this.activeSession.copiesCount || (pkg ? pkg.printsCount : 1);
+
+      // Decrement paper roll counter
+      const currentRemaining = config.paperPrintsRemaining !== undefined ? config.paperPrintsRemaining : (config.paperMaxPrints || 150);
+      config.paperPrintsRemaining = Math.max(0, currentRemaining - copies);
+      saveKioskConfig(config);
       
       let totalAmount = 0;
       let packageName = null;

@@ -338,14 +338,52 @@ const stateIndexMap: Record<AppState, number> = {
 let activeBgObjectUrl: string | null = null;
 
 // Global theme application helper
+function getLighterColor(hex: string): string {
+  if (!hex.startsWith('#')) return hex;
+  try {
+    const rawHex = hex.slice(1);
+    let r = parseInt(rawHex.slice(0, 2), 16);
+    let g = parseInt(rawHex.slice(2, 4), 16);
+    let b = parseInt(rawHex.slice(4, 6), 16);
+    const lighten = (val: number) => Math.min(255, Math.round(val + (255 - val) * 0.25));
+    const lr = lighten(r).toString(16).padStart(2, '0');
+    const lg = lighten(g).toString(16).padStart(2, '0');
+    const lb = lighten(b).toString(16).padStart(2, '0');
+    return `#${lr}${lg}${lb}`;
+  } catch (e) {
+    return hex;
+  }
+}
+
 async function applyTheme(config: KioskConfig) {
   const root = document.documentElement;
   root.style.setProperty('--bg-primary', config.backgroundColor);
   root.style.setProperty('--bg-secondary', config.backgroundColor);
   root.style.setProperty('--text-primary', config.textColor);
-  root.style.setProperty('--accent-color', config.textColor);
-  root.style.setProperty('--accent-secondary', config.textColor);
+  
+  const accentColor = config.accentColor || '#007aff';
+  root.style.setProperty('--accent-color', accentColor);
+  root.style.setProperty('--accent-secondary', accentColor);
   root.style.setProperty('--curtain-color', config.curtainColor || '#111111');
+
+  // Compute accent RGB
+  let accentRgb = '0, 122, 255';
+  if (accentColor.startsWith('#')) {
+    try {
+      const hex = accentColor.slice(1);
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      accentRgb = `${r}, ${g}, ${b}`;
+    } catch (e) {
+      console.warn('Failed to parse accent color to RGB:', e);
+    }
+  }
+  root.style.setProperty('--accent-color-rgb', accentRgb);
+
+  // Compute dynamic accent gradient
+  const lighterAccent = getLighterColor(accentColor);
+  root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${accentColor} 0%, ${lighterAccent} 100%)`);
 
   // Set home screen split typography colors
   const textHome = config.textColorHome || '#000000';
@@ -756,6 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const subtitleBottomInput = document.getElementById('input-home-subtitle-bottom') as HTMLInputElement;
     const adminPinInput = document.getElementById('input-admin-pin') as HTMLInputElement;
     const curtainColorInput = document.getElementById('input-curtain-color') as HTMLInputElement;
+    const accentColorInput = document.getElementById('input-accent-color') as HTMLInputElement;
     
     if (nameInput) nameInput.value = config.cafeName;
     if (addressInput) addressInput.value = config.cafeAddress;
@@ -772,6 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (subtitleBottomInput) subtitleBottomInput.value = config.homeSubtitleBottom || '';
     if (adminPinInput) adminPinInput.value = config.adminPin || '1234';
     if (curtainColorInput) curtainColorInput.value = config.curtainColor || '#111111';
+    if (accentColorInput) accentColorInput.value = config.accentColor || '#007aff';
 
     const sessionPriceInput = document.getElementById('input-session-price') as HTMLInputElement;
     const profitShareInput = document.getElementById('input-profit-share') as HTMLInputElement;
@@ -1089,6 +1129,157 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('[Reconciliation Error]', err);
       if (reconLoading) reconLoading.textContent = '❌ Failed to connect to cloud reconciliation';
     }
+
+    // Render collection info
+    let lastCollectedDate: Date | null = null;
+    if (navigator.onLine) {
+      try {
+        const deviceId = await getDeviceUUID();
+        const { data: b, error: bErr } = await supabase
+          .from('booths')
+          .select('last_collected_at')
+          .eq('id', deviceId)
+          .single();
+        if (!bErr && b && b.last_collected_at) {
+          lastCollectedDate = new Date(b.last_collected_at);
+          localStorage.setItem('kiosk_last_collected_at', b.last_collected_at);
+        }
+      } catch (err) {
+        console.warn('[Stats] Remote collection query failed:', err);
+      }
+    }
+
+    if (!lastCollectedDate) {
+      const cached = localStorage.getItem('kiosk_last_collected_at');
+      if (cached) {
+        lastCollectedDate = new Date(cached);
+      }
+    }
+
+    // Filter sessions since last collection date
+    const uncollectedSessions = localSessions.filter(s => !lastCollectedDate || new Date(s.createdAt) > lastCollectedDate);
+    const uncollectedBalance = uncollectedSessions.reduce((sum, s) => sum + s.totalAmount, 0);
+
+    const lastCollectedLabel = document.getElementById('kiosk-last-collected-label');
+    const uncollectedBalanceEl = document.getElementById('kiosk-uncollected-balance');
+    const confirmCollectedBtn = document.getElementById('admin-confirm-collected-btn') as HTMLButtonElement;
+
+    if (lastCollectedLabel) {
+      lastCollectedLabel.textContent = lastCollectedDate 
+        ? lastCollectedDate.toLocaleString() 
+        : 'Never Collected';
+    }
+
+    if (uncollectedBalanceEl) {
+      uncollectedBalanceEl.textContent = `${currency}${uncollectedBalance.toFixed(2)}`;
+    }
+
+    if (confirmCollectedBtn) {
+      confirmCollectedBtn.disabled = uncollectedBalance === 0;
+      
+      // Remove any existing listener by replacing the button clone
+      const newBtn = confirmCollectedBtn.cloneNode(true) as HTMLButtonElement;
+      confirmCollectedBtn.parentNode?.replaceChild(newBtn, confirmCollectedBtn);
+      
+      newBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (confirm(`Confirm audit & collection of cash payment of ${currency}${uncollectedBalance.toFixed(2)}?`)) {
+          const nowStr = new Date().toISOString();
+          localStorage.setItem('kiosk_last_collected_at', nowStr);
+          
+          if (navigator.onLine) {
+            try {
+              const deviceId = await getDeviceUUID();
+              await supabase
+                .from('booths')
+                .update({ last_collected_at: nowStr, updated_at: nowStr })
+                .eq('id', deviceId);
+              await supabase
+                .from('collections')
+                .insert({
+                  booth_id: deviceId,
+                  collected_at: nowStr,
+                  amount_collected: uncollectedBalance,
+                  collector_name: 'Kiosk Operator'
+                });
+              alert('Collection payment successfully verified and synced with cloud console!');
+            } catch (err) {
+              console.error('Remote save failed:', err);
+              localStorage.setItem('kiosk_pending_collection_amount', uncollectedBalance.toString());
+              localStorage.setItem('kiosk_pending_collection_time', nowStr);
+              alert('Collection logged locally (offline). It will sync automatically when internet resumes.');
+            }
+          } else {
+            localStorage.setItem('kiosk_pending_collection_amount', uncollectedBalance.toString());
+            localStorage.setItem('kiosk_pending_collection_time', nowStr);
+            alert('Collection logged locally (offline). It will sync automatically when internet resumes.');
+          }
+          await loadAdminStatistics();
+        }
+      });
+    }
+
+    // Render Paper Roll info
+    const paperMax = config.paperMaxPrints || 150;
+    const paperRemaining = config.paperPrintsRemaining !== undefined ? config.paperPrintsRemaining : paperMax;
+    const paperPercent = Math.min(100, Math.max(0, Math.round((paperRemaining / paperMax) * 100)));
+
+    const paperRemainingLabel = document.getElementById('kiosk-paper-remaining-label');
+    const paperBar = document.getElementById('kiosk-paper-bar');
+    const refillPaperBtn = document.getElementById('admin-refill-paper-btn') as HTMLButtonElement;
+
+    if (paperRemainingLabel) {
+      paperRemainingLabel.textContent = `${paperRemaining} / ${paperMax} prints (${paperPercent}%)`;
+      if (paperPercent <= 15) {
+        paperRemainingLabel.style.color = '#c92a2a'; // critical red
+      } else if (paperPercent <= 30) {
+        paperRemainingLabel.style.color = '#e69500'; // warning gold
+      } else {
+        paperRemainingLabel.style.color = 'var(--text-secondary)';
+      }
+    }
+
+    if (paperBar) {
+      paperBar.style.width = `${paperPercent}%`;
+      if (paperPercent <= 15) {
+        paperBar.style.backgroundColor = '#c92a2a';
+      } else if (paperPercent <= 30) {
+        paperBar.style.backgroundColor = '#e69500';
+      } else {
+        paperBar.style.backgroundColor = '#1c7ed6';
+      }
+    }
+
+    if (refillPaperBtn) {
+      // Remove any existing listener by replacing clone
+      const newRefillBtn = refillPaperBtn.cloneNode(true) as HTMLButtonElement;
+      refillPaperBtn.parentNode?.replaceChild(newRefillBtn, refillPaperBtn);
+
+      newRefillBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (confirm('Confirm refilling the printer paper roll? This will reset the prints counter to 150.')) {
+          config.paperPrintsRemaining = paperMax;
+          saveKioskConfig(config);
+
+          if (navigator.onLine) {
+            try {
+              const deviceId = await getDeviceUUID();
+              await supabase
+                .from('booths')
+                .update({ paper_prints_remaining: paperMax, updated_at: new Date().toISOString() })
+                .eq('id', deviceId);
+              alert('Paper roll refill successfully saved to cloud console!');
+            } catch (err) {
+              console.error('Remote paper update failed:', err);
+              alert('Refilled locally (offline). Telemetry will update when internet is restored.');
+            }
+          } else {
+            alert('Refilled locally (offline). Telemetry will update when internet is restored.');
+          }
+          await loadAdminStatistics();
+        }
+      });
+    }
   }
 
   // Sync offline captures to Supabase
@@ -1206,6 +1397,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const subtitleBottomInput = document.getElementById('input-home-subtitle-bottom') as HTMLInputElement;
     const adminPinInput = document.getElementById('input-admin-pin') as HTMLInputElement;
     const curtainColorInput = document.getElementById('input-curtain-color') as HTMLInputElement;
+    const accentColorInput = document.getElementById('input-accent-color') as HTMLInputElement;
 
     // Handle background media save
     let resolvedBgType: 'image' | 'video' | null = bgFileType;
@@ -1236,6 +1428,7 @@ document.addEventListener('DOMContentLoaded', () => {
       homeScreenMode: homeModeSelect ? (homeModeSelect.value as 'graphic' | 'layout' | 'curtain') : 'graphic',
       curtainOverlayDataUrl: currentCurtainOverlayDataUrl,
       curtainColor: curtainColorInput ? curtainColorInput.value : '#111111',
+      accentColor: accentColorInput ? accentColorInput.value : '#007aff',
       enableQrCode: enableQrInput ? enableQrInput.checked : true,
       enableMemoryFortune: enableFortuneInput ? enableFortuneInput.checked : true,
       enableComfortCards: enableComfortInput ? enableComfortInput.checked : true,
@@ -1309,6 +1502,12 @@ document.addEventListener('DOMContentLoaded', () => {
       navigateTo('activation');
     }
   })();
+
+  window.addEventListener('kiosk-config-updated', () => {
+    console.log('[Main] Kiosk config updated remotely. Reloading stats.');
+    loadAdminStatistics();
+  });
+
   resetInactivityTimer();
 });
 }
