@@ -30,12 +30,10 @@ export class CaptureView extends BaseView {
   mount(): void {
     this.element.innerHTML = `
       <div class="capture-screen-content">
-        <div class="screen-header">
+        <div class="template-screen-header">
           <button class="btn-back" id="btn-capture-back">← CANCEL</button>
-          <div class="header-titles">
-            <h2 class="view-title" id="capture-title">GET READY</h2>
-            <p class="view-subtitle" id="capture-subtitle">Strike a pose!</p>
-          </div>
+          <h2 class="template-choose-title" id="capture-title" style="justify-content: center;">GET <span class="script-title">Ready</span></h2>
+          <p class="view-subtitle" id="capture-subtitle" style="margin-top: 6px;">Strike a pose!</p>
         </div>
 
         <div class="camera-viewport-container">
@@ -130,11 +128,22 @@ export class CaptureView extends BaseView {
     const titleEl = this.element.querySelector('#capture-title');
     const subtitleEl = this.element.querySelector('#capture-subtitle');
     
+    const getStyledTitle = (name: string) => {
+      const parts = name.split(' ');
+      if (parts.length >= 2) {
+        const first = parts[0];
+        const rest = parts.slice(1).join(' ').toLowerCase();
+        const restCapitalized = rest.replace(/\b\w/g, c => c.toUpperCase());
+        return `${first} <span class="script-title">${restCapitalized}</span>`;
+      }
+      return name;
+    };
+
     if (this.retakeIndex !== null) {
-      if (titleEl) titleEl.textContent = 'RETAKE PHOTO';
+      if (titleEl) titleEl.innerHTML = `RETAKE <span class="script-title">Photo</span>`;
       if (subtitleEl) subtitleEl.textContent = `Retaking photo ${this.retakeIndex + 1} of ${template.photoCount}`;
     } else {
-      if (titleEl) titleEl.textContent = template.name;
+      if (titleEl) titleEl.innerHTML = getStyledTitle(template.name);
       if (subtitleEl) {
         subtitleEl.textContent = template.photoCount === 1 
           ? 'Tap the shutter to take photo!' 

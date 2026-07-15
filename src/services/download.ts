@@ -183,20 +183,21 @@ export async function renderReceiptToCanvas(
   const spacingAfterGrid = templateId === 'comfort-card' ? 0 : Math.round(20 * scale);
   const qrHeight = qrImg ? (qrSize + Math.round(56 * scale)) : 0;
   const footerHeight = Math.round(20 * scale);
-  const paddingTop = 0; // Remove top margin header since print driver/paper already leaves a margin
+  const isPrint = (mode === 'print');
+  const paddingTop = isPrint ? 0 : Math.round(25 * scale);
   const paddingBottom = Math.round(25 * scale);
-  const bottomMargin = Math.round(45 * scale); // Extra margin at bottom to prevent cutter from clipping footer info
+  const bottomMargin = isPrint ? Math.round(45 * scale) : 0; // Extra margin at bottom to prevent cutter from clipping footer info
 
   const height = paddingTop + paddingBottom + headerHeight + spacingAfterHeader + gridHeight + spacingAfterGrid + qrHeight + footerHeight + fortuneHeight + comfortHeight + bottomMargin;
 
   const themeId = session.selectedThemeId || 'default';
   let totalHeight = height;
   if (themeId === 'classic-1' || themeId === 'duet-1') {
-    totalHeight = Math.round(680 * scale) + bottomMargin;
+    totalHeight = Math.round(680 * scale) - (isPrint ? Math.round(25 * scale) : 0) + bottomMargin;
   } else if (themeId === 'classic-2') {
-    totalHeight = Math.round(795 * scale) + bottomMargin;
+    totalHeight = Math.round(795 * scale) - (isPrint ? Math.round(25 * scale) : 0) + bottomMargin;
   } else if (themeId === 'film-1') {
-    totalHeight = Math.round(1050 * scale) + bottomMargin;
+    totalHeight = Math.round(1050 * scale) - (isPrint ? Math.round(25 * scale) : 0) + bottomMargin;
   }
   
   canvas.height = totalHeight;

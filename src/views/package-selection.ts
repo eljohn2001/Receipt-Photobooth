@@ -20,7 +20,6 @@ export class PackageSelectionView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="template-screen-header">
-          <button class="btn-back" id="btn-pkg-back">← BACK</button>
           <h2 class="template-choose-title">CHOOSE A <span class="script-title">Package</span></h2>
           <p style="margin-top: 8px; font-size: 16px; color: var(--text-secondary);">Select the number of prints for your receipt photo strip.</p>
         </div>
@@ -29,6 +28,10 @@ export class PackageSelectionView extends BaseView {
           <div class="packages-list-grid" id="packages-list-grid">
             <!-- Rendered dynamically -->
           </div>
+        </div>
+
+        <div class="selection-footer">
+          <button class="btn btn-secondary btn-wide" id="btn-pkg-back">← GO BACK</button>
         </div>
       </div>
     `;

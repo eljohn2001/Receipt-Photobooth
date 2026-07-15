@@ -31,12 +31,10 @@ export class ReviewView extends BaseView {
 
     this.element.innerHTML = `
       <div class="review-screen-content">
-        <div class="screen-header">
+        <div class="template-screen-header">
           <button class="btn-back" id="btn-review-back">← CANCEL</button>
-          <div class="header-titles">
-            <h2 class="view-title">REVIEW PHOTOS</h2>
-            <p class="view-subtitle">Tap any photo you want to retake</p>
-          </div>
+          <h2 class="template-choose-title" style="justify-content: center;">REVIEW <span class="script-title">Photos</span></h2>
+          <p class="view-subtitle" style="margin-top: 6px;">Tap any photo you want to retake</p>
         </div>
 
         <div class="review-grid-container">

@@ -124,12 +124,27 @@ body {
 }
 
 .view-title {
-  font-family: var(--font-vintage);
-  font-size: 24px;
+  font-family: var(--font-ui);
+  font-size: 26px;
   font-weight: 700;
-  letter-spacing: -0.5px;
-  text-transform: none;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-title .script-title {
+  font-family: var(--font-script);
+  font-size: 44px;
+  text-transform: none;
+  font-weight: 400;
+  margin-left: 10px;
+  line-height: 0.8;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .view-subtitle {
@@ -1779,7 +1794,7 @@ body {
   padding: 20px 15px;
   border: 1px solid #000;
 
-  animation: receipt-eject 5s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
+  animation: receipt-eject 3s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
   transform: translateY(100%);
 }
 
@@ -1885,15 +1900,15 @@ body {
 
 .finished-download-card {
   width: 100%;
-  max-width: 340px;
-  background: var(--ios-glass-bg);
-  border: 1px solid var(--ios-glass-border);
-  border-radius: 24px; /* squircle ticket shape */
-  padding: 24px;
+  max-width: 440px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   text-align: center;
-  box-shadow: var(--ios-glass-shadow);
-  backdrop-filter: var(--ios-glass-blur);
-  -webkit-backdrop-filter: var(--ios-glass-blur);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .download-label {
@@ -3054,7 +3069,7 @@ body {
 }
 
 .attract-cafe-logo {
-  max-height: 90px;
+  max-height: 180px;
   max-width: 100%;
   object-fit: contain;
   margin: 0 auto;
@@ -5624,18 +5639,25 @@ body:not(.dark-theme) .mode-option-card.selected {
   max-width: 680px;
   height: 68px;
   border-radius: 99px;
-  background: rgba(52, 199, 89, 0.06);
-  border: 1px solid rgba(52, 199, 89, 0.12);
+  background: rgba(var(--accent-color-rgb), 0.06);
+  border: 1px solid rgba(var(--accent-color-rgb), 0.12);
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
   touch-action: pan-x;
   cursor: grab;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .swipe-print-track:active {
   cursor: grabbing;
+}
+
+.swipe-print-track.dragging {
+  background: rgba(var(--accent-color-rgb), 0.1);
+  border-color: rgba(var(--accent-color-rgb), 0.25);
+  box-shadow: 0 4px 20px rgba(var(--accent-color-rgb), 0.15);
 }
 
 .swipe-print-label {
@@ -5647,9 +5669,10 @@ body:not(.dark-theme) .mode-option-card.selected {
   font-family: var(--font-ui);
   font-size: 16.5px;
   font-weight: 700;
-  color: #34c759;
+  color: var(--accent-color);
   letter-spacing: 0.5px;
   pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
 .swipe-print-thumb {
@@ -5659,14 +5682,19 @@ body:not(.dark-theme) .mode-option-card.selected {
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #34c759 0%, #248a3d 100%);
-  box-shadow: 0 4px 14px rgba(52, 199, 89, 0.3);
+  background: var(--accent-gradient);
+  box-shadow: 0 4px 14px rgba(var(--accent-color-rgb), 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2;
-  transition: left 0.1s ease, box-shadow 0.2s ease;
+  transition: left 0.1s ease, box-shadow 0.2s ease, transform 0.2s ease;
   pointer-events: none;
+}
+
+.swipe-print-track.dragging .swipe-print-thumb {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(var(--accent-color-rgb), 0.4);
 }
 
 .swipe-print-thumb svg {
@@ -5676,7 +5704,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 }
 
 .swipe-print-track.swiped .swipe-print-thumb {
-  box-shadow: 0 0 20px rgba(52, 199, 89, 0.5);
+  box-shadow: 0 0 20px rgba(var(--accent-color-rgb), 0.5);
 }
 
 .swipe-print-track.swiped .swipe-print-label {
@@ -5701,4 +5729,208 @@ body:not(.dark-theme) .mode-option-card.selected {
 @keyframes spin-clockwise {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.selection-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 24px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 10px;
+}
+
+.swipe-arrows {
+  display: inline-flex;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.swipe-arrows span {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0.3;
+  margin-right: -2px;
+  animation: arrow-glow 1.5s infinite;
+}
+
+.swipe-arrows span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.swipe-arrows span:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.swipe-arrows span:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+.swipe-print-track.dragging .swipe-arrows span {
+  animation-duration: 0.8s;
+  color: var(--accent-color);
+}
+
+@keyframes arrow-glow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(4px);
+  }
+}
+
+.finished-thank-you-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  padding: 44px 36px 56px 36px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  margin: 20px auto 35px auto;
+  width: 95%;
+  max-width: 480px;
+  box-sizing: border-box;
+  text-align: center;
+  overflow: visible;
+}
+
+/* Semi-circular left & right cuts */
+.receipt-cutout {
+  position: absolute;
+  top: 36%;
+  width: 24px;
+  height: 24px;
+  background-color: var(--bg-primary); /* Masks out card using parent screen background */
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.receipt-cutout.left {
+  left: -12px;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.receipt-cutout.right {
+  right: -12px;
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Scalloped bottom border */
+.receipt-bottom-scallops {
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background: radial-gradient(circle at 50% 0, #ffffff 6px, transparent 7px);
+  background-size: 14px 10px;
+  background-repeat: repeat-x;
+  z-index: 2;
+}
+
+.thank-you-logo {
+  max-width: 200px;
+  max-height: 75px;
+  margin-bottom: 18px;
+  object-fit: contain;
+}
+
+.thank-you-logo-placeholder {
+  font-size: 44px;
+  margin-bottom: 12px;
+}
+
+.thank-you-cafe-name {
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+  color: var(--text-primary);
+}
+
+.thank-you-message {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0 0 20px 0;
+}
+
+.thank-you-divider {
+  width: 100%;
+  border-top: 1.5px dashed rgba(0, 0, 0, 0.1);
+  margin: 18px 0;
+}
+
+.receipt-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  margin: 4px 0;
+  text-align: left;
+  gap: 12px;
+}
+
+.receipt-meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.receipt-meta-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  color: #888888;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.receipt-meta-val {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.thank-you-barcode {
+  width: 100%;
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.thank-you-barcode svg {
+  max-width: 320px;
+}
+
+.finished-top-logo {
+  max-width: 280px;
+  max-height: 100px;
+  margin: 10px auto 20px auto;
+  object-fit: contain;
+  display: block;
+}
+
+.finished-top-cafe-name {
+  font-family: var(--font-ui);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 10px auto 20px auto;
+  color: var(--text-primary);
 }

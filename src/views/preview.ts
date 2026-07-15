@@ -27,12 +27,10 @@ export class PreviewView extends BaseView {
   mount(): void {
     this.element.innerHTML = `
       <div class="preview-screen-content">
-        <div class="screen-header">
+        <div class="template-screen-header">
           <button class="btn-back" id="btn-preview-retake-header">← RETAKE</button>
-          <div class="header-titles">
-            <h2 class="view-title">PREVIEW PRINT</h2>
-            <p class="view-subtitle">Review your thermal receipt memory</p>
-          </div>
+          <h2 class="template-choose-title" style="justify-content: center;">PREVIEW <span class="script-title">Print</span></h2>
+          <p class="view-subtitle" style="margin-top: 6px;">Review your thermal receipt memory</p>
         </div>
 
         <div class="preview-layout-container">
@@ -77,7 +75,12 @@ export class PreviewView extends BaseView {
         <!-- Sticky viewport controls -->
         <div class="preview-actions-bar" style="justify-content: center;">
           <div class="swipe-print-track" id="swipe-print">
-            <span class="swipe-print-label" id="swipe-print-label">🖨 SWIPE TO PRINT</span>
+            <span class="swipe-print-label" id="swipe-print-label">
+              🖨 SWIPE TO PRINT 
+              <span class="swipe-arrows">
+                <span>›</span><span>›</span><span>›</span>
+              </span>
+            </span>
             <div class="swipe-print-thumb hint" id="swipe-print-thumb">
               <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
             </div>
@@ -328,6 +331,7 @@ export class PreviewView extends BaseView {
       thumbStart = parseInt(thumb.style.left || '5', 10);
       thumb.classList.remove('hint');
       thumb.style.transition = 'none';
+      track.classList.add('dragging');
     };
 
     const onMove = (clientX: number) => {
@@ -335,11 +339,19 @@ export class PreviewView extends BaseView {
       const dx = clientX - startX;
       const newLeft = Math.max(5, Math.min(thumbStart + dx, maxLeft()));
       thumb.style.left = newLeft + 'px';
+      
+      // Dynamically fade out label as the user swipes
+      const label = track.querySelector('.swipe-print-label') as HTMLElement;
+      if (label) {
+        const progress = newLeft / maxLeft();
+        label.style.opacity = Math.max(0, 1 - progress * 1.5).toString();
+      }
     };
 
     const onEnd = () => {
       if (!isDragging) return;
       isDragging = false;
+      track.classList.remove('dragging');
       thumb.style.transition = 'left 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
 
       const currentLeft = parseInt(thumb.style.left || '5', 10);
@@ -354,6 +366,8 @@ export class PreviewView extends BaseView {
       } else {
         // Snap back
         thumb.style.left = '5px';
+        const label = track.querySelector('.swipe-print-label') as HTMLElement;
+        if (label) label.style.opacity = '1';
         setTimeout(() => thumb.classList.add('hint'), 400);
       }
     };

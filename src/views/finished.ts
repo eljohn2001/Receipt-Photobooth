@@ -38,7 +38,6 @@ export class FinishedView extends BaseView {
           <div class="finished-qr-container">
             <img class="finished-qr-image" id="finished-qr-img" src="" alt="Download QR" />
           </div>
-          <button class="btn btn-download-png" id="btn-finished-download">💾 DOWNLOAD PRINT COPY</button>
           <p class="cafe-tag">Share the joy! Tag us at <strong>${cleanTag}</strong></p>
         </div>
 
@@ -93,17 +92,101 @@ export class FinishedView extends BaseView {
     if (offlineWarning) {
       offlineWarning.remove();
     }
+    this.element.querySelector('.finished-strip-preview')?.remove();
+    this.element.querySelector('.finished-thank-you-card')?.remove();
 
-    // If QR code feature is disabled, hide elements and return early
+    // If QR code feature is disabled, render the Branded Thank You card and return early
     if (config.enableQrCode === false) {
       if (downloadLabel) {
-        downloadLabel.textContent = 'Digital copy disabled';
+        downloadLabel.innerHTML = '';
       }
       if (qrContainer) {
         qrContainer.style.display = 'none';
       }
       if (qrImg) {
         qrImg.classList.add('hidden');
+      }
+
+      // Render Branded Cafe / Thank You Card
+      const downloadCard = this.element.querySelector('.finished-download-card');
+      const cafeTag = this.element.querySelector('.cafe-tag');
+      
+      if (downloadCard && cafeTag) {
+        const thankYouCard = document.createElement('div');
+        thankYouCard.className = 'finished-thank-you-card animate-pop-in';
+        
+        const logoHtml = config.logoDataUrl 
+          ? `<img src="${config.logoDataUrl}" class="thank-you-logo" />` 
+          : `<div class="thank-you-logo-placeholder">☕️</div>`;
+          
+        const dateStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+        const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const printsCount = this.activeSession.copiesCount || 1;
+        const printsStr = `${printsCount} ${printsCount === 1 ? 'COPY' : 'COPIES'}`;
+
+        thankYouCard.innerHTML = `
+          <!-- Circular cutouts for receipt appearance -->
+          <div class="receipt-cutout left"></div>
+          <div class="receipt-cutout right"></div>
+
+          ${logoHtml}
+          <h3 class="thank-you-cafe-name">THANK YOU</h3>
+          <p class="thank-you-message">Your print memory has been processed successfully.</p>
+          
+          <div class="thank-you-divider"></div>
+          
+          <div class="receipt-meta-grid">
+            <div class="receipt-meta-item">
+              <span class="receipt-meta-label">LOCATION</span>
+              <span class="receipt-meta-val">${config.cafeAddress}</span>
+            </div>
+            <div class="receipt-meta-item" style="text-align: right;">
+              <span class="receipt-meta-label">PRINTS</span>
+              <span class="receipt-meta-val">${printsStr}</span>
+            </div>
+            <div class="receipt-meta-item" style="grid-column: span 2; margin-top: 6px;">
+              <span class="receipt-meta-label">DATE & TIME</span>
+              <span class="receipt-meta-val">${dateStr} | ${timeStr}</span>
+            </div>
+          </div>
+          
+          <div class="thank-you-divider"></div>
+          
+          <div class="thank-you-barcode">
+            <svg viewBox="0 0 100 30" width="100%" height="45">
+              <rect x="0" y="0" width="2" height="22" fill="#000" />
+              <rect x="3" y="0" width="1" height="22" fill="#000" />
+              <rect x="6" y="0" width="3" height="22" fill="#000" />
+              <rect x="11" y="0" width="1" height="22" fill="#000" />
+              <rect x="14" y="0" width="2" height="22" fill="#000" />
+              <rect x="18" y="0" width="4" height="22" fill="#000" />
+              <rect x="24" y="0" width="1" height="22" fill="#000" />
+              <rect x="27" y="0" width="2" height="22" fill="#000" />
+              <rect x="31" y="0" width="3" height="22" fill="#000" />
+              <rect x="36" y="0" width="1" height="22" fill="#000" />
+              <rect x="39" y="0" width="2" height="22" fill="#000" />
+              <rect x="43" y="0" width="4" height="22" fill="#000" />
+              <rect x="49" y="0" width="1" height="22" fill="#000" />
+              <rect x="52" y="0" width="2" height="22" fill="#000" />
+              <rect x="56" y="0" width="3" height="22" fill="#000" />
+              <rect x="61" y="0" width="1" height="22" fill="#000" />
+              <rect x="64" y="0" width="2" height="22" fill="#000" />
+              <rect x="68" y="0" width="4" height="22" fill="#000" />
+              <rect x="74" y="0" width="1" height="22" fill="#000" />
+              <rect x="77" y="0" width="2" height="22" fill="#000" />
+              <rect x="81" y="0" width="3" height="22" fill="#000" />
+              <rect x="86" y="0" width="1" height="22" fill="#000" />
+              <rect x="89" y="0" width="2" height="22" fill="#000" />
+              <rect x="93" y="0" width="4" height="22" fill="#000" />
+              <text x="50" y="28" font-size="5" text-anchor="middle" font-family="Courier New, monospace" font-weight="bold" fill="#000">${config.cafeName.toUpperCase()}</text>
+            </svg>
+          </div>
+
+          <!-- Jagged scallops at bottom -->
+          <div class="receipt-bottom-scallops"></div>
+        `;
+
+        downloadCard.insertBefore(thankYouCard, cafeTag);
       }
       
       // Explode confetti!
@@ -251,7 +334,7 @@ export class FinishedView extends BaseView {
   private setupEvents() {
     const againBtn = this.element.querySelector('#btn-finished-again');
     const endBtn = this.element.querySelector('#btn-finished-end');
-    const downloadBtn = this.element.querySelector('#btn-finished-download') as HTMLButtonElement;
+    const downloadBtn = this.element.querySelector('#btn-finished-download') as HTMLButtonElement | null;
 
     againBtn?.addEventListener('click', () => {
       audioManager.playBeep();
@@ -319,20 +402,33 @@ export class FinishedView extends BaseView {
   }
 
   private triggerConfetti() {
+    // Left side burst
     confetti({
-      particleCount: 50,
+      particleCount: 120,
       angle: 60,
-      spread: 55,
-      origin: { x: 0, y: 0.8 },
-      colors: ['#ffffff', '#aaaaaa', '#555555']
+      spread: 70,
+      origin: { x: 0, y: 0.85 },
+      colors: ['#ffffff', '#aaaaaa', '#555555', '#007aff']
     });
 
+    // Right side burst
     confetti({
-      particleCount: 50,
+      particleCount: 120,
       angle: 120,
-      spread: 55,
-      origin: { x: 1, y: 0.8 },
-      colors: ['#ffffff', '#aaaaaa', '#555555']
+      spread: 70,
+      origin: { x: 1, y: 0.85 },
+      colors: ['#ffffff', '#aaaaaa', '#555555', '#007aff']
     });
+
+    // Center delay burst for maximum depth!
+    setTimeout(() => {
+      confetti({
+        particleCount: 80,
+        angle: 90,
+        spread: 80,
+        origin: { x: 0.5, y: 0.8 },
+        colors: ['#ffffff', '#bbbbbb', '#777777']
+      });
+    }, 200);
   }
 }

@@ -20,6 +20,7 @@ import { uploadReceiptPhotos } from './services/upload';
 import { audioManager } from './services/audio';
 import { getShareRecord, getPublicStorageUrl, supabase } from './services/supabase';
 import { syncPendingSessions, updateBoothTelemetry } from './services/sync';
+import { requestWakeLock } from './services/wake-lock';
 import defaultSnapHome from './assets/Snap Home.png';
 
 function renderDownloadPage(
@@ -476,6 +477,9 @@ async function applyTheme(config: KioskConfig) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Request Screen Wake Lock to prevent tablet from sleeping
+  requestWakeLock();
+
   const slider = document.getElementById('views-slider');
   if (!slider) {
     console.error('Views slider not found!');
@@ -828,6 +832,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const enableFortuneInput = document.getElementById('input-enable-fortune') as HTMLInputElement;
     if (enableFortuneInput) enableFortuneInput.checked = config.enableMemoryFortune !== false;
+
+    const saveGalleryInput = document.getElementById('input-save-gallery') as HTMLInputElement;
+    if (saveGalleryInput) saveGalleryInput.checked = config.saveToGallery !== false;
 
     const enableComfortInput = document.getElementById('input-enable-comfort') as HTMLInputElement;
     if (enableComfortInput) enableComfortInput.checked = config.enableComfortCards !== false;
@@ -1399,6 +1406,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
     const enableFortuneInput = document.getElementById('input-enable-fortune') as HTMLInputElement;
     const enableComfortInput = document.getElementById('input-enable-comfort') as HTMLInputElement;
+    const saveGalleryInput = document.getElementById('input-save-gallery') as HTMLInputElement;
     const subtitleTopInput = document.getElementById('input-home-subtitle-top') as HTMLInputElement;
     const subtitleBottomInput = document.getElementById('input-home-subtitle-bottom') as HTMLInputElement;
     const adminPinInput = document.getElementById('input-admin-pin') as HTMLInputElement;
@@ -1441,6 +1449,7 @@ document.addEventListener('DOMContentLoaded', () => {
       enableQrCode: enableQrInput ? enableQrInput.checked : true,
       enableMemoryFortune: enableFortuneInput ? enableFortuneInput.checked : true,
       enableComfortCards: enableComfortInput ? enableComfortInput.checked : true,
+      saveToGallery: saveGalleryInput ? saveGalleryInput.checked : true,
       printContrast: printContrastSelect ? (printContrastSelect.value as 'light' | 'medium' | 'dark' | 'deep') : 'medium',
       printerMode: printModeSelect ? (printModeSelect.value as 'usb' | 'bluetooth') : 'usb',
       paperWidth: paperWidthSelect ? (paperWidthSelect.value as '58mm' | '80mm') : '80mm',

@@ -35,6 +35,7 @@ export interface KioskConfig {
   paperRefilledAt?: string;
   accentColor?: string;
   paperWidth?: '58mm' | '80mm';
+  saveToGallery?: boolean;
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -62,6 +63,7 @@ export const DEFAULT_CONFIG: KioskConfig = {
   printContrast: 'medium',
   printerMode: 'usb',
   paperWidth: '80mm',
+  saveToGallery: true,
   sessionPrice: 30.00,
   profitSharePercent: 60.00,
   maxPrintsAllowed: 4,

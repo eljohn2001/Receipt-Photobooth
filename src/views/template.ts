@@ -26,7 +26,6 @@ export class TemplateView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="template-screen-header">
-          <button class="btn-back" id="btn-tmpl-back">← BACK</button>
           <h2 class="template-choose-title">CHOOSE A <span class="script-title">Layout</span></h2>
         </div>
 
@@ -35,6 +34,10 @@ export class TemplateView extends BaseView {
           <div class="templates-static-grid">
             <!-- Populated dynamically by renderTemplatesGrid in onEnter -->
           </div>
+        </div>
+
+        <div class="selection-footer">
+          <button class="btn btn-secondary btn-wide" id="btn-tmpl-back">← GO BACK</button>
         </div>
       </div>
     `;
