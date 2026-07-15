@@ -134,47 +134,70 @@ export class PrintingView extends BaseView {
 
       const copies = this.activeSession.copiesCount || 1;
       try {
+        if (headlineEl) {
+          headlineEl.textContent = 'GENERATING PRINT DATA...';
+        }
+        audioManager.playDispenser();
+        
+        // Generate single copy ESC/POS bytes
+        const singleCopyBytes = await generateReceiptEscPos(this.activeSession);
+        
+        // Concatenate copies into a single print stream
+        const totalLength = singleCopyBytes.length * copies;
+        const escPosBytes = new Uint8Array(totalLength);
         for (let i = 0; i < copies; i++) {
-          if (headlineEl) {
-            headlineEl.textContent = copies > 1 
-              ? `GENERATING COPY ${i + 1} OF ${copies}...`
-              : 'GENERATING PRINT DATA...';
-          }
-          audioManager.playDispenser();
-          
-          const escPosBytes = await generateReceiptEscPos(this.activeSession);
-          
-          let binaryString = '';
-          const len = escPosBytes.byteLength;
-          for (let j = 0; j < len; j++) {
-            binaryString += String.fromCharCode(escPosBytes[j]);
-          }
-          const base64Data = btoa(binaryString);
-          
-          const config = loadKioskConfig();
-          const isBluetooth = config.printerMode === 'bluetooth';
+          escPosBytes.set(singleCopyBytes, i * singleCopyBytes.length);
+        }
+        
+        let binaryString = '';
+        const len = escPosBytes.byteLength;
+        for (let j = 0; j < len; j++) {
+          binaryString += String.fromCharCode(escPosBytes[j]);
+        }
+        const base64Data = btoa(binaryString);
+        
+        const config = loadKioskConfig();
+        const isBluetooth = config.printerMode === 'bluetooth';
 
-          if (headlineEl) {
-            headlineEl.textContent = copies > 1
-              ? `SENDING COPY ${i + 1} OF ${copies}...`
-              : (isBluetooth ? 'SENDING TO BLUETOOTH PRINTER...' : 'SENDING TO USB PRINTER...');
-          }
-          
-          if (isBluetooth) {
-            await DirectPrinter.printRawBluetooth({ base64Data });
-          } else {
-            await DirectPrinter.printRawUsb({ base64Data });
-          }
-          
-          audioManager.stopDispenser();
-          if (i < copies - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+        if (headlineEl) {
+          headlineEl.textContent = isBluetooth 
+            ? 'SENDING TO BLUETOOTH PRINTER...' 
+            : 'SENDING TO USB PRINTER...';
+        }
+        
+        let printSuccess = false;
+        let printError: any = null;
+        
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            if (isBluetooth) {
+              await DirectPrinter.printRawBluetooth({ base64Data });
+            } else {
+              await DirectPrinter.printRawUsb({ base64Data });
+            }
+            printSuccess = true;
+            break;
+          } catch (err) {
+            printError = err;
+            console.warn(`Direct print attempt ${attempt} failed:`, err);
+            if (attempt < 3) {
+              if (headlineEl) {
+                headlineEl.textContent = `PRINTER BUSY, RETRYING (${attempt}/2)...`;
+              }
+              await new Promise((resolve) => setTimeout(resolve, 3000));
+            }
           }
         }
+
+        if (!printSuccess) {
+          throw printError || new Error('Direct print transfer failed');
+        }
+        
+        audioManager.stopDispenser();
       } catch (e: any) {
         const config = loadKioskConfig();
         const isBluetooth = config.printerMode === 'bluetooth';
-        console.error('Direct print failed:', e);
+        console.error('Direct print failed after retries:', e);
         alert((isBluetooth ? 'Direct Bluetooth print failed: ' : 'Direct USB print failed: ') + (e.message || e));
         audioManager.stopDispenser();
       }
@@ -191,7 +214,7 @@ export class PrintingView extends BaseView {
           await this.triggerWindowPrint();
           audioManager.stopDispenser();
           if (i < copies - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 800));
+            await new Promise((resolve) => setTimeout(resolve, 1500));
           }
         }
       } catch (e) {
@@ -322,6 +345,17 @@ export class PrintingView extends BaseView {
     
     if (printTarget && previewContent) {
       printTarget.innerHTML = previewContent.innerHTML;
+      
+      // Dynamically set CSS page width for printer compatibility
+      const config = loadKioskConfig();
+      const printPaperWidth = config.paperWidth === '58mm' ? '58mm' : '80mm';
+      let styleEl = document.getElementById('dynamic-print-page-style');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'dynamic-print-page-style';
+        document.head.appendChild(styleEl);
+      }
+      styleEl.innerHTML = `@media print { @page { size: ${printPaperWidth} auto; margin: 0; } }`;
       
       // Wait for all images to load in the print DOM tree
       const images = Array.from(printTarget.querySelectorAll('img'));

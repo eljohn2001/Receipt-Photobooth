@@ -10,11 +10,12 @@ export class CaptureView extends BaseView {
   private videoElement: HTMLVideoElement | null = null;
   private countdownOverlay: HTMLElement | null = null;
   private countdownText: HTMLElement | null = null;
-  private progressIndicators: HTMLElement | null = null;
+  private photoStripElement: HTMLElement | null = null;
   private activeSession: AppSession;
   private countdownIntervalId: number | null = null;
   private activeSequenceTimeoutId: number | null = null;
   private isCaptureActive = false;
+  private retakeIndex: number | null = null;
 
   constructor(
     element: HTMLElement,
@@ -54,9 +55,9 @@ export class CaptureView extends BaseView {
         </div>
 
         <div class="capture-controls">
-          <!-- Shot sequence progress dots -->
-          <div class="sequence-progress hidden" id="sequence-progress">
-            <!-- Dynamic dots added during sequence -->
+          <!-- Live horizontal photo strip preview -->
+          <div class="photo-strip" id="capture-photo-strip">
+            <!-- Dynamic slots filled dynamically -->
           </div>
           
           <!-- Sleek camera shutter button -->
@@ -72,14 +73,18 @@ export class CaptureView extends BaseView {
     this.videoElement = this.element.querySelector('#webcam-preview');
     this.countdownOverlay = this.element.querySelector('#countdown-overlay');
     this.countdownText = this.element.querySelector('#countdown-text');
-    this.progressIndicators = this.element.querySelector('#sequence-progress');
+    this.photoStripElement = this.element.querySelector('#capture-photo-strip');
 
     // Back Button listener
     const backBtn = this.element.querySelector('#btn-capture-back');
     backBtn?.addEventListener('click', () => {
       this.isCaptureActive = false;
       this.cameraService.stop();
-      this.navigateTo('template-selection');
+      if (this.retakeIndex !== null) {
+        this.navigateTo('review');
+      } else {
+        this.navigateTo('template-selection');
+      }
     });
 
     // Shutter Button listener
@@ -101,7 +106,7 @@ export class CaptureView extends BaseView {
     this.clearAllTimers();
   }
 
-  async onEnter(): Promise<void> {
+  async onEnter(params?: any): Promise<void> {
     this.isCaptureActive = true;
     const template = getTemplateById(this.activeSession.selectedTemplateId || '');
     if (!template) {
@@ -110,31 +115,35 @@ export class CaptureView extends BaseView {
       return;
     }
 
-    // Reset session photos
-    this.activeSession.capturedPhotos = [];
-    this.activeSession.ditheredPhotos = [];
+    // Check if we are in retake mode
+    if (params && typeof params.retakeIndex === 'number') {
+      this.retakeIndex = params.retakeIndex;
+      console.log(`Entering CaptureView in RETAKE mode for photo index: ${this.retakeIndex}`);
+    } else {
+      this.retakeIndex = null;
+      // Reset session photos ONLY if NOT retaking
+      this.activeSession.capturedPhotos = [];
+      this.activeSession.ditheredPhotos = [];
+    }
 
     // Title setup
     const titleEl = this.element.querySelector('#capture-title');
     const subtitleEl = this.element.querySelector('#capture-subtitle');
-    if (titleEl) titleEl.textContent = template.name;
-    if (subtitleEl) {
-      subtitleEl.textContent = template.photoCount === 1 
-        ? 'Tap the shutter to take photo!' 
-        : `Tap the shutter to start ${template.photoCount}-photo sequence!`;
-    }
-
-    // Initialize progress indicators if multi-shot
-    if (this.progressIndicators) {
-      if (template.photoCount > 1) {
-        this.progressIndicators.classList.remove('hidden');
-        this.progressIndicators.innerHTML = Array.from({ length: template.photoCount })
-          .map((_, i) => `<span class="seq-dot" id="seq-dot-${i}">${i + 1}</span>`)
-          .join('');
-      } else {
-        this.progressIndicators.classList.add('hidden');
+    
+    if (this.retakeIndex !== null) {
+      if (titleEl) titleEl.textContent = 'RETAKE PHOTO';
+      if (subtitleEl) subtitleEl.textContent = `Retaking photo ${this.retakeIndex + 1} of ${template.photoCount}`;
+    } else {
+      if (titleEl) titleEl.textContent = template.name;
+      if (subtitleEl) {
+        subtitleEl.textContent = template.photoCount === 1 
+          ? 'Tap the shutter to take photo!' 
+          : `Tap the shutter to start ${template.photoCount}-photo sequence!`;
       }
     }
+
+    // Render horizontal photo strip preview initially
+    this.renderPhotoStrip(template.photoCount);
 
     // Reset shutter button UI state
     const shutterBtn = this.element.querySelector('#btn-shutter') as HTMLButtonElement;
@@ -184,17 +193,81 @@ export class CaptureView extends BaseView {
     }
   }
 
+  private renderPhotoStrip(totalShots: number, activeIndex?: number) {
+    if (!this.photoStripElement) return;
+
+    let html = '';
+    const currentActive = activeIndex !== undefined ? activeIndex : (this.retakeIndex !== null ? this.retakeIndex : 0);
+
+    for (let i = 0; i < totalShots; i++) {
+      const isRetakingThis = this.retakeIndex === i;
+      const hasPhoto = this.activeSession.capturedPhotos[i] && !isRetakingThis;
+      const isActive = i === currentActive;
+
+      let slotClass = 'photo-strip-slot';
+      if (hasPhoto) {
+        slotClass += ' slot-captured';
+      } else if (isActive) {
+        slotClass += ' slot-active';
+      } else {
+        slotClass += ' slot-empty';
+      }
+
+      html += `
+        <div class="${slotClass}" id="strip-slot-${i}">
+          <div class="slot-number-badge">${i + 1}</div>
+          ${hasPhoto 
+            ? `<img src="${this.activeSession.capturedPhotos[i]}" class="slot-thumbnail" />` 
+            : (isRetakingThis && isActive ? '<span style="font-size: 10px; font-weight: bold; color: var(--accent-color);">RETAKE</span>' : '')
+          }
+        </div>
+      `;
+    }
+
+    this.photoStripElement.innerHTML = html;
+  }
+
   /**
    * Run the countdown and capture photos based on count requirements
    */
   private async runCaptureSequence(totalShots: number) {
     this.isCaptureActive = true;
+
+    if (this.retakeIndex !== null) {
+      // Retake Mode
+      const targetIdx = this.retakeIndex;
+      this.renderPhotoStrip(totalShots, targetIdx);
+
+      // Perform countdown
+      await this.countdown(3);
+      if (!this.isCaptureActive) return;
+
+      // Shutter flash & capture
+      this.triggerFlash();
+      if (this.videoElement) {
+        const frameData = this.cameraService.capture(this.videoElement);
+        this.activeSession.capturedPhotos[targetIdx] = frameData;
+      }
+
+      this.renderPhotoStrip(totalShots, targetIdx);
+      await new Promise((r) => setTimeout(r, 600));
+
+      if (!this.isCaptureActive) return;
+
+      this.cameraService.stop();
+      this.navigateTo('review');
+      return;
+    }
+
+    // Sequence Mode
     for (let shotIndex = 0; shotIndex < totalShots; shotIndex++) {
       if (!this.isCaptureActive) break;
-      // 1. Update active indicator dot
-      if (totalShots > 1) {
-        const activeDot = this.element.querySelector(`#seq-dot-${shotIndex}`);
-        activeDot?.classList.add('active');
+
+      // 1. Update strip and progress text
+      this.renderPhotoStrip(totalShots, shotIndex);
+      const subtitleEl = this.element.querySelector('#capture-subtitle');
+      if (subtitleEl) {
+        subtitleEl.textContent = `Photo ${shotIndex + 1} of ${totalShots}`;
       }
 
       // 2. Perform Countdown (3, 2, 1)
@@ -208,12 +281,8 @@ export class CaptureView extends BaseView {
         this.activeSession.capturedPhotos.push(frameData);
       }
 
-      // 4. Mark active dot as captured
-      if (totalShots > 1) {
-        const activeDot = this.element.querySelector(`#seq-dot-${shotIndex}`);
-        activeDot?.classList.remove('active');
-        activeDot?.classList.add('captured');
-      }
+      // 4. Update slot state to captured
+      this.renderPhotoStrip(totalShots, shotIndex);
 
       // Pause briefly between shots in sequence
       if (shotIndex < totalShots - 1) {
@@ -224,9 +293,9 @@ export class CaptureView extends BaseView {
 
     if (!this.isCaptureActive) return;
 
-    // Sequence completed! Stop camera and move to Preview View
+    // Sequence completed! Stop camera and move to Review View
     this.cameraService.stop();
-    this.navigateTo('preview');
+    this.navigateTo('review');
   }
 
   /**

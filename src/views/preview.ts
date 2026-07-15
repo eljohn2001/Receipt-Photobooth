@@ -14,8 +14,6 @@ import { audioManager } from '../services/audio';
 
 export class PreviewView extends BaseView {
   private activeSession: AppSession;
-  private printBtn: HTMLButtonElement | null = null;
-  private retakeBtn: HTMLButtonElement | null = null;
 
   constructor(
     element: HTMLElement,
@@ -77,15 +75,16 @@ export class PreviewView extends BaseView {
         </div>
 
         <!-- Sticky viewport controls -->
-        <div class="preview-actions-bar">
-          <button class="btn btn-secondary btn-half" id="btn-preview-retake">🔄 RETAKE</button>
-          <button class="btn btn-primary btn-half btn-glow" id="btn-preview-print" disabled>🖨 PRINT NOW</button>
+        <div class="preview-actions-bar" style="justify-content: center;">
+          <div class="swipe-print-track" id="swipe-print">
+            <span class="swipe-print-label" id="swipe-print-label">🖨 SWIPE TO PRINT</span>
+            <div class="swipe-print-thumb hint" id="swipe-print-thumb">
+              <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+            </div>
+          </div>
         </div>
       </div>
     `;
-
-    this.printBtn = this.element.querySelector('#btn-preview-print') as HTMLButtonElement;
-    this.retakeBtn = this.element.querySelector('#btn-preview-retake') as HTMLButtonElement;
 
     this.setupEvents();
   }
@@ -119,7 +118,7 @@ export class PreviewView extends BaseView {
     const qtyValEl = this.element.querySelector('#qty-val');
     if (qtyValEl) {
       const count = this.activeSession.copiesCount || 1;
-      qtyValEl.textContent = `${count} Cop${count > 1 ? 'ies' : 'y'} 🔒`;
+      qtyValEl.textContent = count.toString();
     }
 
     // Reset slide-down exit animation states
@@ -130,7 +129,19 @@ export class PreviewView extends BaseView {
       contentTarget.classList.add('hidden');
       contentTarget.innerHTML = '';
     }
-    if (this.printBtn) this.printBtn.disabled = true;
+
+    // Reset Swipe Button
+    const thumb = this.element.querySelector('#swipe-print-thumb') as HTMLElement;
+    if (thumb) {
+      thumb.style.left = '5px';
+      thumb.classList.add('hint');
+    }
+    const track = this.element.querySelector('#swipe-print') as HTMLElement;
+    if (track) {
+      track.classList.remove('swiped');
+      track.style.pointerEvents = 'none';
+      track.style.opacity = '0.5';
+    }
 
     const template = getTemplateById(this.activeSession.selectedTemplateId || '');
     if (!template || this.activeSession.capturedPhotos.length === 0) {
@@ -151,11 +162,6 @@ export class PreviewView extends BaseView {
 
           let matchingQuotes: string[] = [];
 
-          // Categorize the 98 quotes into 4 segments corresponding to the 4 templates
-          // classic-solo: 0 to 24 (25 quotes)
-          // duet-grid: 25 to 49 (25 quotes)
-          // film-stack: 50 to 74 (25 quotes)
-          // hex-grid: 75 to 97 (23 quotes)
           if (template.id === 'classic-solo') {
             matchingQuotes = allQuotes.slice(0, 25);
           } else if (template.id === 'duet-grid') {
@@ -235,7 +241,12 @@ export class PreviewView extends BaseView {
       // Hide loader, show content
       if (loader) loader.classList.add('hidden');
       if (contentTarget) contentTarget.classList.remove('hidden');
-      if (this.printBtn) this.printBtn.disabled = false;
+      
+      // Enable Swipe Print Interaction
+      if (track) {
+        track.style.pointerEvents = 'auto';
+        track.style.opacity = '1';
+      }
 
     } catch (error) {
       console.error('Failed to process preview:', error);
@@ -244,19 +255,16 @@ export class PreviewView extends BaseView {
     }
   }
 
-  onLeave(): void {
-    if (this.printBtn) this.printBtn.disabled = true;
-  }
+  onLeave(): void {}
 
   private setupEvents(): void {
-    // Back header button and primary Retake button both return to camera capture
+    // Back header button returns to review screen
     const headerRetakeBtn = this.element.querySelector('#btn-preview-retake-header');
     
     const triggerRetake = () => {
-      this.navigateTo('camera-capture');
+      this.navigateTo('review');
     };
 
-    this.retakeBtn?.addEventListener('click', triggerRetake);
     headerRetakeBtn?.addEventListener('click', triggerRetake);
 
     // Copies control buttons
@@ -298,62 +306,142 @@ export class PreviewView extends BaseView {
       }
     });
 
-    // Print button triggers printing screen and triggers standard print
-    this.printBtn?.addEventListener('click', () => {
-      const config = loadKioskConfig();
-      if (config.enableQrCode !== false) {
-        // 1. Kick off background upload before transitioning
-        this.activeSession.uploadPromise = (async () => {
-          try {
-            // Generate high quality B&W (grayscale, non-dithered) and Color receipt images
-            const bwBlob = await generateReceiptBlob(this.activeSession, 'bw');
-            const colorBlob = await generateReceiptBlob(this.activeSession, 'color');
-            
-            this.activeSession.bwBlob = bwBlob;
-            this.activeSession.colorBlob = colorBlob;
-            
-            const shareId = await uploadReceiptPhotos(bwBlob, colorBlob, this.activeSession.shareId);
-            
-            const baseUrl = 'https://photoreceipt.stoodioph.com';
-            const hybridUrl = `${baseUrl}/?id=${shareId}`;
-            const qrDataUrl = await generateQRCode(hybridUrl);
-            
-            if (this.activeSession.metadata) {
-              this.activeSession.metadata.qrCodeUrl = qrDataUrl;
-            }
-
-            // Proactively update any rendered HTML preview or print containers with the correct QR code image
-            const previewQrImages = document.querySelectorAll('.receipt-qr-image');
-            previewQrImages.forEach((img) => {
-              (img as HTMLImageElement).src = qrDataUrl;
-            });
-
-            return qrDataUrl;
-          } catch (err) {
-            console.error('Failed to upload receipts in background:', err);
-            return null; // Fallback to local default QR code url on error
-          }
-        })();
-      } else {
-        this.activeSession.uploadPromise = undefined;
-      }
-
-      const paperEl = this.element.querySelector('#preview-thermal-paper');
-      if (paperEl) {
-        paperEl.classList.add('slide-down-exit');
-        
-        // Disable buttons to prevent multiple clicks
-        if (this.printBtn) this.printBtn.disabled = true;
-        if (this.retakeBtn) this.retakeBtn.disabled = true;
-        
-        // Navigate after paper slides down completely
-        setTimeout(() => {
-          this.navigateTo('printing');
-        }, 800);
-      } else {
-        this.navigateTo('printing');
-      }
+    // Setup Swipe-to-print gesture
+    this.setupSwipePrint('swipe-print', () => {
+      this.triggerPrintFlow();
     });
+  }
+
+  private setupSwipePrint(trackId: string, onComplete: () => void): void {
+    const track = this.element.querySelector(`#${trackId}`) as HTMLElement;
+    const thumb = this.element.querySelector(`#${trackId}-thumb`) as HTMLElement;
+    if (!track || !thumb) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let thumbStart = 5;
+    const maxLeft = () => track.clientWidth - thumb.clientWidth - 10;
+
+    const onStart = (clientX: number) => {
+      isDragging = true;
+      startX = clientX;
+      thumbStart = parseInt(thumb.style.left || '5', 10);
+      thumb.classList.remove('hint');
+      thumb.style.transition = 'none';
+    };
+
+    const onMove = (clientX: number) => {
+      if (!isDragging) return;
+      const dx = clientX - startX;
+      const newLeft = Math.max(5, Math.min(thumbStart + dx, maxLeft()));
+      thumb.style.left = newLeft + 'px';
+    };
+
+    const onEnd = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      thumb.style.transition = 'left 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+
+      const currentLeft = parseInt(thumb.style.left || '5', 10);
+      const progress = currentLeft / maxLeft();
+
+      if (progress > 0.75) {
+        // Swipe completed
+        thumb.style.left = maxLeft() + 'px';
+        track.classList.add('swiped');
+        audioManager.playBeep();
+        setTimeout(() => onComplete(), 250);
+      } else {
+        // Snap back
+        thumb.style.left = '5px';
+        setTimeout(() => thumb.classList.add('hint'), 400);
+      }
+    };
+
+    // Touch events
+    track.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      const thumbRect = thumb.getBoundingClientRect();
+      const touchInThumb = touch.clientX >= thumbRect.left - 10 && touch.clientX <= thumbRect.right + 10
+                        && touch.clientY >= thumbRect.top - 10 && touch.clientY <= thumbRect.bottom + 10;
+      if (touchInThumb) onStart(touch.clientX);
+    }, { passive: true });
+
+    track.addEventListener('touchmove', (e) => {
+      if (isDragging) onMove(e.touches[0].clientX);
+    }, { passive: true });
+
+    track.addEventListener('touchend', () => onEnd());
+    track.addEventListener('touchcancel', () => onEnd());
+
+    // Mouse events (for desktop testing)
+    track.addEventListener('mousedown', (e) => {
+      const thumbRect = thumb.getBoundingClientRect();
+      const inThumb = e.clientX >= thumbRect.left - 10 && e.clientX <= thumbRect.right + 10;
+      if (inThumb) onStart(e.clientX);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) onMove(e.clientX);
+    });
+
+    window.addEventListener('mouseup', () => onEnd());
+  }
+
+  private triggerPrintFlow(): void {
+    const config = loadKioskConfig();
+    if (config.enableQrCode !== false) {
+      // 1. Kick off background upload before transitioning
+      this.activeSession.uploadPromise = (async () => {
+        try {
+          // Generate high quality B&W (grayscale, non-dithered) and Color receipt images
+          const bwBlob = await generateReceiptBlob(this.activeSession, 'bw');
+          const colorBlob = await generateReceiptBlob(this.activeSession, 'color');
+          
+          this.activeSession.bwBlob = bwBlob;
+          this.activeSession.colorBlob = colorBlob;
+          
+          const shareId = await uploadReceiptPhotos(bwBlob, colorBlob, this.activeSession.shareId);
+          
+          const baseUrl = 'https://photoreceipt.stoodioph.com';
+          const hybridUrl = `${baseUrl}/?id=${shareId}`;
+          const qrDataUrl = await generateQRCode(hybridUrl);
+          
+          if (this.activeSession.metadata) {
+            this.activeSession.metadata.qrCodeUrl = qrDataUrl;
+          }
+
+          // Proactively update any rendered HTML preview or print containers with the correct QR code image
+          const previewQrImages = document.querySelectorAll('.receipt-qr-image');
+          previewQrImages.forEach((img) => {
+            (img as HTMLImageElement).src = qrDataUrl;
+          });
+
+          return qrDataUrl;
+        } catch (err) {
+          console.error('Failed to upload receipts in background:', err);
+          return null; // Fallback to local default QR code url on error
+        }
+      })();
+    } else {
+      this.activeSession.uploadPromise = undefined;
+    }
+
+    const paperEl = this.element.querySelector('#preview-thermal-paper');
+    if (paperEl) {
+      paperEl.classList.add('slide-down-exit');
+      
+      // Disable track to prevent multiple swipes
+      const track = this.element.querySelector('#swipe-print') as HTMLElement;
+      if (track) track.style.pointerEvents = 'none';
+
+      // Navigate after paper slides down completely
+      setTimeout(() => {
+        this.navigateTo('printing');
+      }, 800);
+    } else {
+      this.navigateTo('printing');
+    }
   }
 
   private renderThemeSelector(templateId: string): void {

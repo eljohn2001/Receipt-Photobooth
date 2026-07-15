@@ -34,6 +34,7 @@ export interface KioskConfig {
   paperPrintsRemaining?: number;
   paperRefilledAt?: string;
   accentColor?: string;
+  paperWidth?: '58mm' | '80mm';
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -60,6 +61,7 @@ export const DEFAULT_CONFIG: KioskConfig = {
   enableComfortCards: true,
   printContrast: 'medium',
   printerMode: 'usb',
+  paperWidth: '80mm',
   sessionPrice: 30.00,
   profitSharePercent: 60.00,
   maxPrintsAllowed: 4,

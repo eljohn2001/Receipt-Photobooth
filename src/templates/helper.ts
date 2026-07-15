@@ -45,13 +45,19 @@ export function renderReceiptFooter(metadata: ReceiptMetadata): string {
   `;
 }
 
+export function renderReceiptDivider(): string {
+  const config = loadKioskConfig();
+  const dots = config.paperWidth === '58mm' ? '.............................' : '............................................';
+  return `<div class="receipt-divider">${dots}</div>`;
+}
+
 export function renderReceiptQR(metadata: ReceiptMetadata): string {
   const config = loadKioskConfig();
   if (config.enableQrCode === false || !metadata.qrCodeUrl) {
     return '';
   }
   return `
-    <div class="receipt-divider qr-divider">.............................</div>
+    ${renderReceiptDivider()}
     <div class="receipt-qr-block">
       <div class="qr-info-text">SCAN FOR DIGITAL COPY</div>
       <img class="receipt-qr-image" src="${metadata.qrCodeUrl}" alt="QR Link" />
@@ -67,7 +73,7 @@ export function renderReceiptFortune(session: AppSession): string {
   }
   return `
     <div class="receipt-fortune-wrapper">
-      <div class="receipt-divider">.............................</div>
+      ${renderReceiptDivider()}
       <div class="receipt-fortune-block">
         <div class="fortune-title">MEMORY FORTUNE</div>
         <div class="fortune-text">"${session.selectedQuote}"</div>
@@ -134,7 +140,7 @@ export function renderComfortCard(session: AppSession, metadata: ReceiptMetadata
         ${illustrationSvg}
       </div>
 
-      <div class="receipt-divider">.............................</div>
+      ${renderReceiptDivider()}
       
       <div class="comfort-card-body">
         <div class="comfort-card-title">COMFORT CARD</div>

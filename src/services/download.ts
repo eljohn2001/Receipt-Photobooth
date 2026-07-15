@@ -81,15 +81,20 @@ export async function renderReceiptToCanvas(
   const config = loadKioskConfig();
   const themeImg = null;
 
-  // Standard canvas width of 384px (58mm printer standard width)
-  const width = 384;
+  // Dynamic canvas scaling based on printer paper width (58mm = 384px, 80mm = 576px)
+  const scale = config.paperWidth === '58mm' ? 1.0 : 1.5;
+  const width = Math.round(384 * scale);
   canvas.width = width;
 
   const templateId = session.selectedTemplateId || '';
   
   let gridHeight = 0;
-  const margin = 8; // Standard receipt margin matching CSS
-  const printWidth = width - margin * 2; // 368px
+  const margin = Math.round(8 * scale); // Standard receipt margin matching CSS
+  const printWidth = width - margin * 2;
+
+  // Get dynamic divider styles
+  const dottedLine = config.paperWidth === '58mm' ? '.............................' : '............................................';
+  const dashedLine = config.paperWidth === '58mm' ? '- - - - - - - - - - - - - - - - - - - -' : '- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -';
 
   let comfortHeight = 0;
   let comfortLines: string[] = [];
@@ -97,23 +102,23 @@ export async function renderReceiptToCanvas(
   if (templateId === 'comfort-card') {
     gridHeight = 0;
     ctx.save();
-    ctx.font = 'bold 18px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = `bold ${Math.round(18 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
     const quoteText = `"${session.selectedQuote || ''}"`;
-    comfortLines = wrapText(ctx, quoteText, printWidth - 16);
+    comfortLines = wrapText(ctx, quoteText, printWidth - Math.round(16 * scale));
     ctx.restore();
-    comfortHeight = 90 + 16 + 22 + 25 + (comfortLines.length * 22) + 10;
+    comfortHeight = Math.round(90 * scale) + Math.round(16 * scale) + Math.round(22 * scale) + Math.round(25 * scale) + (comfortLines.length * Math.round(22 * scale)) + Math.round(10 * scale);
   } else if (templateId === 'classic-solo') {
-    gridHeight = printWidth; // 336px
+    gridHeight = printWidth;
   } else if (templateId === 'duet-grid') {
-    const size = (printWidth - 8) / 2; // 164px
-    gridHeight = size * 2 + 8; // 336px
+    const size = (printWidth - Math.round(8 * scale)) / 2;
+    gridHeight = size * 2 + Math.round(8 * scale);
   } else if (templateId === 'film-stack') {
-    const pHeight = Math.round(printWidth / 1.5); // 224px
-    gridHeight = (pHeight + 8) * 3 - 8; // 688px
+    const pHeight = Math.round(printWidth / 1.5);
+    gridHeight = (pHeight + Math.round(8 * scale)) * 3 - Math.round(8 * scale);
   } else if (templateId === 'hex-grid') {
-    const sizeW = (printWidth - 8) / 2; // 164px
-    const sizeH = Math.round(sizeW / 1.5); // 109px
-    gridHeight = (sizeH + 8) * 3 - 8; // 343px
+    const sizeW = (printWidth - Math.round(8 * scale)) / 2;
+    const sizeH = Math.round(sizeW / 1.5);
+    gridHeight = (sizeH + Math.round(8 * scale)) * 3 - Math.round(8 * scale);
   } else {
     gridHeight = printWidth;
   }
@@ -124,12 +129,12 @@ export async function renderReceiptToCanvas(
 
   if (hasFortune) {
     ctx.save();
-    ctx.font = 'bold 16px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = `bold ${Math.round(16 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
     const quoteText = `"${session.selectedQuote}"`;
-    fortuneLines = wrapText(ctx, quoteText, printWidth - 16);
+    fortuneLines = wrapText(ctx, quoteText, printWidth - Math.round(16 * scale));
     ctx.restore();
 
-    fortuneHeight = 22 + 22 + (fortuneLines.length * 20) + 10;
+    fortuneHeight = Math.round(22 * scale) + Math.round(22 * scale) + (fortuneLines.length * Math.round(20 * scale)) + Math.round(10 * scale);
   }
 
   // Helper to load image securely
@@ -152,8 +157,8 @@ export async function renderReceiptToCanvas(
   if (config.logoDataUrl) {
     try {
       logoImg = await loadImage(config.logoDataUrl);
-      const logoMaxW = 220;
-      const logoMaxH = 80;
+      const logoMaxW = config.paperWidth === '58mm' ? 220 : 330;
+      const logoMaxH = config.paperWidth === '58mm' ? 80 : 120;
       const ratio = Math.min(logoMaxW / logoImg.width, logoMaxH / logoImg.height);
       logoH = logoImg.height * ratio;
     } catch (e) {
@@ -163,7 +168,7 @@ export async function renderReceiptToCanvas(
 
   // Load QR code image if enabled and explicitly requested
   let qrImg: HTMLImageElement | null = null;
-  const qrSize = 110; // matches receipt-qr-image CSS width
+  const qrSize = config.paperWidth === '58mm' ? 110 : 160;
   if (includeQrCode && config.enableQrCode !== false && metadata.qrCodeUrl) {
     try {
       qrImg = await loadImage(metadata.qrCodeUrl);
@@ -173,23 +178,25 @@ export async function renderReceiptToCanvas(
   }
 
   // Dynamic layout calculations to avoid trailing blank paper
-  const headerHeight = logoImg ? logoH : 30;
-  const spacingAfterHeader = 20;
-  const spacingAfterGrid = templateId === 'comfort-card' ? 0 : 20;
-  const qrHeight = qrImg ? (qrSize + 56) : 0; // QR image size + divider spacing + text spacing
-  const footerHeight = 20;
-  const padding = 25; // padding top and bottom
+  const headerHeight = logoImg ? logoH : Math.round(30 * scale);
+  const spacingAfterHeader = Math.round(20 * scale);
+  const spacingAfterGrid = templateId === 'comfort-card' ? 0 : Math.round(20 * scale);
+  const qrHeight = qrImg ? (qrSize + Math.round(56 * scale)) : 0;
+  const footerHeight = Math.round(20 * scale);
+  const paddingTop = 0; // Remove top margin header since print driver/paper already leaves a margin
+  const paddingBottom = Math.round(25 * scale);
+  const bottomMargin = Math.round(45 * scale); // Extra margin at bottom to prevent cutter from clipping footer info
 
-  const height = padding * 2 + headerHeight + spacingAfterHeader + gridHeight + spacingAfterGrid + qrHeight + footerHeight + fortuneHeight + comfortHeight;
+  const height = paddingTop + paddingBottom + headerHeight + spacingAfterHeader + gridHeight + spacingAfterGrid + qrHeight + footerHeight + fortuneHeight + comfortHeight + bottomMargin;
 
   const themeId = session.selectedThemeId || 'default';
   let totalHeight = height;
   if (themeId === 'classic-1' || themeId === 'duet-1') {
-    totalHeight = 680;
+    totalHeight = Math.round(680 * scale) + bottomMargin;
   } else if (themeId === 'classic-2') {
-    totalHeight = 795;
+    totalHeight = Math.round(795 * scale) + bottomMargin;
   } else if (themeId === 'film-1') {
-    totalHeight = 1050;
+    totalHeight = Math.round(1050 * scale) + bottomMargin;
   }
   
   canvas.height = totalHeight;
@@ -200,7 +207,7 @@ export async function renderReceiptToCanvas(
 
   ctx.fillStyle = '#000000';
   ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1.5 * scale;
 
   const isMirrored = session.isMirrored || false;
 
@@ -218,7 +225,7 @@ export async function renderReceiptToCanvas(
   };
 
   if (themeId !== 'default') {
-    let y = padding;
+    let y = paddingTop;
     if (mode === 'bw') {
       ctx.filter = 'grayscale(100%)';
     } else {
@@ -233,16 +240,16 @@ export async function renderReceiptToCanvas(
         y += logoH;
       } else {
         ctx.save();
-        ctx.font = 'bold 25px "Playfair Display", Georgia, serif';
+        ctx.font = `bold ${Math.round(25 * scale)}px "Playfair Display", Georgia, serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + 20);
+        ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + Math.round(20 * scale));
         ctx.restore();
-        y += 30;
+        y += Math.round(30 * scale);
       }
-      y += 10;
+      y += Math.round(10 * scale);
 
-      ctx.fillRect(margin, y, printWidth, 2);
-      y += 12;
+      ctx.fillRect(margin, y, printWidth, Math.round(2 * scale));
+      y += Math.round(12 * scale);
 
       // Draw Photos
       if (themeId === 'classic-1' && loadedPhotos[0]) {
@@ -250,14 +257,14 @@ export async function renderReceiptToCanvas(
       } else if (themeId === 'duet-1') {
         ctx.fillStyle = '#000000';
         ctx.fillRect(margin, y, printWidth, printWidth);
-        const size = (printWidth - 6) / 2;
+        const size = (printWidth - Math.round(6 * scale)) / 2;
         for (let i = 0; i < 4; i++) {
           const img = loadedPhotos[i];
           if (img) {
             const col = i % 2;
             const row = Math.floor(i / 2);
-            const px = margin + col * (size + 6);
-            const py = y + row * (size + 6);
+            const px = margin + col * (size + Math.round(6 * scale));
+            const py = y + row * (size + Math.round(6 * scale));
             ctx.save();
             if (isMirrored) {
               ctx.translate(px + size / 2, py + size / 2);
@@ -270,46 +277,46 @@ export async function renderReceiptToCanvas(
           }
         }
       }
-      y += printWidth + 20;
+      y += printWidth + Math.round(20 * scale);
 
       // Draw Footer
       ctx.fillStyle = '#000000';
-      ctx.fillRect(margin, y, printWidth, 2);
-      y += 6;
+      ctx.fillRect(margin, y, printWidth, Math.round(2 * scale));
+      y += Math.round(6 * scale);
 
       ctx.save();
-      ctx.font = '900 36px "Space Grotesk", sans-serif';
+      ctx.font = `900 ${Math.round(36 * scale)}px "Space Grotesk", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText((metadata.homeSubtitleBottom || 'EVENT NAME').toUpperCase(), width / 2, y + 32);
+      ctx.fillText((metadata.homeSubtitleBottom || 'EVENT NAME').toUpperCase(), width / 2, y + Math.round(32 * scale));
       ctx.restore();
-      y += 40;
+      y += Math.round(40 * scale);
 
-      ctx.fillRect(margin, y, printWidth, 2);
-      y += 12;
+      ctx.fillRect(margin, y, printWidth, Math.round(2 * scale));
+      y += Math.round(12 * scale);
 
       ctx.save();
-      ctx.font = 'bold 15px "Space Grotesk", sans-serif';
+      ctx.font = `bold ${Math.round(15 * scale)}px "Space Grotesk", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText(metadata.timestamp.split(',')[0], width / 2, y + 12);
+      ctx.fillText(metadata.timestamp.split(',')[0], width / 2, y + Math.round(12 * scale));
       ctx.restore();
-      y += 20;
+      y += Math.round(20 * scale);
 
       // Draw Scan Section (Barcode only)
       ctx.save();
-      ctx.font = 'bold 14px "Courier Prime", monospace';
+      ctx.font = `bold ${Math.round(14 * scale)}px "Courier Prime", monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText('- - - - - - - - - - - - - - - - - - - -', width / 2, y + 11);
+      ctx.fillText(dashedLine, width / 2, y + Math.round(11 * scale));
       ctx.restore();
-      y += 20;
+      y += Math.round(20 * scale);
 
-      const barcodeW = 240;
+      const barcodeW = Math.round(240 * scale);
       const barcodeX = (width - barcodeW) / 2;
-      drawBarcode(ctx, barcodeX, y, barcodeW, 45);
+      drawBarcode(ctx, barcodeX, y, barcodeW, Math.round(45 * scale));
 
       ctx.save();
-      ctx.font = 'bold 11px "Courier Prime", monospace';
+      ctx.font = `bold ${Math.round(11 * scale)}px "Courier Prime", monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText(`NO. ${metadata.receiptNumber}`, width / 2, y + 58);
+      ctx.fillText(`NO. ${metadata.receiptNumber}`, width / 2, y + Math.round(58 * scale));
       ctx.restore();
       
     } else if (themeId === 'classic-2') {
@@ -320,73 +327,73 @@ export async function renderReceiptToCanvas(
         y += logoH;
       } else {
         ctx.save();
-        ctx.font = 'bold 25px "Playfair Display", Georgia, serif';
+        ctx.font = `bold ${Math.round(25 * scale)}px "Playfair Display", Georgia, serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + 20);
+        ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + Math.round(20 * scale));
         ctx.restore();
-        y += 30;
+        y += Math.round(30 * scale);
       }
-      y += 6;
+      y += Math.round(6 * scale);
 
       // Draw Header
       ctx.save();
-      ctx.font = 'bold 12px "Space Grotesk", sans-serif';
+      ctx.font = `bold ${Math.round(12 * scale)}px "Space Grotesk", sans-serif`;
       ctx.textAlign = 'right';
-      ctx.fillText('✈ POWERED BY BLCKLABS', width - margin, y + 11);
+      ctx.fillText('✈ POWERED BY BLCKLABS', width - margin, y + Math.round(11 * scale));
       ctx.restore();
-      y += 18;
+      y += Math.round(18 * scale);
 
       // Draw Photo
       if (loadedPhotos[0]) {
         drawPhotoWithMirror(loadedPhotos[0], margin, y, printWidth, printWidth);
       }
-      y += printWidth + 20;
+      y += printWidth + Math.round(20 * scale);
 
       // Draw Info Grid
       ctx.save();
-      ctx.font = 'bold 10px "Space Grotesk", sans-serif';
+      ctx.font = `bold ${Math.round(10 * scale)}px "Space Grotesk", sans-serif`;
       ctx.fillStyle = '#666666';
       ctx.textAlign = 'left';
-      ctx.fillText('DATE', margin, y + 9);
-      ctx.fillText('GATE', margin + 115, y + 9);
-      ctx.fillText('TIME', margin + 250, y + 9);
+      ctx.fillText('DATE', margin, y + Math.round(9 * scale));
+      ctx.fillText('GATE', margin + Math.round(115 * scale), y + Math.round(9 * scale));
+      ctx.fillText('TIME', margin + Math.round(250 * scale), y + Math.round(9 * scale));
       
-      ctx.font = '900 13px "Space Grotesk", sans-serif';
+      ctx.font = `900 ${Math.round(13 * scale)}px "Space Grotesk", sans-serif`;
       ctx.fillStyle = '#000000';
-      ctx.fillText(metadata.timestamp.split(',')[0], margin, y + 25);
-      ctx.fillText(metadata.cafeAddress.split(',')[0] || 'PASTORAL', margin + 115, y + 25);
-      ctx.fillText(metadata.timestamp.split(',')[1]?.trim().slice(0, 5) || '15:40', margin + 250, y + 25);
+      ctx.fillText(metadata.timestamp.split(',')[0], margin, y + Math.round(25 * scale));
+      ctx.fillText(metadata.cafeAddress.split(',')[0] || 'PASTORAL', margin + Math.round(115 * scale), y + Math.round(25 * scale));
+      ctx.fillText(metadata.timestamp.split(',')[1]?.trim().slice(0, 5) || '15:40', margin + Math.round(250 * scale), y + Math.round(25 * scale));
       ctx.restore();
-      y += 34;
+      y += Math.round(34 * scale);
 
       // Dashed separator line
       ctx.save();
-      ctx.font = 'bold 14px "Courier Prime", monospace';
+      ctx.font = `bold ${Math.round(14 * scale)}px "Courier Prime", monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText('- - - - - - - - - - - - - - - - - - - -', width / 2, y + 11);
+      ctx.fillText(dashedLine, width / 2, y + Math.round(11 * scale));
       ctx.restore();
-      y += 18;
+      y += Math.round(18 * scale);
 
       // Flight Codes
       ctx.save();
-      ctx.font = '900 42px "Space Grotesk", sans-serif';
+      ctx.font = `900 ${Math.round(42 * scale)}px "Space Grotesk", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText('DXB  ✈  HKG', width / 2, y + 36);
+      ctx.fillText('DXB  ✈  HKG', width / 2, y + Math.round(36 * scale));
       
-      ctx.font = 'bold 12px "Space Grotesk", sans-serif';
-      ctx.fillText('B O A R D I N G   P A S S', width / 2, y + 54);
+      ctx.font = `bold ${Math.round(12 * scale)}px "Space Grotesk", sans-serif`;
+      ctx.fillText('B O A R D I N G   P A S S', width / 2, y + Math.round(54 * scale));
       ctx.restore();
-      y += 64;
+      y += Math.round(64 * scale);
 
       // Draw Scan Section (Barcode only)
-      const barcodeW = 240;
+      const barcodeW = Math.round(240 * scale);
       const barcodeX = (width - barcodeW) / 2;
-      drawBarcode(ctx, barcodeX, y, barcodeW, 45);
+      drawBarcode(ctx, barcodeX, y, barcodeW, Math.round(45 * scale));
 
       ctx.save();
-      ctx.font = 'bold 11px "Courier Prime", monospace';
+      ctx.font = `bold ${Math.round(11 * scale)}px "Courier Prime", monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText(`NO. ${metadata.receiptNumber}`, width / 2, y + 58);
+      ctx.fillText(`NO. ${metadata.receiptNumber}`, width / 2, y + Math.round(58 * scale));
       ctx.restore();
       
     } else if (themeId === 'film-1') {
@@ -397,26 +404,26 @@ export async function renderReceiptToCanvas(
         y += logoH;
       } else {
         ctx.save();
-        ctx.font = 'bold 25px "Playfair Display", Georgia, serif';
+        ctx.font = `bold ${Math.round(25 * scale)}px "Playfair Display", Georgia, serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + 20);
+        ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + Math.round(20 * scale));
         ctx.restore();
-        y += 30;
+        y += Math.round(30 * scale);
       }
-      y += 10;
+      y += Math.round(10 * scale);
 
-      ctx.fillRect(margin, y, printWidth, 2);
-      y += 12;
+      ctx.fillRect(margin, y, printWidth, Math.round(2 * scale));
+      y += Math.round(12 * scale);
 
       // Draw stacked 3 landscape photos
       ctx.fillStyle = '#000000';
-      const pHeight = Math.round(printWidth / 1.5); // 224px
-      const stackHeight = (pHeight + 6) * 3 - 6; // 684px
+      const pHeight = Math.round(printWidth / 1.5);
+      const stackHeight = (pHeight + Math.round(6 * scale)) * 3 - Math.round(6 * scale);
       ctx.fillRect(margin, y, printWidth, stackHeight);
       for (let i = 0; i < 3; i++) {
         const img = loadedPhotos[i];
         if (img) {
-          const py = y + i * (pHeight + 6);
+          const py = y + i * (pHeight + Math.round(6 * scale));
           ctx.save();
           if (isMirrored) {
             ctx.translate(margin + printWidth / 2, py + pHeight / 2);
@@ -428,46 +435,46 @@ export async function renderReceiptToCanvas(
           ctx.restore();
         }
       }
-      y += stackHeight + 20;
+      y += stackHeight + Math.round(20 * scale);
 
       // Draw Footer
       ctx.fillStyle = '#000000';
-      ctx.fillRect(margin, y, printWidth, 2);
-      y += 6;
+      ctx.fillRect(margin, y, printWidth, Math.round(2 * scale));
+      y += Math.round(6 * scale);
 
       ctx.save();
-      ctx.font = '900 36px "Space Grotesk", sans-serif';
+      ctx.font = `900 ${Math.round(36 * scale)}px "Space Grotesk", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText((metadata.homeSubtitleBottom || 'EVENT NAME').toUpperCase(), width / 2, y + 32);
+      ctx.fillText((metadata.homeSubtitleBottom || 'EVENT NAME').toUpperCase(), width / 2, y + Math.round(32 * scale));
       ctx.restore();
-      y += 40;
+      y += Math.round(40 * scale);
 
-      ctx.fillRect(margin, y, printWidth, 2);
-      y += 12;
+      ctx.fillRect(margin, y, printWidth, Math.round(2 * scale));
+      y += Math.round(12 * scale);
 
       ctx.save();
-      ctx.font = 'bold 15px "Space Grotesk", sans-serif';
+      ctx.font = `bold ${Math.round(15 * scale)}px "Space Grotesk", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText(metadata.timestamp.split(',')[0], width / 2, y + 12);
+      ctx.fillText(metadata.timestamp.split(',')[0], width / 2, y + Math.round(12 * scale));
       ctx.restore();
-      y += 20;
+      y += Math.round(20 * scale);
 
       // Draw Scan Section (Barcode only)
       ctx.save();
-      ctx.font = 'bold 14px "Courier Prime", monospace';
+      ctx.font = `bold ${Math.round(14 * scale)}px "Courier Prime", monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText('- - - - - - - - - - - - - - - - - - - -', width / 2, y + 11);
+      ctx.fillText(dashedLine, width / 2, y + Math.round(11 * scale));
       ctx.restore();
-      y += 20;
+      y += Math.round(20 * scale);
 
-      const barcodeW = 240;
+      const barcodeW = Math.round(240 * scale);
       const barcodeX = (width - barcodeW) / 2;
-      drawBarcode(ctx, barcodeX, y, barcodeW, 45);
+      drawBarcode(ctx, barcodeX, y, barcodeW, Math.round(45 * scale));
 
       ctx.save();
-      ctx.font = 'bold 11px "Courier Prime", monospace';
+      ctx.font = `bold ${Math.round(11 * scale)}px "Courier Prime", monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText(`NO. ${metadata.receiptNumber}`, width / 2, y + 58);
+      ctx.fillText(`NO. ${metadata.receiptNumber}`, width / 2, y + Math.round(58 * scale));
       ctx.restore();
     }
 
@@ -475,7 +482,7 @@ export async function renderReceiptToCanvas(
     return;
   }
 
-  let y = padding;
+  let y = paddingTop;
 
   // 1. Draw Cafe Logo or Cafe Name at Header
   if (logoImg) {
@@ -483,10 +490,10 @@ export async function renderReceiptToCanvas(
     ctx.drawImage(logoImg, (width - logoW) / 2, y, logoW, logoH);
     y += logoH;
   } else {
-    ctx.font = 'bold 25px "Playfair Display", Georgia, serif';
+    ctx.font = `bold ${Math.round(25 * scale)}px "Playfair Display", Georgia, serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + 20);
-    y += 30;
+    ctx.fillText(metadata.cafeName.toUpperCase(), width / 2, y + Math.round(20 * scale));
+    y += Math.round(30 * scale);
   }
 
   y += spacingAfterHeader;
@@ -503,29 +510,29 @@ export async function renderReceiptToCanvas(
     const svgDataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svgString);
     try {
       const svgImg = await loadImage(svgDataUrl);
-      const size = 90;
+      const size = Math.round(90 * scale);
       ctx.drawImage(svgImg, (width - size) / 2, y, size, size);
-      y += size + 16;
+      y += size + Math.round(16 * scale);
     } catch (e) {
       console.warn('Failed to load comfort card SVG:', e);
-      y += 90 + 16;
+      y += Math.round(90 * scale) + Math.round(16 * scale);
     }
 
-    ctx.font = 'bold 14px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = `bold ${Math.round(14 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
     ctx.textAlign = 'center';
-    ctx.fillText('.............................', width / 2, y + 10);
-    y += 22;
+    ctx.fillText(dottedLine, width / 2, y + Math.round(10 * scale));
+    y += Math.round(22 * scale);
 
-    ctx.font = 'bold 19px "Courier Prime", "Courier New", Courier, monospace';
-    ctx.fillText('COMFORT CARD', width / 2, y + 10);
-    y += 25;
+    ctx.font = `bold ${Math.round(19 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
+    ctx.fillText('COMFORT CARD', width / 2, y + Math.round(10 * scale));
+    y += Math.round(25 * scale);
 
-    ctx.font = 'bold 18px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = `bold ${Math.round(18 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
     for (const line of comfortLines) {
-      ctx.fillText(line, width / 2, y + 10);
-      y += 22;
+      ctx.fillText(line, width / 2, y + Math.round(10 * scale));
+      y += Math.round(22 * scale);
     }
-    y += 10;
+    y += Math.round(10 * scale);
   } else if (templateId === 'classic-solo' && loadedPhotos[0]) {
     drawPhotoWithMirror(loadedPhotos[0], margin, y, printWidth, printWidth);
     if (themeImg) {
@@ -533,28 +540,28 @@ export async function renderReceiptToCanvas(
     }
     y += printWidth;
   } else if (templateId === 'duet-grid') {
-    const size = (printWidth - 8) / 2;
+    const size = (printWidth - Math.round(8 * scale)) / 2;
     for (let i = 0; i < 4; i++) {
       const img = loadedPhotos[i];
       if (img) {
         const col = i % 2;
         const row = Math.floor(i / 2);
-        const px = margin + col * (size + 8);
-        const py = y + row * (size + 8);
+        const px = margin + col * (size + Math.round(8 * scale));
+        const py = y + row * (size + Math.round(8 * scale));
         drawPhotoWithMirror(img, px, py, size, size);
       }
     }
     if (themeImg) {
       ctx.drawImage(themeImg, margin, y, printWidth, printWidth);
     }
-    y += size * 2 + 8;
+    y += size * 2 + Math.round(8 * scale);
   } else if (templateId === 'film-stack') {
     const pHeight = Math.round(printWidth / 1.5);
-    const stackHeight = (pHeight + 8) * 3 - 8;
+    const stackHeight = (pHeight + Math.round(8 * scale)) * 3 - Math.round(8 * scale);
     for (let i = 0; i < 3; i++) {
       const img = loadedPhotos[i];
       if (img) {
-        const py = y + i * (pHeight + 8);
+        const py = y + i * (pHeight + Math.round(8 * scale));
         drawPhotoWithMirror(img, margin, py, printWidth, pHeight);
       }
     }
@@ -563,19 +570,19 @@ export async function renderReceiptToCanvas(
     }
     y += stackHeight;
   } else if (templateId === 'hex-grid') {
-    const sizeW = (printWidth - 8) / 2;
+    const sizeW = (printWidth - Math.round(8 * scale)) / 2;
     const sizeH = Math.round(sizeW / 1.5);
     for (let i = 0; i < 6; i++) {
       const img = loadedPhotos[i];
       if (img) {
         const col = i % 2;
         const row = Math.floor(i / 2);
-        const px = margin + col * (sizeW + 8);
-        const py = y + row * (sizeH + 8);
+        const px = margin + col * (sizeW + Math.round(8 * scale));
+        const py = y + row * (sizeH + Math.round(8 * scale));
         drawPhotoWithMirror(img, px, py, sizeW, sizeH);
       }
     }
-    y += (sizeH + 8) * 3 - 8;
+    y += (sizeH + Math.round(8 * scale)) * 3 - Math.round(8 * scale);
   }
 
   ctx.filter = 'none';
@@ -584,24 +591,24 @@ export async function renderReceiptToCanvas(
   // 3. Draw QR Code if available
   if (qrImg) {
     // Draw divider dots
-    ctx.font = 'bold 12px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = `bold ${Math.round(12 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
     ctx.textAlign = 'center';
-    ctx.fillText('.............................', width / 2, y + 10);
-    y += 18;
+    ctx.fillText(dottedLine, width / 2, y + Math.round(10 * scale));
+    y += Math.round(18 * scale);
 
     // Draw "SCAN FOR DIGITAL COPY" text
-    ctx.font = 'bold 12px "Space Grotesk", Arial, sans-serif';
-    ctx.fillText('SCAN FOR DIGITAL COPY', width / 2, y + 10);
-    y += 18;
+    ctx.font = `bold ${Math.round(12 * scale)}px "Space Grotesk", Arial, sans-serif`;
+    ctx.fillText('SCAN FOR DIGITAL COPY', width / 2, y + Math.round(10 * scale));
+    y += Math.round(18 * scale);
 
     // Draw QR image centered
     ctx.drawImage(qrImg, (width - qrSize) / 2, y, qrSize, qrSize);
     y += qrSize;
 
     // Draw link text
-    ctx.font = '11px "Space Grotesk", Arial, sans-serif';
-    ctx.fillText('photoreceipt.stoodioph.com', width / 2, y + 10);
-    y += 18;
+    ctx.font = `${Math.round(11 * scale)}px "Space Grotesk", Arial, sans-serif`;
+    ctx.fillText('photoreceipt.stoodioph.com', width / 2, y + Math.round(10 * scale));
+    y += Math.round(18 * scale);
   }
 
   // 4. Draw Footer: Location (Left) and Piped Date (Right)
@@ -621,11 +628,11 @@ export async function renderReceiptToCanvas(
 
   const formattedDate = getFormattedDate(metadata.timestamp);
 
-  ctx.font = 'bold 15px "Courier Prime", "Courier New", Courier, monospace';
+  ctx.font = `bold ${Math.round(15 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
   ctx.textAlign = 'left';
-  ctx.fillText(metadata.cafeAddress.toUpperCase(), margin, y + 10);
+  ctx.fillText(metadata.cafeAddress.toUpperCase(), margin, y + Math.round(10 * scale));
   ctx.textAlign = 'right';
-  ctx.fillText(formattedDate, width - margin, y + 10);
+  ctx.fillText(formattedDate, width - margin, y + Math.round(10 * scale));
 
   y += footerHeight;
 
@@ -634,20 +641,20 @@ export async function renderReceiptToCanvas(
     ctx.textAlign = 'center';
 
     // 1. Divider dots
-    ctx.font = 'bold 14px "Courier Prime", "Courier New", Courier, monospace';
-    ctx.fillText('.............................', width / 2, y + 10);
-    y += 22;
+    ctx.font = `bold ${Math.round(14 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
+    ctx.fillText(dottedLine, width / 2, y + Math.round(10 * scale));
+    y += Math.round(22 * scale);
 
     // 2. Title "MEMORY FORTUNE"
-    ctx.font = 'bold 16px "Courier Prime", "Courier New", Courier, monospace';
-    ctx.fillText('MEMORY FORTUNE', width / 2, y + 10);
-    y += 22;
+    ctx.font = `bold ${Math.round(16 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
+    ctx.fillText('MEMORY FORTUNE', width / 2, y + Math.round(10 * scale));
+    y += Math.round(22 * scale);
 
     // 3. Quote text lines
-    ctx.font = 'bold 16px "Courier Prime", "Courier New", Courier, monospace';
+    ctx.font = `bold ${Math.round(16 * scale)}px "Courier Prime", "Courier New", Courier, monospace`;
     for (const line of fortuneLines) {
-      ctx.fillText(line, width / 2, y + 10);
-      y += 20;
+      ctx.fillText(line, width / 2, y + Math.round(10 * scale));
+      y += Math.round(20 * scale);
     }
   }
 }

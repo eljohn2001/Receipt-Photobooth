@@ -9,6 +9,7 @@ import { CaptureView } from './views/capture';
 import { PreviewView } from './views/preview';
 import { PrintingView } from './views/printing';
 import { FinishedView } from './views/finished';
+import { ReviewView } from './views/review';
 import { BaseView } from './views/base';
 import { ModeSelectionView } from './views/mode-selection';
 import { AdminPanelView } from './views/admin-panel';
@@ -330,9 +331,10 @@ const stateIndexMap: Record<AppState, number> = {
   'package-selection': 4,
   'order-summary': 5,
   'camera-capture': 6,
-  'preview': 7,
-  'printing': 8,
-  'finished': 9
+  'review': 7,
+  'preview': 8,
+  'printing': 9,
+  'finished': 10
 };
 
 let activeBgObjectUrl: string | null = null;
@@ -490,6 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'package-selection': new PackageSelectionView(document.getElementById('view-package-selection')!, navigateTo, session),
     'order-summary': new OrderSummaryView(document.getElementById('view-order-summary')!, navigateTo, session),
     'camera-capture': new CaptureView(document.getElementById('view-camera-capture')!, navigateTo, session),
+    'review': new ReviewView(document.getElementById('view-review')!, navigateTo, session),
     'preview': new PreviewView(document.getElementById('view-preview')!, navigateTo, session),
     'printing': new PrintingView(document.getElementById('view-printing')!, navigateTo, session),
     'finished': new FinishedView(document.getElementById('view-finished')!, navigateTo, session)
@@ -790,6 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
     const printContrastSelect = document.getElementById('input-print-contrast') as HTMLSelectElement;
     const printModeSelect = document.getElementById('input-print-mode') as HTMLSelectElement;
+    const paperWidthSelect = document.getElementById('input-paper-width') as HTMLSelectElement;
     const subtitleTopInput = document.getElementById('input-home-subtitle-top') as HTMLInputElement;
     const subtitleBottomInput = document.getElementById('input-home-subtitle-bottom') as HTMLInputElement;
     const adminPinInput = document.getElementById('input-admin-pin') as HTMLInputElement;
@@ -807,6 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (homeModeSelect) homeModeSelect.value = config.homeScreenMode || 'graphic';
     if (printContrastSelect) printContrastSelect.value = config.printContrast || 'medium';
     if (printModeSelect) printModeSelect.value = config.printerMode || 'usb';
+    if (paperWidthSelect) paperWidthSelect.value = config.paperWidth || '80mm';
     if (subtitleTopInput) subtitleTopInput.value = config.homeSubtitleTop || '';
     if (subtitleBottomInput) subtitleBottomInput.value = config.homeSubtitleBottom || '';
     if (adminPinInput) adminPinInput.value = config.adminPin || '1234';
@@ -1390,6 +1395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeModeSelect = document.getElementById('input-home-mode') as HTMLSelectElement;
     const printContrastSelect = document.getElementById('input-print-contrast') as HTMLSelectElement;
     const printModeSelect = document.getElementById('input-print-mode') as HTMLSelectElement;
+    const paperWidthSelect = document.getElementById('input-paper-width') as HTMLSelectElement;
     const enableQrInput = document.getElementById('input-enable-qr') as HTMLInputElement;
     const enableFortuneInput = document.getElementById('input-enable-fortune') as HTMLInputElement;
     const enableComfortInput = document.getElementById('input-enable-comfort') as HTMLInputElement;
@@ -1412,7 +1418,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const sessionPriceInput = document.getElementById('input-session-price') as HTMLInputElement;
     const profitShareInput = document.getElementById('input-profit-share') as HTMLInputElement;
 
+    const currentKioskConfig = loadKioskConfig();
+
     const newConfig: KioskConfig = {
+      ...currentKioskConfig,
       cafeName: nameInput.value.trim().toUpperCase(),
       cafeAddress: addressInput.value.trim().toUpperCase(),
       cafePhone: phoneInput.value.trim().toUpperCase(),
@@ -1434,6 +1443,7 @@ document.addEventListener('DOMContentLoaded', () => {
       enableComfortCards: enableComfortInput ? enableComfortInput.checked : true,
       printContrast: printContrastSelect ? (printContrastSelect.value as 'light' | 'medium' | 'dark' | 'deep') : 'medium',
       printerMode: printModeSelect ? (printModeSelect.value as 'usb' | 'bluetooth') : 'usb',
+      paperWidth: paperWidthSelect ? (paperWidthSelect.value as '58mm' | '80mm') : '80mm',
       homeSubtitleTop: subtitleTopInput ? subtitleTopInput.value.trim() : '',
       homeSubtitleBottom: subtitleBottomInput ? subtitleBottomInput.value.trim() : '',
       adminPin: adminPinInput ? adminPinInput.value.trim() : '1234',

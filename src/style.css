@@ -5411,3 +5411,294 @@ body:not(.dark-theme) .mode-option-card.selected {
   transform-style: preserve-3d;
   will-change: transform;
 }
+
+/* =============================================================
+   HORIZONTAL LIVE PHOTO STRIP & REVIEW SCREEN STYLES
+   ============================================================= */
+
+/* Photo Strip during Capture */
+.photo-strip {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px 0 15px 0;
+  width: 100%;
+}
+
+.photo-strip-slot {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.photo-strip-slot.slot-empty {
+  border: 1.5px dashed rgba(0, 0, 0, 0.15);
+  opacity: 0.55;
+}
+
+.photo-strip-slot.slot-active {
+  border: 2px solid var(--accent-color);
+  background: rgba(0, 122, 255, 0.04);
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.photo-strip-slot.slot-captured {
+  border: 1.5px solid var(--border-primary);
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.photo-strip-slot img.slot-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: photo-strip-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes photo-strip-in {
+  from {
+    transform: scale(0.8) rotate(-3deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+/* Review Screen View layout */
+.review-screen-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.review-grid-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.review-grid {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Dynamic grid layouts based on template counts */
+.review-grid.grid-1 {
+  grid-template-columns: 1fr;
+  max-width: 320px;
+}
+
+.review-grid.grid-2 {
+  grid-template-columns: 1fr 1fr;
+  max-width: 480px;
+}
+
+.review-grid.grid-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+  max-width: 580px;
+}
+
+.review-grid.grid-4 {
+  grid-template-columns: 1fr 1fr;
+  max-width: 440px;
+}
+
+.review-photo-card {
+  position: relative;
+  aspect-ratio: 1.0;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-primary);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.review-photo-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.review-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.review-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.25s ease;
+  z-index: 3;
+}
+
+.review-photo-card:hover .review-card-overlay {
+  opacity: 1;
+}
+
+.review-card-overlay .overlay-icon {
+  font-size: 24px;
+  color: #ffffff;
+  animation: spin-clockwise 4s linear infinite;
+}
+
+.review-card-overlay .overlay-text {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.review-photo-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+}
+
+.review-actions-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 20px 40px 40px 40px;
+  box-sizing: border-box;
+}
+
+.btn-wide {
+  min-width: 320px;
+  height: 52px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 99px;
+  letter-spacing: -0.1px;
+}
+
+/* Swipe to Print Slider styles */
+.swipe-print-track {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  height: 68px;
+  border-radius: 99px;
+  background: rgba(52, 199, 89, 0.06);
+  border: 1px solid rgba(52, 199, 89, 0.12);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-x;
+  cursor: grab;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+}
+
+.swipe-print-track:active {
+  cursor: grabbing;
+}
+
+.swipe-print-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ui);
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #34c759;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+.swipe-print-thumb {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #34c759 0%, #248a3d 100%);
+  box-shadow: 0 4px 14px rgba(52, 199, 89, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: left 0.1s ease, box-shadow 0.2s ease;
+  pointer-events: none;
+}
+
+.swipe-print-thumb svg {
+  width: 24px;
+  height: 24px;
+  fill: #ffffff;
+}
+
+.swipe-print-track.swiped .swipe-print-thumb {
+  box-shadow: 0 0 20px rgba(52, 199, 89, 0.5);
+}
+
+.swipe-print-track.swiped .swipe-print-label {
+  opacity: 0;
+}
+
+.animate-pop-in {
+  animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes spin-clockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

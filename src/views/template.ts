@@ -26,6 +26,7 @@ export class TemplateView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="template-screen-header">
+          <button class="btn-back" id="btn-tmpl-back">← BACK</button>
           <h2 class="template-choose-title">CHOOSE A <span class="script-title">Layout</span></h2>
         </div>
 
@@ -33,15 +34,6 @@ export class TemplateView extends BaseView {
         <div class="templates-grid-wrapper">
           <div class="templates-static-grid">
             <!-- Populated dynamically by renderTemplatesGrid in onEnter -->
-          </div>
-        </div>
-
-        <div class="template-screen-footer">
-          <div class="swipe-back-track" id="swipe-back-tmpl">
-            <span class="swipe-back-label" id="swipe-back-tmpl-label">← SWIPE TO GO BACK</span>
-            <div class="swipe-back-thumb hint" id="swipe-back-tmpl-thumb">
-              <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
-            </div>
           </div>
         </div>
       </div>
@@ -54,29 +46,14 @@ export class TemplateView extends BaseView {
 
   onEnter(): void {
     this.renderTemplatesGrid();
-    const label = this.element.querySelector('#swipe-back-tmpl-label');
-    if (label) {
-      const config = loadKioskConfig();
-      if (config.enableComfortCards !== false) {
-        label.textContent = '← SWIPE TO GO BACK';
-      } else {
-        label.textContent = '← SWIPE TO GO BACK';
-      }
-    }
-    // Reset thumb position
-    const thumb = this.element.querySelector('#swipe-back-tmpl-thumb') as HTMLElement;
-    if (thumb) {
-      thumb.style.left = '5px';
-      thumb.classList.add('hint');
-    }
-    const track = this.element.querySelector('#swipe-back-tmpl') as HTMLElement;
-    if (track) track.classList.remove('swiped');
 
-    // Animate header and footer entrance
+    // Animate header entrance
     const header = this.element.querySelector('.template-screen-header') as HTMLElement;
-    const footer = this.element.querySelector('.template-screen-footer') as HTMLElement;
-    if (header) { header.classList.remove('header-animate-in'); void header.offsetHeight; header.classList.add('header-animate-in'); }
-    if (footer) { footer.classList.remove('footer-animate-in'); void footer.offsetHeight; footer.classList.add('footer-animate-in'); }
+    if (header) { 
+      header.classList.remove('header-animate-in'); 
+      void header.offsetHeight; 
+      header.classList.add('header-animate-in'); 
+    }
 
     // Staggered card entrance + breathing
     const items = this.element.querySelectorAll('.template-selection-item');
@@ -100,8 +77,9 @@ export class TemplateView extends BaseView {
   }
 
   private setupEvents(): void {
-    // Swipe-to-go-back interaction
-    this.setupSwipeBack('swipe-back-tmpl', () => {
+    const backBtn = this.element.querySelector('#btn-tmpl-back');
+    backBtn?.addEventListener('click', () => {
+      audioManager.playBeep();
       const config = loadKioskConfig();
       if (config.enableComfortCards !== false) {
         this.navigateTo('mode-selection');
@@ -191,81 +169,7 @@ export class TemplateView extends BaseView {
     }, 900);
   }
 
-  private setupSwipeBack(trackId: string, onComplete: () => void): void {
-    const track = this.element.querySelector(`#${trackId}`) as HTMLElement;
-    const thumb = this.element.querySelector(`#${trackId}-thumb`) as HTMLElement;
-    if (!track || !thumb) return;
 
-    let isDragging = false;
-    let startX = 0;
-    let thumbStart = 5;
-    const maxLeft = () => track.clientWidth - thumb.clientWidth - 10;
-
-    const onStart = (clientX: number) => {
-      isDragging = true;
-      startX = clientX;
-      thumbStart = parseInt(thumb.style.left || '5', 10);
-      thumb.classList.remove('hint');
-      thumb.style.transition = 'none';
-    };
-
-    const onMove = (clientX: number) => {
-      if (!isDragging) return;
-      const dx = clientX - startX;
-      const newLeft = Math.max(5, Math.min(thumbStart + dx, maxLeft()));
-      thumb.style.left = newLeft + 'px';
-    };
-
-    const onEnd = () => {
-      if (!isDragging) return;
-      isDragging = false;
-      thumb.style.transition = 'left 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-
-      const currentLeft = parseInt(thumb.style.left || '5', 10);
-      const progress = currentLeft / maxLeft();
-
-      if (progress > 0.6) {
-        // Swipe completed
-        thumb.style.left = maxLeft() + 'px';
-        track.classList.add('swiped');
-        audioManager.playBeep();
-        setTimeout(() => onComplete(), 250);
-      } else {
-        // Snap back
-        thumb.style.left = '5px';
-        setTimeout(() => thumb.classList.add('hint'), 400);
-      }
-    };
-
-    // Touch events
-    track.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      const thumbRect = thumb.getBoundingClientRect();
-      const touchInThumb = touch.clientX >= thumbRect.left - 10 && touch.clientX <= thumbRect.right + 10
-                        && touch.clientY >= thumbRect.top - 10 && touch.clientY <= thumbRect.bottom + 10;
-      if (touchInThumb) onStart(touch.clientX);
-    }, { passive: true });
-
-    track.addEventListener('touchmove', (e) => {
-      if (isDragging) onMove(e.touches[0].clientX);
-    }, { passive: true });
-
-    track.addEventListener('touchend', () => onEnd());
-    track.addEventListener('touchcancel', () => onEnd());
-
-    // Mouse events (for desktop testing)
-    track.addEventListener('mousedown', (e) => {
-      const thumbRect = thumb.getBoundingClientRect();
-      const inThumb = e.clientX >= thumbRect.left - 10 && e.clientX <= thumbRect.right + 10;
-      if (inThumb) onStart(e.clientX);
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (isDragging) onMove(e.clientX);
-    });
-
-    document.addEventListener('mouseup', () => onEnd());
-  }
 
   private renderTemplatesGrid(): void {
     const gridContainer = this.element.querySelector('.templates-static-grid');

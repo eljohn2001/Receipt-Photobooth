@@ -6,6 +6,7 @@ export type AppState =
   | 'package-selection'
   | 'order-summary'
   | 'camera-capture'
+  | 'review'
   | 'preview'
   | 'printing'
   | 'finished';

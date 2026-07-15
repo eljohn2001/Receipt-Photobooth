@@ -1261,6 +1261,15 @@ export class AdminPanelView {
                   `}
                 </div>
               </div>
+
+              <!-- Danger Zone Card -->
+              <div style="background: #fff5f5; border: 1px solid #ffc9c9; padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <h4 style="margin: 0; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #c92a2a; border-bottom: 1px solid #ffc9c9; padding-bottom: 5px;">🚨 Danger Zone</h4>
+                <p style="font-size: 11px; color: #868e96; margin: 0;">Deleting this kiosk will permanently erase the booth record, all session history, earnings, collections, and maintenance logs. The associated license key will also be reset (unbound).</p>
+                <button type="button" id="btn-drawer-delete-booth" style="background: #e03131; color: white; border: none; font-weight: bold; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 13px; width: 100%;">
+                  🗑️ Delete Booth & All Records
+                </button>
+              </div>
             </div>
           `;
 
@@ -1346,6 +1355,90 @@ export class AdminPanelView {
               }, 300);
 
               await this.loadBoothsTab(container);
+            }
+          });
+
+          // Bind delete booth button
+          const deleteBoothBtn = drawerBody.querySelector('#btn-drawer-delete-booth');
+          deleteBoothBtn?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm(`Are you sure you want to permanently delete booth "${b.name}" and all of its associated sessions, earnings, collection logs, and maintenance logs? This action is irreversible.`)) {
+              
+              const deleteBtn = e.currentTarget as HTMLButtonElement;
+              deleteBtn.disabled = true;
+              deleteBtn.textContent = 'Deleting...';
+
+              try {
+                // 1. Delete associated sessions
+                const { error: sessErr } = await supabase.from('sessions').delete().eq('booth_id', b.id);
+                if (sessErr) console.warn('Failed to delete sessions:', sessErr);
+
+                // 2. Delete associated collections
+                const { error: colErr } = await supabase.from('collections').delete().eq('booth_id', b.id);
+                if (colErr) console.warn('Failed to delete collections:', colErr);
+
+                // 3. Delete associated maintenance logs
+                const { error: maintErr } = await supabase.from('maintenance_logs').delete().eq('booth_id', b.id);
+                if (maintErr) console.warn('Failed to delete maintenance logs:', maintErr);
+
+                // 4. Reset device license binding
+                const { error: licErr } = await supabase
+                  .from('licenses')
+                  .update({
+                    device_id: null,
+                    activated_at: null,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('device_id', b.id);
+                if (licErr) console.warn('Failed to reset license:', licErr);
+
+                // 5. Delete booth itself
+                const { error: boothErr } = await supabase.from('booths').delete().eq('id', b.id);
+                if (boothErr) throw boothErr;
+
+                alert(`Kiosk "${b.name}" and all associated data have been permanently deleted.`);
+
+                // Update local storage caches
+                const cachedBoothsStr = localStorage.getItem('admin_cached_booths');
+                if (cachedBoothsStr) {
+                  const cachedBooths = JSON.parse(cachedBoothsStr) as any[];
+                  localStorage.setItem('admin_cached_booths', JSON.stringify(cachedBooths.filter(x => x.id !== b.id)));
+                }
+
+                const cachedSessionsStr = localStorage.getItem('admin_cached_sessions');
+                if (cachedSessionsStr) {
+                  const cachedSessions = JSON.parse(cachedSessionsStr) as any[];
+                  localStorage.setItem('admin_cached_sessions', JSON.stringify(cachedSessions.filter(x => x.booth_id !== b.id)));
+                }
+
+                const cachedCollectionsStr = localStorage.getItem('admin_cached_collections');
+                if (cachedCollectionsStr) {
+                  const cachedCollections = JSON.parse(cachedCollectionsStr) as any[];
+                  localStorage.setItem('admin_cached_collections', JSON.stringify(cachedCollections.filter(x => x.booth_id !== b.id)));
+                }
+
+                const cachedMaintLogsStr = localStorage.getItem('admin_cached_maintenance_logs');
+                if (cachedMaintLogsStr) {
+                  const cachedMaintLogs = JSON.parse(cachedMaintLogsStr) as any[];
+                  localStorage.setItem('admin_cached_maintenance_logs', JSON.stringify(cachedMaintLogs.filter(x => x.booth_id !== b.id)));
+                }
+
+                // Close drawer
+                const drawer = this.container.querySelector('#admin-detail-drawer') as HTMLElement;
+                drawer.classList.remove('active');
+                setTimeout(() => {
+                  drawer.classList.add('hidden');
+                }, 300);
+
+                // Refresh the tab view
+                await this.loadBoothsTab(container);
+
+              } catch (err: any) {
+                alert('Deletion failed: ' + err.message);
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = '🗑️ Delete Booth & All Records';
+              }
             }
           });
         }
@@ -1604,17 +1697,62 @@ export class AdminPanelView {
         const id = btn.getAttribute('data-id');
         const key = btn.getAttribute('data-key');
         if (!id) return;
-        if (!confirm(`Are you sure you want to delete activation key ${key}?`)) return;
+
+        // Find if this license is currently bound
+        const lic = licenses.find(x => x.id === id);
+        const isBound = lic && !!lic.device_id;
+        const deviceId = lic ? lic.device_id : null;
+
+        let confirmMsg = `Are you sure you want to delete activation key ${key}?`;
+        if (isBound) {
+          confirmMsg = `WARNING: This café account is currently bound to a live photobooth (Device ID: ${deviceId?.substring(0,8)}...). Deleting this café account will also permanently delete the associated booth configuration and ALL records (sessions, collections, logs). Do you want to proceed?`;
+        }
+
+        if (!confirm(confirmMsg)) return;
+
+        const deleteBtn = btn as HTMLButtonElement;
+        deleteBtn.disabled = true;
+        const originalText = deleteBtn.textContent;
+        deleteBtn.textContent = 'Deleting...';
 
         try {
+          if (isBound && deviceId) {
+            // Delete associated sessions
+            const { error: sessErr } = await supabase.from('sessions').delete().eq('booth_id', deviceId);
+            if (sessErr) console.warn('Failed to delete sessions:', sessErr);
+
+            // Delete associated collections
+            const { error: colErr } = await supabase.from('collections').delete().eq('booth_id', deviceId);
+            if (colErr) console.warn('Failed to delete collections:', colErr);
+
+            // Delete associated maintenance logs
+            const { error: maintErr } = await supabase.from('maintenance_logs').delete().eq('booth_id', deviceId);
+            if (maintErr) console.warn('Failed to delete maintenance logs:', maintErr);
+
+            // Delete booth configuration
+            const { error: boothErr } = await supabase.from('booths').delete().eq('id', deviceId);
+            if (boothErr) console.warn('Failed to delete booth configuration:', boothErr);
+
+            // Clean up local storage caches for deleted booth data
+            const cachedBoothsStr = localStorage.getItem('admin_cached_booths');
+            if (cachedBoothsStr) {
+              const cachedBooths = JSON.parse(cachedBoothsStr) as any[];
+              localStorage.setItem('admin_cached_booths', JSON.stringify(cachedBooths.filter(x => x.id !== deviceId)));
+            }
+          }
+
           const { error } = await supabase.from('licenses').delete().eq('id', id);
           if (error) {
             alert('Failed to delete license: ' + error.message);
           } else {
+            alert('Café account deleted successfully.');
             await this.loadTabContent();
           }
         } catch (err: any) {
           alert('Error: ' + err.message);
+        } finally {
+          deleteBtn.disabled = false;
+          deleteBtn.textContent = originalText;
         }
       });
     });
@@ -1686,6 +1824,7 @@ export class AdminPanelView {
                 <th>Copies</th>
                 <th>Revenue</th>
                 <th>Status</th>
+                <th style="text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="sessions-table-body">
@@ -1770,7 +1909,7 @@ export class AdminPanelView {
       if (nextBtn) nextBtn.disabled = currentPage === totalPages;
 
       if (pageItems.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">No matching session logs.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #666;">No matching session logs.</td></tr>';
         return;
       }
 
@@ -1786,9 +1925,60 @@ export class AdminPanelView {
             <td class="font-mono" style="text-align: center;">${s.prints_count}</td>
             <td class="font-mono" style="font-weight: 600;">₱${parseFloat(s.total_amount).toFixed(2)}</td>
             <td><span class="status-badge online">Synced</span></td>
+            <td style="text-align: right;">
+              <button class="btn-delete-session" data-session-id="${s.id}" style="background: #fff5f5; border: 1px solid #ffe3e3; color: #e03131; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer;">
+                Delete
+              </button>
+            </td>
           </tr>
         `;
       }).join('');
+
+      // Bind delete session event listeners
+      const deleteSessionBtns = tableBody.querySelectorAll('.btn-delete-session');
+      deleteSessionBtns.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const sessionId = btn.getAttribute('data-session-id');
+          if (!sessionId) return;
+          if (confirm(`Are you sure you want to permanently delete session record ${sessionId}?`)) {
+            const delBtn = btn as HTMLButtonElement;
+            delBtn.disabled = true;
+            delBtn.textContent = 'Deleting...';
+
+            try {
+              const { error } = await supabase.from('sessions').delete().eq('id', sessionId);
+              if (error) {
+                alert('Failed to delete session: ' + error.message);
+                delBtn.disabled = false;
+                delBtn.textContent = 'Delete';
+              } else {
+                alert('Session deleted successfully!');
+                
+                // Update local storage cache
+                const cachedSessionsStr = localStorage.getItem('admin_cached_sessions');
+                if (cachedSessionsStr) {
+                  const cachedSessions = JSON.parse(cachedSessionsStr) as any[];
+                  localStorage.setItem('admin_cached_sessions', JSON.stringify(cachedSessions.filter(x => x.id !== sessionId)));
+                }
+
+                // Update local sessions array in parent closure
+                const sIdx = sessions.findIndex(x => x.id === sessionId);
+                if (sIdx !== -1) {
+                  sessions.splice(sIdx, 1);
+                }
+
+                renderFilteredSessions();
+              }
+            } catch (err: any) {
+              alert('Error: ' + err.message);
+              delBtn.disabled = false;
+              delBtn.textContent = 'Delete';
+            }
+          }
+        });
+      });
     };
 
     boothSelect.addEventListener('change', () => {
