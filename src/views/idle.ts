@@ -136,10 +136,49 @@ export class IdleView extends BaseView {
             <!-- Receipt paper delivery feed -->
             <div class="printer-paper-clipper">
               <div class="attract-loop-receipt">
-                <div class="receipt-elegant-prompt">
-                  <span>Tap to</span>
-                  <span>Start</span>
+                <!-- Circular cutouts for receipt appearance -->
+                <div class="receipt-cutout left"></div>
+                <div class="receipt-cutout right"></div>
+
+                <div class="attract-prompt-wrapper">
+                  <span class="attract-prompt-sub">TOUCH SCREEN</span>
+                  <h1 class="attract-prompt-main">TAP TO START</h1>
                 </div>
+                
+                <div class="attract-receipt-divider" style="margin: 10px 0; width: 85%;"></div>
+                
+                <div class="attract-receipt-barcode">
+                  <svg viewBox="0 0 100 24" width="100%" height="28">
+                    <rect x="0" y="0" width="2" height="16" fill="#000" />
+                    <rect x="3" y="0" width="1" height="16" fill="#000" />
+                    <rect x="6" y="0" width="3" height="16" fill="#000" />
+                    <rect x="11" y="0" width="1" height="16" fill="#000" />
+                    <rect x="14" y="0" width="2" height="16" fill="#000" />
+                    <rect x="18" y="0" width="4" height="16" fill="#000" />
+                    <rect x="24" y="0" width="1" height="16" fill="#000" />
+                    <rect x="27" y="0" width="2" height="16" fill="#000" />
+                    <rect x="31" y="0" width="3" height="16" fill="#000" />
+                    <rect x="36" y="0" width="1" height="16" fill="#000" />
+                    <rect x="39" y="0" width="2" height="16" fill="#000" />
+                    <rect x="43" y="0" width="4" height="16" fill="#000" />
+                    <rect x="49" y="0" width="1" height="16" fill="#000" />
+                    <rect x="52" y="0" width="2" height="16" fill="#000" />
+                    <rect x="56" y="0" width="3" height="16" fill="#000" />
+                    <rect x="61" y="0" width="1" height="16" fill="#000" />
+                    <rect x="64" y="0" width="2" height="16" fill="#000" />
+                    <rect x="68" y="0" width="4" height="16" fill="#000" />
+                    <rect x="74" y="0" width="1" height="16" fill="#000" />
+                    <rect x="77" y="0" width="2" height="16" fill="#000" />
+                    <rect x="81" y="0" width="3" height="16" fill="#000" />
+                    <rect x="86" y="0" width="1" height="16" fill="#000" />
+                    <rect x="89" y="0" width="2" height="16" fill="#000" />
+                    <rect x="93" y="0" width="4" height="16" fill="#000" />
+                    <text x="50" y="22" font-size="4.5" text-anchor="middle" font-family="Courier New, monospace" font-weight="bold" fill="#000">${config.cafeName.toUpperCase()}</text>
+                  </svg>
+                </div>
+
+                <!-- Jagged scallops at bottom -->
+                <div class="receipt-bottom-scallops"></div>
               </div>
             </div>
           </div>
@@ -286,7 +325,12 @@ export class IdleView extends BaseView {
     } else {
       const container = this.element.querySelector('.attract-logo-container');
       if (container) {
-        const topBadgeText = config.homeSubtitleTop || '';
+        // Format date dynamically like "Wednesday, July 15"
+        const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
+        const dynamicDate = new Date().toLocaleDateString('en-US', options);
+
+        const rawTop = config.homeSubtitleTop;
+        const topBadgeText = (!rawTop || rawTop === '06.21.2026') ? dynamicDate : rawTop;
         const subtitleText = config.homeSubtitleBottom || '';
         
         const topBadge = topBadgeText ? `<div class="attract-top-subtitle">${topBadgeText}</div>` : '';

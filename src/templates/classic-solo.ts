@@ -82,9 +82,9 @@ export const classicSoloTemplate: ReceiptTemplate = {
             <div class="boarding-dashed-line"></div>
             
             <div class="boarding-pass-codes">
-              <span class="boarding-code">DXB</span>
+              <span class="boarding-code">CLV</span>
               <span class="boarding-plane-divider">✈</span>
-              <span class="boarding-code">HKG</span>
+              <span class="boarding-code">PFC</span>
             </div>
             
             <div class="boarding-pass-label">BOARDING PASS</div>

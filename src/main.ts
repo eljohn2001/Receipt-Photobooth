@@ -21,7 +21,16 @@ import { audioManager } from './services/audio';
 import { getShareRecord, getPublicStorageUrl, supabase } from './services/supabase';
 import { syncPendingSessions, updateBoothTelemetry } from './services/sync';
 import { requestWakeLock } from './services/wake-lock';
+import { registerPlugin } from '@capacitor/core';
+import { generateTestPrintEscPos } from './services/download';
 import defaultSnapHome from './assets/Snap Home.png';
+
+interface DirectPrinterPlugin {
+  printRawUsb(options: { base64Data: string }): Promise<void>;
+  printRawBluetooth(options: { base64Data: string }): Promise<void>;
+  savePhotoToGallery(options: { base64Data: string }): Promise<void>;
+}
+const DirectPrinter = registerPlugin<DirectPrinterPlugin>('DirectPrinter');
 
 function renderDownloadPage(
   photoUrl: string | null,
@@ -588,24 +597,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const isCurtainMode = config.homeScreenMode === 'curtain';
     const isInstant = forceInstant || (isCurtainMode && (nextState === 'idle' || currentActiveState === 'idle'));
 
+    const prevPanel = document.getElementById(`view-${currentActiveState}`);
+    const nextPanel = document.getElementById(`view-${nextState}`);
+
+    // Helper to clean up all transition classes from all view panels
+    const clearTransitions = () => {
+      Object.keys(stateIndexMap).forEach(state => {
+        const el = document.getElementById(`view-${state}`);
+        if (el) {
+          el.classList.remove('slide-out-left', 'slide-in-right', 'slide-out-right', 'slide-in-left');
+        }
+      });
+    };
+
     if (isInstant) {
-      slider!.classList.add('no-transition');
+      clearTransitions();
+      Object.keys(stateIndexMap).forEach(state => {
+        const el = document.getElementById(`view-${state}`);
+        if (state === nextState) {
+          el?.classList.add('active-slide');
+        } else {
+          el?.classList.remove('active-slide');
+        }
+      });
     } else {
-      slider!.classList.remove('no-transition');
-    }
+      const prevIndex = stateIndexMap[currentActiveState];
+      const nextIndex = stateIndexMap[nextState];
+      const isForward = nextIndex > prevIndex;
 
-    const slideIndex = stateIndexMap[nextState];
-    slider!.style.transform = `translateX(-${slideIndex * 100}vw)`;
+      clearTransitions();
 
-    // Update active visual panel markers
-    Object.keys(stateIndexMap).forEach(state => {
-      const el = document.getElementById(`view-${state}`);
-      if (state === nextState) {
-        el?.classList.add('active-slide');
-      } else {
-        el?.classList.remove('active-slide');
+      if (prevPanel && nextPanel) {
+        if (isForward) {
+          prevPanel.classList.add('slide-out-left');
+          nextPanel.classList.add('slide-in-right');
+        } else {
+          prevPanel.classList.add('slide-out-right');
+          nextPanel.classList.add('slide-in-left');
+        }
       }
-    });
+
+      Object.keys(stateIndexMap).forEach(state => {
+        const el = document.getElementById(`view-${state}`);
+        if (state === nextState) {
+          el?.classList.add('active-slide');
+        } else {
+          el?.classList.remove('active-slide');
+        }
+      });
+
+      // Clear transition classes once the animation completes
+      setTimeout(() => {
+        if (currentActiveState === nextState) {
+          clearTransitions();
+        }
+      }, 500);
+    }
 
     // Update state tracker
     currentActiveState = nextState;
@@ -891,6 +938,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (countText && syncBtn) {
       countText.textContent = `${offlineShares.length} captures saved offline`;
       syncBtn.disabled = offlineShares.length === 0;
+    }
+
+    // Refresh offline sessions UI
+    const allSessions = await listLocalSessions();
+    const pendingSessions = allSessions.filter(s => s.syncStatus === 'pending');
+    const pendingCountText = document.getElementById('offline-sessions-count');
+    const syncSessionsBtn = document.getElementById('admin-sync-sessions-btn') as HTMLButtonElement;
+    if (pendingCountText && syncSessionsBtn) {
+      pendingCountText.textContent = `${pendingSessions.length} sessions pending sync`;
+      syncSessionsBtn.disabled = pendingSessions.length === 0;
     }
 
     // Load statistics on modal open
@@ -1325,6 +1382,74 @@ document.addEventListener('DOMContentLoaded', () => {
     countText.textContent = `${updatedShares.length} captures saved offline`;
     syncBtnEl.disabled = updatedShares.length === 0;
     syncBtnEl.textContent = 'Sync Now';
+  });
+
+  // Sync offline sessions to Supabase
+  const syncSessionsBtn = document.getElementById('admin-sync-sessions-btn');
+  syncSessionsBtn?.addEventListener('click', async () => {
+    const syncBtnEl = syncSessionsBtn as HTMLButtonElement;
+    const countText = document.getElementById('offline-sessions-count');
+    if (!syncBtnEl || !countText) return;
+
+    syncBtnEl.disabled = true;
+    syncBtnEl.textContent = 'Syncing...';
+
+    try {
+      const { successCount, failedCount } = await syncPendingSessions();
+      alert(`Sync completed: ${successCount} sessions uploaded. Failed: ${failedCount}.`);
+      
+      // Refresh UI counts
+      const allSessions = await listLocalSessions();
+      const pendingSessions = allSessions.filter(s => s.syncStatus === 'pending');
+      countText.textContent = `${pendingSessions.length} sessions pending sync`;
+      syncBtnEl.disabled = pendingSessions.length === 0;
+      
+      await loadAdminStatistics();
+    } catch (err) {
+      console.error('[Sync Sessions Exception]', err);
+      alert('Sync sessions operation failed.');
+    } finally {
+      syncBtnEl.disabled = false;
+      syncBtnEl.textContent = 'Sync Sessions';
+    }
+  });
+
+  // Test Print Diagnostic Feed
+  const testPrintBtn = document.getElementById('btn-admin-test-print');
+  testPrintBtn?.addEventListener('click', async () => {
+    const btn = testPrintBtn as HTMLButtonElement;
+    btn.disabled = true;
+    const oldText = btn.innerHTML;
+    btn.innerHTML = 'Sending to printer...';
+    
+    try {
+      audioManager.playDispenser();
+      const escPosBytes = await generateTestPrintEscPos();
+      
+      let binaryString = '';
+      const len = escPosBytes.byteLength;
+      for (let j = 0; j < len; j++) {
+        binaryString += String.fromCharCode(escPosBytes[j]);
+      }
+      const base64Data = btoa(binaryString);
+      
+      const config = loadKioskConfig();
+      const isBluetooth = config.printerMode === 'bluetooth';
+      
+      if (isBluetooth) {
+        await DirectPrinter.printRawBluetooth({ base64Data });
+      } else {
+        await DirectPrinter.printRawUsb({ base64Data });
+      }
+      
+      alert('Diagnostic test ticket successfully sent to thermal printer!');
+    } catch (e: any) {
+      console.error('Failed to print test ticket:', e);
+      alert('Test print failed: ' + (e.message || e));
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = oldText;
+    }
   });
 
   // File readers

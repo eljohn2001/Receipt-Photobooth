@@ -836,3 +836,144 @@ export async function downloadReceiptImage(session: AppSession): Promise<void> {
   // Revoke after download is triggered
   setTimeout(() => URL.revokeObjectURL(link.href), 100);
 }
+
+export async function generateTestPrintEscPos(): Promise<Uint8Array> {
+  const config = loadKioskConfig();
+  const scale = config.paperWidth === '58mm' ? 1.0 : 1.5;
+  const width = Math.round(384 * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = Math.round(380 * scale);
+  
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Could not get canvas context');
+  
+  // Fill white
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.fillStyle = '#000000';
+  ctx.textAlign = 'center';
+  
+  // Draw Logo (if available)
+  let logoY = Math.round(20 * scale);
+  if (config.logoDataUrl) {
+    try {
+      const img = new Image();
+      img.src = config.logoDataUrl;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+      const maxW = Math.round(180 * scale);
+      const maxH = Math.round(60 * scale);
+      let logoW = img.width;
+      let logoH = img.height;
+      if (logoW > maxW) {
+        logoH = logoH * (maxW / logoW);
+        logoW = maxW;
+      }
+      if (logoH > maxH) {
+        logoW = logoW * (maxH / logoH);
+        logoH = maxH;
+      }
+      ctx.drawImage(img, (width - logoW) / 2, logoY, logoW, logoH);
+      logoY += logoH + Math.round(15 * scale);
+    } catch (e) {
+      console.warn('Failed to draw test logo:', e);
+      logoY += Math.round(20 * scale);
+    }
+  } else {
+    ctx.font = `bold ${Math.round(28 * scale)}px "Courier New", Courier, monospace`;
+    ctx.fillText('☕️', width / 2, logoY + Math.round(25 * scale));
+    logoY += Math.round(40 * scale);
+  }
+
+  // Draw Cafe Name
+  ctx.font = `bold ${Math.round(16 * scale)}px "Courier New", Courier, monospace`;
+  ctx.fillText(config.cafeName.toUpperCase(), width / 2, logoY);
+  logoY += Math.round(25 * scale);
+  
+  // Slogan
+  ctx.font = `${Math.round(12 * scale)}px "Courier New", Courier, monospace`;
+  ctx.fillText('SNAPCEIPT DIAGNOSTIC TICKET', width / 2, logoY);
+  logoY += Math.round(18 * scale);
+  
+  // Divider
+  const dashedLine = config.paperWidth === '58mm' ? '- - - - - - - - - - - - - - - - - - - -' : '- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -';
+  ctx.fillText(dashedLine, width / 2, logoY);
+  logoY += Math.round(22 * scale);
+  
+  // Printer info
+  ctx.font = `bold ${Math.round(13 * scale)}px "Courier New", Courier, monospace`;
+  ctx.fillText(`STATUS: CONNECTION OK`, width / 2, logoY);
+  logoY += Math.round(20 * scale);
+  
+  ctx.font = `${Math.round(12 * scale)}px "Courier New", Courier, monospace`;
+  ctx.fillText(`PRINTER MODE: ${(config.printerMode || 'usb').toUpperCase()}`, width / 2, logoY);
+  logoY += Math.round(20 * scale);
+  
+  ctx.fillText(`PAPER WIDTH: ${(config.paperWidth || '80mm').toUpperCase()}`, width / 2, logoY);
+  logoY += Math.round(20 * scale);
+  
+  const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
+  const dateStr = new Date().toLocaleDateString('en-US', options);
+  const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  ctx.fillText(`${dateStr} | ${timeStr}`, width / 2, logoY);
+  logoY += Math.round(25 * scale);
+  
+  ctx.fillText(dashedLine, width / 2, logoY);
+  logoY += Math.round(25 * scale);
+  
+  // Draw message
+  ctx.font = `bold ${Math.round(13 * scale)}px "Courier New", Courier, monospace`;
+  ctx.fillText('THANK YOU FOR PARTNERING!', width / 2, logoY);
+  
+  ditherCanvas(canvas);
+  
+  const widthBytes = Math.ceil(width / 8);
+  const paddedWidth = widthBytes * 8;
+  const imgData = ctx.getImageData(0, 0, width, canvas.height);
+  const data = imgData.data;
+
+  const header = new Uint8Array([
+    0x1B, 0x40, // ESC @ (Initialize printer)
+    0x1D, 0x76, 0x30, 0x00, // GS v 0 0
+    widthBytes & 0xFF, (widthBytes >> 8) & 0xFF, // xL xH
+    canvas.height & 0xFF, (canvas.height >> 8) & 0xFF // yL yH
+  ]);
+
+  const body = new Uint8Array(widthBytes * canvas.height);
+
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < paddedWidth; x++) {
+      let bit = 0;
+      if (x < width) {
+        const idx = (y * width + x) * 4;
+        const r = data[idx];
+        if (r < 128) {
+          bit = 1;
+        }
+      }
+
+      const byteIdx = y * widthBytes + Math.floor(x / 8);
+      const bitIdx = 7 - (x % 8);
+      if (bit === 1) {
+        body[byteIdx] |= (1 << bitIdx);
+      }
+    }
+  }
+
+  const footer = new Uint8Array([
+    0x0A, 0x0A, 0x0A, 0x0A, // 4 lines feed
+    0x1D, 0x56, 0x42, 0x00  // GS V B 00 (Partial cut command)
+  ]);
+
+  const totalLength = header.length + body.length + footer.length;
+  const escPosBytes = new Uint8Array(totalLength);
+  escPosBytes.set(header, 0);
+  escPosBytes.set(body, header.length);
+  escPosBytes.set(footer, header.length + body.length);
+
+  return escPosBytes;
+}

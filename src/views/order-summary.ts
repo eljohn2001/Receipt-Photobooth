@@ -17,6 +17,11 @@ export class OrderSummaryView extends BaseView {
   }
 
   mount(): void {
+    const config = loadKioskConfig();
+    const logoHtml = config.logoDataUrl 
+      ? `<img src="${config.logoDataUrl}" class="thank-you-logo" />` 
+      : `<div class="thank-you-logo-placeholder">☕️</div>`;
+
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="template-screen-header">
@@ -24,33 +29,73 @@ export class OrderSummaryView extends BaseView {
           <p style="margin-top: 8px; font-size: 16px; color: var(--text-secondary);">Please verify your selection before capturing.</p>
         </div>
 
-        <div class="order-summary-card">
-          <div class="summary-row">
-            <span class="summary-label">Layout Selection:</span>
-            <strong id="summary-layout-name" class="summary-val">-</strong>
-          </div>
-          <div class="summary-row">
-            <span class="summary-label">Print Package:</span>
-            <strong id="summary-package-name" class="summary-val">-</strong>
-          </div>
-          <div class="summary-row">
-            <span class="summary-label">Copies to Print:</span>
-            <strong id="summary-prints-count" class="summary-val">-</strong>
-          </div>
-          <div class="summary-row summary-total-row">
-            <span>Total Amount:</span>
-            <span id="summary-total-price" class="summary-total-price-val">-</span>
+        <div class="order-summary-printer-container">
+          <!-- simulated 3D printer hardware slot -->
+          <div class="printer-hardware-mouth">
+            <div class="printer-hardware-slot"></div>
           </div>
           
-          <div class="payment-notification-box">
-            ☕ <strong>Cashier Payment</strong><br/>
-            Please pay at the cashier together with your café order. No activation code or confirmation is needed!
+          <div class="printer-paper-clipper">
+            <div class="order-summary-receipt">
+              <!-- Circular cuts for receipt look -->
+              <div class="receipt-cutout left"></div>
+              <div class="receipt-cutout right"></div>
+
+              ${logoHtml}
+              <h3 class="receipt-cafe-name" style="font-family: var(--font-ui); font-size: 12px; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 1px; margin: 4px 0 0 0;">${config.cafeName}</h3>
+              <h4 class="receipt-order-title">ORDER SUMMARY</h4>
+              
+              <div class="thank-you-divider"></div>
+
+              <!-- Selected Items Grid -->
+              <div class="order-receipt-item-row">
+                <div class="order-receipt-item-col">
+                  <span class="order-receipt-item-title" id="summary-layout-name">-</span>
+                  <span class="order-receipt-item-sub">Selected Layout</span>
+                </div>
+                <div class="order-receipt-item-price">—</div>
+              </div>
+
+              <div class="order-receipt-item-row">
+                <div class="order-receipt-item-col">
+                  <span class="order-receipt-item-title" id="summary-package-name">-</span>
+                  <span class="order-receipt-item-sub">Selected Package</span>
+                </div>
+                <div class="order-receipt-item-price" id="summary-total-price-item">—</div>
+              </div>
+
+              <div class="order-receipt-item-row">
+                <div class="order-receipt-item-col">
+                  <span class="order-receipt-item-title" id="summary-prints-count">-</span>
+                  <span class="order-receipt-item-sub">Copies Selected</span>
+                </div>
+                <div class="order-receipt-item-price">—</div>
+              </div>
+
+              <div class="thank-you-divider"></div>
+
+              <!-- Total Pricing row -->
+              <div class="order-receipt-total-row">
+                <span>TOTAL:</span>
+                <span id="summary-total-price" class="order-receipt-total-val">-</span>
+              </div>
+
+              <div class="thank-you-divider"></div>
+
+              <div class="order-receipt-payment-info">
+                ☕ <strong>Cashier Payment</strong><br/>
+                Please pay at the cashier together with your café order. No activation code or confirmation is needed!
+              </div>
+
+              <!-- Scalloped bottom -->
+              <div class="receipt-bottom-scallops"></div>
+            </div>
           </div>
         </div>
 
-        <div class="summary-actions-bar">
-          <button class="btn btn-secondary" id="btn-summary-back" type="button">← CHANGE</button>
-          <button class="btn btn-primary" id="btn-summary-start" type="button">⚡ START CAPTURE</button>
+        <div class="order-summary-footer">
+          <button class="btn btn-primary btn-wide" id="btn-summary-start" type="button">⚡ START CAPTURE</button>
+          <button class="btn btn-secondary btn-wide" id="btn-summary-back" type="button">← CHANGE SELECTION</button>
         </div>
       </div>
     `;
@@ -85,6 +130,7 @@ export class OrderSummaryView extends BaseView {
     const packageNameEl = this.element.querySelector('#summary-package-name');
     const printsCountEl = this.element.querySelector('#summary-prints-count');
     const totalPriceEl = this.element.querySelector('#summary-total-price');
+    const totalPriceItemEl = this.element.querySelector('#summary-total-price-item');
 
     if (!layoutNameEl || !packageNameEl || !printsCountEl || !totalPriceEl) return;
 
@@ -100,13 +146,15 @@ export class OrderSummaryView extends BaseView {
     const pkg = this.activeSession.selectedPackage;
     if (pkg) {
       packageNameEl.textContent = pkg.name;
-      printsCountEl.textContent = `${pkg.printsCount} copies`;
+      printsCountEl.textContent = `${pkg.printsCount} ${pkg.printsCount === 1 ? 'copy' : 'copies'}`;
       totalPriceEl.textContent = `${currency}${pkg.price.toFixed(2)}`;
+      if (totalPriceItemEl) totalPriceItemEl.textContent = `${currency}${pkg.price.toFixed(2)}`;
     } else {
       // Fallback
       packageNameEl.textContent = 'Standard Package';
       printsCountEl.textContent = '1 copy';
       totalPriceEl.textContent = `${currency}30.00`;
+      if (totalPriceItemEl) totalPriceItemEl.textContent = `${currency}30.00`;
     }
   }
 }

@@ -77,24 +77,100 @@ body {
 }
 
 .views-slider {
-  display: flex;
-  width: 600%;
-  /* 6 views */
+  position: relative;
+  width: 100vw;
   height: 100vh;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
 .view-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
-  flex-shrink: 0;
   overflow: hidden;
-  position: relative;
-  display: flex;
+  display: none;
   flex-direction: column;
   padding: calc(env(safe-area-inset-top, 0px) + 24px) 24px calc(env(safe-area-inset-bottom, 0px) + 24px) 24px;
   background: radial-gradient(circle at 50% 0%, #ffffff 0%, #f4f4f6 100%);
   box-sizing: border-box;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+.view-panel.active-slide {
+  display: flex;
+  z-index: 2;
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
+}
+
+/* iOS Slide Transitions */
+.view-panel.slide-out-left {
+  display: flex !important;
+  z-index: 1;
+  animation: ios-slide-out-left 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.view-panel.slide-in-right {
+  display: flex !important;
+  z-index: 3; /* Render on top of the outgoing view */
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+  animation: ios-slide-in-right 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.view-panel.slide-out-right {
+  display: flex !important;
+  z-index: 3; /* Keep on top during back transition */
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+  animation: ios-slide-out-right 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.view-panel.slide-in-left {
+  display: flex !important;
+  z-index: 1;
+  animation: ios-slide-in-left 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes ios-slide-in-right {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes ios-slide-out-left {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(-30%, 0, 0);
+    opacity: 0.8;
+  }
+}
+
+@keyframes ios-slide-in-left {
+  from {
+    transform: translate3d(-30%, 0, 0);
+    opacity: 0.8;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes ios-slide-out-right {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
 }
 
 /* -------------------------------------------------------------
@@ -357,12 +433,14 @@ body {
 }
 
 .brand-subtitle {
-  font-family: var(--font-script);
-  font-size: 44px;
+  font-family: var(--font-ui);
+  font-size: 25px;
   color: var(--text-home);
   font-weight: 400;
-  margin-top: 0px;
-  letter-spacing: 1px;
+  margin-top: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.75;
 }
 
 
@@ -404,6 +482,26 @@ body {
   background: #000000;
   border-radius: 4px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+  border: 1px solid transparent;
+  animation: slot-breath 3s ease-in-out infinite;
+  box-sizing: border-box;
+}
+
+@keyframes slot-breath {
+  0%, 100% {
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.9),
+      0 0 8px rgba(var(--accent-color-rgb), 0.25),
+      0 0 15px rgba(var(--accent-color-rgb), 0.1);
+    border-color: rgba(var(--accent-color-rgb), 0.3);
+  }
+  50% {
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.9),
+      0 0 18px rgba(var(--accent-color-rgb), 0.75),
+      0 0 30px rgba(var(--accent-color-rgb), 0.4);
+    border-color: rgba(var(--accent-color-rgb), 0.6);
+  }
 }
 
 /* Paper clip window - aligned to slot center (top: 27px) */
@@ -433,20 +531,19 @@ body {
   align-items: center;
   border-left: 1px solid rgba(0, 0, 0, 0.05);
   border-right: 1px solid rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
   position: relative;
   transform: translateY(-100%);
   opacity: 0;
   transform-origin: top center;
+  overflow: visible;
 }
 
 .receipt-elegant-prompt {
-  font-family: var(--font-vintage);
-  font-style: italic;
-  font-size: 38px;
-  font-weight: 400;
-  line-height: 1.15;
+  font-family: var(--font-ui);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.25;
   text-align: center;
   color: #000000;
   display: flex;
@@ -4083,7 +4180,8 @@ body:not(.dark-theme) .mode-option-card.selected {
   }
   
   .brand-subtitle {
-    font-size: 60px;
+    font-size: 35px;
+    font-weight: 400;
   }
   
   .attract-top-subtitle {
@@ -5791,43 +5889,43 @@ body:not(.dark-theme) .mode-option-card.selected {
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  padding: 44px 36px 56px 36px;
+  padding: 48px 44px 60px 44px;
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-bottom: none;
   border-radius: 12px 12px 0 0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
   margin: 20px auto 35px auto;
   width: 95%;
-  max-width: 480px;
+  max-width: 530px;
   box-sizing: border-box;
   text-align: center;
   overflow: visible;
 }
 
 /* Semi-circular left & right cuts */
-.receipt-cutout {
+.finished-thank-you-card .receipt-cutout {
   position: absolute;
   top: 36%;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   background-color: var(--bg-primary); /* Masks out card using parent screen background */
   border-radius: 50%;
   z-index: 2;
   box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
 }
 
-.receipt-cutout.left {
-  left: -12px;
+.finished-thank-you-card .receipt-cutout.left {
+  left: -14px;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.receipt-cutout.right {
-  right: -12px;
+.finished-thank-you-card .receipt-cutout.right {
+  right: -14px;
   border-left: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* Scalloped bottom border */
-.receipt-bottom-scallops {
+.finished-thank-you-card .receipt-bottom-scallops {
   position: absolute;
   bottom: -10px;
   left: 0;
@@ -5840,8 +5938,8 @@ body:not(.dark-theme) .mode-option-card.selected {
 }
 
 .thank-you-logo {
-  max-width: 200px;
-  max-height: 75px;
+  max-width: 250px;
+  max-height: 85px;
   margin-bottom: 18px;
   object-fit: contain;
 }
@@ -5853,7 +5951,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .thank-you-cafe-name {
   font-family: var(--font-ui);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -5863,7 +5961,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .thank-you-message {
   font-family: var(--font-ui);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   line-height: 1.5;
   color: var(--text-secondary);
@@ -5892,7 +5990,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .receipt-meta-label {
   font-family: var(--font-ui);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #888888;
   letter-spacing: 0.5px;
@@ -5901,7 +5999,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 
 .receipt-meta-val {
   font-family: "Courier New", Courier, monospace;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: bold;
   color: var(--text-primary);
 }
@@ -5914,7 +6012,7 @@ body:not(.dark-theme) .mode-option-card.selected {
 }
 
 .thank-you-barcode svg {
-  max-width: 320px;
+  max-width: 360px;
 }
 
 .finished-top-logo {
@@ -5933,4 +6031,388 @@ body:not(.dark-theme) .mode-option-card.selected {
   text-transform: uppercase;
   margin: 10px auto 20px auto;
   color: var(--text-primary);
+}
+
+/* Mini attract receipt styles */
+.attract-receipt-logo {
+  max-width: 80px;
+  max-height: 35px;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  object-fit: contain;
+}
+
+.attract-receipt-logo-placeholder {
+  font-size: 22px;
+  margin-top: 10px;
+  margin-bottom: 2px;
+}
+
+.attract-receipt-title {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 0 0 2px 0;
+  color: var(--text-primary);
+  text-transform: uppercase;
+}
+
+.attract-receipt-msg {
+  font-family: var(--font-ui);
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-secondary);
+  margin: 0 0 6px 0;
+  padding: 0 10px;
+}
+
+.attract-receipt-divider {
+  width: 90%;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  margin: 4px 0;
+}
+
+.attract-receipt-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 90%;
+  margin: 2px 0;
+  text-align: left;
+  gap: 4px;
+}
+
+.attract-meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.attract-meta-label {
+  font-family: var(--font-ui);
+  font-size: 6px;
+  font-weight: 700;
+  color: #888888;
+  letter-spacing: 0.25px;
+  margin-bottom: 1px;
+}
+
+.attract-meta-val {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 8px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+/* Attract Start Banner styled like the card ending mockup capsule */
+.attract-start-banner {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border-radius: 8px;
+  width: 90%;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  margin: 4px 0;
+  text-align: left;
+}
+
+.attract-start-icon {
+  font-size: 14px;
+}
+
+.attract-start-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.attract-start-main {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.attract-start-sub {
+  font-family: var(--font-ui);
+  font-size: 7.5px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.attract-receipt-barcode {
+  width: 90%;
+  margin-top: 4px;
+  display: flex;
+  justify-content: center;
+}
+
+.attract-receipt-barcode svg {
+  max-width: 100%;
+}
+
+/* Order Summary Receipt Printer Hardware Layout */
+.order-summary-printer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  margin: 15px auto 25px auto;
+  width: 100%;
+  max-width: 680px;
+  height: 720px;
+  overflow: visible;
+}
+
+.order-summary-printer-container .printer-hardware-mouth {
+  width: 600px;
+  height: 72px;
+  background: linear-gradient(180deg, #3a3d40 0%, #1e2022 40%, #0a0b0c 100%);
+  border-radius: 36px;
+  box-shadow:
+    0 6px 12px rgba(0, 0, 0, 0.15),
+    inset 0 2px 2px rgba(255, 255, 255, 0.1),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
+.order-summary-printer-container .printer-hardware-slot {
+  width: 520px;
+  height: 12px;
+  background: #000000;
+  border-radius: 6px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9);
+  border: 1px solid transparent;
+  animation: slot-breath 3s ease-in-out infinite;
+  box-sizing: border-box;
+}
+
+.order-summary-printer-container .printer-paper-clipper {
+  width: 530px;
+  height: 660px;
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  z-index: 20;
+}
+
+/* Receipt ticket page */
+.order-summary-receipt {
+  width: 100%;
+  height: auto;
+  min-height: 580px;
+  background: #ffffff;
+  color: #000000;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 48px 48px 100px 48px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: visible;
+  animation: order-receipt-eject 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes order-receipt-eject {
+  0% {
+    transform: translateY(-80%);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.order-summary-receipt .receipt-cutout {
+  position: absolute;
+  top: 38%;
+  width: 32px;
+  height: 32px;
+  background-color: var(--bg-primary);
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.order-summary-receipt .receipt-cutout.left {
+  left: -16px;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.order-summary-receipt .receipt-cutout.right {
+  right: -16px;
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.order-summary-receipt .thank-you-logo {
+  max-width: 260px;
+  max-height: 85px;
+  margin-bottom: 12px;
+  object-fit: contain;
+}
+
+.order-summary-receipt .thank-you-logo-placeholder {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.receipt-order-title {
+  font-family: var(--font-ui);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin: 6px 0 0 0;
+  color: var(--text-primary);
+}
+
+/* Order Item Listing row styles */
+.order-receipt-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin: 10px 0;
+  text-align: left;
+}
+
+.order-receipt-item-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.order-receipt-item-title {
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.order-receipt-item-sub {
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  color: #888888;
+  margin-top: 2px;
+}
+
+.order-receipt-item-price {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.order-receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 10px 0;
+}
+
+.order-receipt-total-val {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+
+.order-receipt-payment-info {
+  width: 100%;
+  background: #f8f9fa;
+  border-radius: 14px;
+  padding: 16px;
+  box-sizing: border-box;
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: #555555;
+  margin-top: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.order-summary-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 520px;
+  margin: 30px auto;
+  box-sizing: border-box;
+  padding: 0 20px;
+}
+
+.order-summary-footer .btn-wide {
+  width: 100%;
+  padding: 20px 30px;
+  font-size: 18px;
+  border-radius: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.attract-prompt-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
+  margin-top: 28px;
+  margin-bottom: 8px;
+  text-align: center;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 12px;
+}
+
+.attract-prompt-sub {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 800;
+  color: #888888;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.attract-prompt-main {
+  font-family: var(--font-ui);
+  font-size: 26px; /* Bigger and highly visible! */
+  font-weight: 900;
+  color: var(--accent-color); /* App brand blue */
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  margin: 0;
+  animation: pulse-blue-text 2s ease-in-out infinite;
+}
+
+@keyframes pulse-blue-text {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
 }

@@ -166,6 +166,16 @@
                     <textarea id="input-custom-message" rows="3" placeholder="e.g. Keep smiling! Thank you for visiting."></textarea>
                   </div>
 
+                  <div class="form-group">
+                    <label for="input-home-subtitle-top">Home Top Subtitle / Date (e.g. Event Date)</label>
+                    <input type="text" id="input-home-subtitle-top" placeholder="Leave empty for dynamic current date (e.g. Wednesday, July 15)" />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-home-subtitle-bottom">Home Bottom Subtitle / Event Name</label>
+                    <input type="text" id="input-home-subtitle-bottom" placeholder="e.g. Receipt Photo Booth" />
+                  </div>
+
                   <div class="form-row">
                     <div class="form-group half-width">
                       <label for="input-session-price">Session Price (₱)</label>
@@ -221,15 +231,7 @@
                     </select>
                   </div>
 
-                  <div class="form-group">
-                    <label for="input-home-subtitle-top">Home Top Subtitle (e.g. Event Date)</label>
-                    <input type="text" id="input-home-subtitle-top" placeholder="e.g. 06.21.2026" />
-                  </div>
 
-                  <div class="form-group">
-                    <label for="input-home-subtitle-bottom">Home Bottom Subtitle (e.g. Event Name)</label>
-                    <input type="text" id="input-home-subtitle-bottom" placeholder="e.g. Receipt Photo Booth" />
-                  </div>
 
                   <div class="form-group">
                     <label>Café Logo (PNG/SVG recommended)</label>
@@ -410,21 +412,41 @@
                       An easier alternative image host. Register at <a href="https://imgbb.com" target="_blank" style="color: inherit; text-decoration: underline;">imgbb.com</a> to generate a free API key at <a href="https://api.imgbb.com/" target="_blank" style="color: inherit; text-decoration: underline;">api.imgbb.com</a>.
                     </p>
                   </div>
+
+                  <h5 style="font-size: 13px; font-weight: 700; margin: 20px 0 10px; color: var(--text-primary); text-transform: uppercase;">Hardware Diagnostics</h5>
+                  <div style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
+                    <p style="font-size: 11.5px; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+                      Test connection status and print feed of the physical thermal printer. Make sure printer is powered on, connected via USB/Bluetooth, and loaded with paper.
+                    </p>
+                    <button type="button" id="btn-admin-test-print" class="btn-admin btn-admin-primary" style="padding: 10px 18px; font-weight: 800; font-size: 12px; width: 100%;">
+                      🖨️ SEND DIAGNOSTIC TEST PRINT
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Tab 4: Cloud Sync -->
                 <div id="admin-tab-sync" class="admin-tab-content hidden">
                   <h4 class="admin-tab-section-title">Offline Cloud Sync Manager</h4>
                   
-                  <p style="font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 10px;">
-                    If the device captures photos while offline, they are safely cached in local storage. Sync them to the cloud database once an active internet connection is restored.
+                  <p style="font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 20px;">
+                    If the device captures photos while offline, the images and transaction sessions are cached locally. Sync them to the cloud database once an active internet connection is restored.
                   </p>
 
-                  <div class="offline-sync-card">
-                    <div class="offline-sync-header">Storage Status</div>
-                    <div class="offline-sync-row">
-                      <span class="offline-sync-count" id="offline-captures-count">0 captures saved offline</span>
-                      <button type="button" id="admin-sync-btn" class="btn-admin btn-admin-primary" style="min-width: 100px; padding: 8px 16px;" disabled>Sync Now</button>
+                  <!-- Queue 1: Captured Photos Upload -->
+                  <div class="offline-sync-card" style="margin-bottom: 20px; border: 1px solid var(--border-primary); border-radius: 8px; padding: 15px; background: #fff;">
+                    <div class="offline-sync-header" style="font-weight: 700; font-size: 13px; margin-bottom: 10px; text-transform: uppercase;">1. Unuploaded Photo Collages</div>
+                    <div class="offline-sync-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                      <span class="offline-sync-count" id="offline-captures-count" style="font-size: 13px; color: var(--text-secondary);">0 captures saved offline</span>
+                      <button type="button" id="admin-sync-btn" class="btn-admin btn-admin-primary" style="padding: 8px 16px;" disabled>Upload Photos</button>
+                    </div>
+                  </div>
+
+                  <!-- Queue 2: Kiosk Session Reports Sync -->
+                  <div class="offline-sync-card" style="border: 1px solid var(--border-primary); border-radius: 8px; padding: 15px; background: #fff;">
+                    <div class="offline-sync-header" style="font-weight: 700; font-size: 13px; margin-bottom: 10px; text-transform: uppercase;">2. Unsynced Sales Ledger Sessions</div>
+                    <div class="offline-sync-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                      <span class="offline-sync-count" id="offline-sessions-count" style="font-size: 13px; color: var(--text-secondary);">0 sessions pending sync</span>
+                      <button type="button" id="admin-sync-sessions-btn" class="btn-admin btn-admin-primary" style="padding: 8px 16px;" disabled>Sync Sessions</button>
                     </div>
                   </div>
                 </div>

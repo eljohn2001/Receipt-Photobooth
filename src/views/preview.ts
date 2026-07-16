@@ -11,6 +11,7 @@ import { generateShortId } from '../services/supabase';
 import quotesRaw from '../Quotes.txt?raw';
 import { THEMES_BY_TEMPLATE } from '../themes';
 import { audioManager } from '../services/audio';
+import { hapticService } from '../services/haptics';
 
 export class PreviewView extends BaseView {
   private activeSession: AppSession;
@@ -323,12 +324,14 @@ export class PreviewView extends BaseView {
     let isDragging = false;
     let startX = 0;
     let thumbStart = 5;
+    let lastStep = -1;
     const maxLeft = () => track.clientWidth - thumb.clientWidth - 10;
 
     const onStart = (clientX: number) => {
       isDragging = true;
       startX = clientX;
       thumbStart = parseInt(thumb.style.left || '5', 10);
+      lastStep = -1;
       thumb.classList.remove('hint');
       thumb.style.transition = 'none';
       track.classList.add('dragging');
@@ -340,10 +343,18 @@ export class PreviewView extends BaseView {
       const newLeft = Math.max(5, Math.min(thumbStart + dx, maxLeft()));
       thumb.style.left = newLeft + 'px';
       
+      const progress = newLeft / maxLeft();
+      
+      // Discrete tactile feedback ticks as user drags the slider
+      const currentStep = Math.floor(progress * 12);
+      if (currentStep !== lastStep) {
+        hapticService.impactLight();
+        lastStep = currentStep;
+      }
+      
       // Dynamically fade out label as the user swipes
       const label = track.querySelector('.swipe-print-label') as HTMLElement;
       if (label) {
-        const progress = newLeft / maxLeft();
         label.style.opacity = Math.max(0, 1 - progress * 1.5).toString();
       }
     };
@@ -361,6 +372,7 @@ export class PreviewView extends BaseView {
         // Swipe completed
         thumb.style.left = maxLeft() + 'px';
         track.classList.add('swiped');
+        hapticService.impactHeavy();
         audioManager.playBeep();
         setTimeout(() => onComplete(), 250);
       } else {
