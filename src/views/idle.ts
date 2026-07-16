@@ -336,11 +336,13 @@ export class IdleView extends BaseView {
         const topBadge = topBadgeText ? `<div class="attract-top-subtitle">${topBadgeText}</div>` : '';
         const subtitle = subtitleText ? `<p class="brand-subtitle">${subtitleText}</p>` : '';
 
-        if (config.logoDataUrl) {
+        const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+
+        if (logoUrl) {
           container.innerHTML = `
             ${topBadge}
             <div class="logo-image-wrapper">
-              <img class="attract-cafe-logo" src="${config.logoDataUrl}" alt="${config.cafeName}" />
+              <img class="attract-cafe-logo" src="${logoUrl}" alt="${config.cafeName}" />
             </div>
             ${subtitle}
           `;

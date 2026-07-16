@@ -18,8 +18,9 @@ export class OrderSummaryView extends BaseView {
 
   mount(): void {
     const config = loadKioskConfig();
-    const logoHtml = config.logoDataUrl 
-      ? `<img src="${config.logoDataUrl}" class="thank-you-logo" />` 
+    const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+    const logoHtml = logoUrl 
+      ? `<img src="${logoUrl}" class="thank-you-logo" />` 
       : `<div class="thank-you-logo-placeholder">☕️</div>`;
 
     this.element.innerHTML = `

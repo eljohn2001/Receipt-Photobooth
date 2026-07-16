@@ -705,6 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminModal = document.getElementById('admin-modal');
   const configForm = document.getElementById('admin-config-form') as HTMLFormElement;
   const logoFileInput = document.getElementById('input-logo-file') as HTMLInputElement;
+  const logoScreenFileInput = document.getElementById('input-logo-screen-file') as HTMLInputElement;
   const curtainOverlayInput = document.getElementById('input-curtain-overlay-file') as HTMLInputElement;
   const bgFileInput = document.getElementById('input-bg-file') as HTMLInputElement;
   const closeBtn = document.getElementById('admin-close-x');
@@ -713,6 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const deactivateBtn = document.getElementById('admin-deactivate-btn');
 
   let currentLogoDataUrl: string | null = null;
+  let currentLogoScreenDataUrl: string | null = null;
   let currentCurtainOverlayDataUrl: string | null = null;
   let pendingBgFile: File | null = null;
   let bgFileType: 'image' | 'video' | null = null;
@@ -796,7 +798,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('preview-logo-container');
     if (!container) return;
     if (dataUrl) {
-      container.innerHTML = `<img src="${dataUrl}" alt="Logo Preview" />`;
+      container.innerHTML = `
+        <img src="${dataUrl}" alt="Logo Preview" />
+        <button type="button" class="btn-remove-media" id="btn-remove-logo" style="width: 100%;">Remove</button>
+      `;
+      container.classList.remove('hidden');
+    } else {
+      container.innerHTML = '';
+      container.classList.add('hidden');
+    }
+  }
+
+  function updateLogoScreenPreview(dataUrl: string | null) {
+    const container = document.getElementById('preview-logo-screen-container');
+    if (!container) return;
+    if (dataUrl) {
+      container.innerHTML = `
+        <img src="${dataUrl}" alt="Screen Logo Preview" />
+        <button type="button" class="btn-remove-media" id="btn-remove-logo-screen" style="width: 100%;">Remove</button>
+      `;
       container.classList.remove('hidden');
     } else {
       container.innerHTML = '';
@@ -808,7 +828,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('preview-curtain-overlay-container');
     if (!container) return;
     if (dataUrl) {
-      container.innerHTML = `<img src="${dataUrl}" alt="Overlay Preview" />`;
+      container.innerHTML = `
+        <img src="${dataUrl}" alt="Overlay Preview" />
+        <button type="button" class="btn-remove-media" id="btn-remove-curtain" style="width: 100%;">Remove</button>
+      `;
       container.classList.remove('hidden');
     } else {
       container.innerHTML = '';
@@ -821,9 +844,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!container) return;
     if (dataUrl) {
       if (isVideo) {
-        container.innerHTML = `<video src="${dataUrl}" style="max-height: 60px; max-width: 100%;" autoplay muted loop></video>`;
+        container.innerHTML = `
+          <video src="${dataUrl}" style="max-height: 60px; max-width: 100%;" autoplay muted loop></video>
+          <button type="button" class="btn-remove-media" id="btn-remove-bg" style="width: 100%;">Remove</button>
+        `;
       } else {
-        container.innerHTML = `<img src="${dataUrl}" alt="Background Preview" />`;
+        container.innerHTML = `
+          <img src="${dataUrl}" alt="Background Preview" />
+          <button type="button" class="btn-remove-media" id="btn-remove-bg" style="width: 100%;">Remove</button>
+        `;
       }
       container.classList.remove('hidden');
     } else {
@@ -893,6 +922,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (imgbbApiKeyInput) imgbbApiKeyInput.value = config.imgbbApiKey || '';
 
     updateLogoPreview(config.logoDataUrl);
+    updateLogoScreenPreview(config.logoScreenDataUrl || null);
     updateCurtainOverlayPreview(config.curtainOverlayDataUrl || null);
 
     if (config.backgroundType) {
@@ -927,6 +957,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = loadKioskConfig();
     await populateAdminForm(config);
     currentLogoDataUrl = config.logoDataUrl;
+    currentLogoScreenDataUrl = config.logoScreenDataUrl || null;
     currentCurtainOverlayDataUrl = config.curtainOverlayDataUrl || null;
     pendingBgFile = null;
     bgFileType = config.backgroundType;
@@ -1466,6 +1497,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  logoScreenFileInput?.addEventListener('change', () => {
+    const file = logoScreenFileInput.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        currentLogoScreenDataUrl = result;
+        updateLogoScreenPreview(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
   curtainOverlayInput?.addEventListener('change', () => {
     const file = curtainOverlayInput.files?.[0];
     if (file) {
@@ -1494,9 +1538,52 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Event delegation for clearing uploads via "Remove" buttons
+  document.getElementById('preview-logo-container')?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'btn-remove-logo') {
+      currentLogoDataUrl = null;
+      updateLogoPreview(null);
+      if (logoFileInput) logoFileInput.value = '';
+    }
+  });
+
+  document.getElementById('preview-logo-screen-container')?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'btn-remove-logo-screen') {
+      currentLogoScreenDataUrl = null;
+      updateLogoScreenPreview(null);
+      if (logoScreenFileInput) logoScreenFileInput.value = '';
+    }
+  });
+
+  document.getElementById('preview-curtain-overlay-container')?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'btn-remove-curtain') {
+      currentCurtainOverlayDataUrl = null;
+      updateCurtainOverlayPreview(null);
+      if (curtainOverlayInput) curtainOverlayInput.value = '';
+    }
+  });
+
+  document.getElementById('preview-bg-container')?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'btn-remove-bg') {
+      pendingBgFile = null;
+      bgFileType = null;
+      updateBgPreview(null);
+      if (bgFileInput) bgFileInput.value = '';
+      if ((window as any).bgPreviewUrl) {
+        URL.revokeObjectURL((window as any).bgPreviewUrl);
+        (window as any).bgPreviewUrl = null;
+      }
+    }
+  });
+
   const closeModal = () => {
     adminModal?.classList.add('hidden');
     if (logoFileInput) logoFileInput.value = '';
+    if (logoScreenFileInput) logoScreenFileInput.value = '';
     if (curtainOverlayInput) curtainOverlayInput.value = '';
     if (bgFileInput) bgFileInput.value = '';
     pendingBgFile = null;
@@ -1546,6 +1633,12 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         console.error('Failed to save background media to IndexedDB:', err);
       }
+    } else if (resolvedBgType === null) {
+      try {
+        await deleteBackgroundMedia();
+      } catch (err) {
+        console.error('Failed to delete background media from IndexedDB:', err);
+      }
     }
 
     const sessionPriceInput = document.getElementById('input-session-price') as HTMLInputElement;
@@ -1564,6 +1657,7 @@ document.addEventListener('DOMContentLoaded', () => {
       textColor: textColorInput.value,
       textColorHome: textColorHomeInput.value,
       logoDataUrl: currentLogoDataUrl,
+      logoScreenDataUrl: currentLogoScreenDataUrl,
       backgroundType: resolvedBgType,
       imgurClientId: imgurClientIdInput ? imgurClientIdInput.value.trim() : '',
       imgbbApiKey: imgbbApiKeyInput ? imgbbApiKeyInput.value.trim() : '',
@@ -1615,6 +1709,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await applyTheme(config);
       await populateAdminForm(config);
       currentLogoDataUrl = config.logoDataUrl;
+      currentLogoScreenDataUrl = config.logoScreenDataUrl || null;
       currentCurtainOverlayDataUrl = config.curtainOverlayDataUrl || null;
       pendingBgFile = null;
       bgFileType = null;

@@ -8,6 +8,7 @@ export interface KioskConfig {
   textColor: string;
   textColorHome: string;
   logoDataUrl: string | null;       // base64 SVG/PNG
+  logoScreenDataUrl?: string | null; // base64 SVG/PNG for screen UI
   backgroundType: 'image' | 'video' | null;
   customMessage: string;
   imgurClientId?: string;
@@ -46,6 +47,7 @@ export const DEFAULT_CONFIG: KioskConfig = {
   textColor: '#000000',
   textColorHome: '#000000',
   logoDataUrl: null,
+  logoScreenDataUrl: null,
   backgroundType: null,
   customMessage: 'Thank you for stopping by! Keep smiling.',
   imgurClientId: '6e08c02c63d5ad3',

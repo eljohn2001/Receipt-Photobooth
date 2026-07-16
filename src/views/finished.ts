@@ -115,8 +115,9 @@ export class FinishedView extends BaseView {
         const thankYouCard = document.createElement('div');
         thankYouCard.className = 'finished-thank-you-card animate-pop-in';
         
-        const logoHtml = config.logoDataUrl 
-          ? `<img src="${config.logoDataUrl}" class="thank-you-logo" />` 
+        const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+        const logoHtml = logoUrl 
+          ? `<img src="${logoUrl}" class="thank-you-logo" />` 
           : `<div class="thank-you-logo-placeholder">☕️</div>`;
           
         const dateStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();

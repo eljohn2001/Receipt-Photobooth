@@ -262,8 +262,9 @@ export class TemplateView extends BaseView {
   }
 
   private renderOverlayLogo(config: any): string {
-    if (config.logoDataUrl) {
-      return `<img class="overlay-cafe-logo" src="${config.logoDataUrl}" alt="${config.cafeName}" />`;
+    const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+    if (logoUrl) {
+      return `<img class="overlay-cafe-logo" src="${logoUrl}" alt="${config.cafeName}" />`;
     }
     return `<span class="overlay-cafe-name">${config.cafeName}</span>`;
   }
