@@ -86,8 +86,8 @@ export class StickersView extends BaseView {
     const totalPhotos = template.photoCount;
     const activePhotoSrc = this.originalPhotosBackup[this.activePhotoIndex];
 
-    // Responsive aspect ratio matching workspace container width of 340px
-    const workspaceWidth = 340;
+    // Responsive aspect ratio matching workspace container width of 420px
+    const workspaceWidth = 420;
     const workspaceHeight = workspaceWidth / template.aspectRatio;
 
     this.element.innerHTML = `
@@ -102,7 +102,7 @@ export class StickersView extends BaseView {
           <!-- Dark Preview-like container wrapper -->
           <div class="stickers-layout-container">
             <div class="stickers-paper-scroll-wrapper">
-              <div class="thermal-paper" style="max-width: 440px; padding: 25px 15px; margin: 0 auto; box-sizing: border-box; position: relative;">
+              <div class="thermal-paper" style="max-width: 460px; padding: 25px 15px; margin: 0 auto; box-sizing: border-box; position: relative;">
                 <div class="receipt-footer-tear"></div>
                 
                 <!-- Receipt Header Mock -->
@@ -393,8 +393,8 @@ export class StickersView extends BaseView {
         audioManager.playBeep();
 
         const workspaceEl = this.element.querySelector('#sticker-workspace') as HTMLElement;
-        const workspaceW = 340;
-        const workspaceH = workspaceEl ? workspaceEl.offsetHeight : 340;
+        const workspaceW = 420;
+        const workspaceH = workspaceEl ? workspaceEl.offsetHeight : 420;
 
         // Position placed sticker in the middle initially (sticker size is 64x64, center is (w/2 - 32))
         const newSticker: PlacedSticker = {
@@ -450,7 +450,7 @@ export class StickersView extends BaseView {
     const template = getTemplateById(this.activeSession.selectedTemplateId || '');
     if (!template) return;
 
-    const workspaceW = 340;
+    const workspaceW = 420;
     const workspaceH = workspaceW / template.aspectRatio;
 
     // Process all captured photos
