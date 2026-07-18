@@ -39,7 +39,7 @@ export class ReviewView extends BaseView {
 
         <div class="review-grid-container">
           <div class="review-grid grid-${template.photoCount}" id="review-photos-grid">
-            ${this.activeSession.capturedPhotos.map((photo, i) => `
+            ${this.activeSession.capturedPhotos.slice(0, template.photoCount).map((photo, i) => `
               <div class="review-photo-card animate-pop-in" data-index="${i}" style="animation-delay: ${i * 100}ms;">
                 <div class="review-photo-badge">${i + 1}</div>
                 <img src="${photo}" class="review-thumbnail" />

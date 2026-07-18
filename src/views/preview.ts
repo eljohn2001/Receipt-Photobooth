@@ -14,28 +14,230 @@ import { THEMES_BY_TEMPLATE } from '../themes';
 import { audioManager } from '../services/audio';
 import { hapticService } from '../services/haptics';
 
-function generateGifPromise(photos: string[]): Promise<Blob> {
+function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(e);
+    img.src = src;
+  });
+}
+
+async function compileIgStoryFrames(
+  photos: string[],
+  logoUrl: string | null,
+  config: any,
+  metadata: any
+): Promise<string[]> {
+  let logoImg: HTMLImageElement | null = null;
+  if (logoUrl) {
+    try {
+      logoImg = await loadImage(logoUrl);
+    } catch (e) {
+      console.warn('Failed to load logo for IG Story GIF frame:', e);
+    }
+  }
+
+  const photoImgs = await Promise.all(photos.map(p => loadImage(p)));
+
+  const dateStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+  const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 540;
+  canvas.height = 960;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Could not get 2D context');
+
+  const frames: string[] = [];
+
+  for (let i = 0; i < photoImgs.length; i++) {
+    const photoImg = photoImgs[i];
+
+    // Clear canvas and draw gradient background
+    const grad = ctx.createLinearGradient(0, 0, 0, 960);
+    grad.addColorStop(0, '#1e1e24');
+    grad.addColorStop(1, '#121214');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 540, 960);
+
+    // Draw white receipt paper (with shadow)
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#ffffff';
+
+    const rx = 50;
+    const rw = 440;
+    const ry = 60;
+    const rh = 840;
+    ctx.fillRect(rx, ry, rw, rh);
+    ctx.restore();
+
+    // Draw top scallops
+    ctx.fillStyle = '#1e1e24';
+    ctx.beginPath();
+    ctx.moveTo(rx, ry);
+    const scallopSize = 10;
+    const scallopCount = rw / scallopSize;
+    for (let s = 0; s <= scallopCount; s++) {
+      const x = rx + s * scallopSize;
+      const y = ry + (s % 2 === 0 ? 0 : scallopSize / 2);
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(rx + rw, ry - 10);
+    ctx.lineTo(rx, ry - 10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw bottom scallops
+    ctx.fillStyle = '#121214';
+    ctx.beginPath();
+    ctx.moveTo(rx, ry + rh);
+    for (let s = 0; s <= scallopCount; s++) {
+      const x = rx + s * scallopSize;
+      const y = ry + rh - (s % 2 === 0 ? 0 : scallopSize / 2);
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(rx + rw, ry + rh + 10);
+    ctx.lineTo(rx, ry + rh + 10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw logo
+    if (logoImg) {
+      const maxLogoW = 180;
+      const maxLogoH = 80;
+      let logoW = logoImg.width;
+      let logoH = logoImg.height;
+      const ratio = Math.min(maxLogoW / logoW, maxLogoH / logoH);
+      logoW *= ratio;
+      logoH *= ratio;
+      ctx.drawImage(logoImg, 270 - logoW / 2, 130 - logoH / 2, logoW, logoH);
+    } else {
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 36px "Courier New", Courier, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('☕️', 270, 130);
+    }
+
+    // Draw THANK YOU header
+    ctx.fillStyle = '#111111';
+    ctx.font = 'bold 20px "Courier New", Courier, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('THANK YOU', 270, 185);
+
+    // Draw line
+    ctx.strokeStyle = '#222222';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(rx + 20, 210);
+    ctx.lineTo(rx + rw - 20, 210);
+    ctx.stroke();
+
+    // Draw Photo
+    ctx.drawImage(photoImg, 80, 235, 380, 380);
+
+    // Photo frame border
+    ctx.setLineDash([]);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(80, 235, 380, 380);
+
+    // Divider line
+    ctx.strokeStyle = '#222222';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(rx + 20, 640);
+    ctx.lineTo(rx + rw - 20, 640);
+    ctx.stroke();
+
+    // Meta Info (Location)
+    ctx.fillStyle = '#666666';
+    ctx.font = 'bold 11px "Courier New", Courier, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('LOCATION', 80, 665);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 13px "Courier New", Courier, monospace';
+    ctx.fillText((metadata?.cafeAddress || config.cafeAddress || 'CLAVER').toUpperCase().slice(0, 22), 80, 685);
+
+    // Meta Info (Date)
+    ctx.fillStyle = '#666666';
+    ctx.font = 'bold 11px "Courier New", Courier, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('DATE & TIME', 460, 665);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 13px "Courier New", Courier, monospace';
+    ctx.fillText(metadata?.timestamp || `${dateStr} | ${timeStr}`, 460, 685);
+
+    // Divider line
+    ctx.strokeStyle = '#222222';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(rx + 20, 710);
+    ctx.lineTo(rx + rw - 20, 710);
+    ctx.stroke();
+
+    // Draw simulated barcode
+    ctx.fillStyle = '#000000';
+    let curX = 100;
+    const barcodeW = 340;
+    const stripePatterns = [1, 2, 4, 1, 3, 2, 1, 4, 2, 3, 1, 2, 4, 1, 3, 2, 1, 4, 2, 3, 1, 2, 4, 1, 3, 2];
+    let pIdx = 0;
+    while (curX < 100 + barcodeW - 10) {
+      const width = stripePatterns[pIdx % stripePatterns.length];
+      ctx.fillRect(curX, 735, width * 2, 60);
+      curX += width * 2 + (pIdx % 3 === 0 ? 4 : 2);
+      pIdx++;
+    }
+
+    // Brand name below barcode
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 13px "Courier New", Courier, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText((config.cafeName || 'BEANS & BITES').toUpperCase(), 270, 825);
+
+    frames.push(canvas.toDataURL('image/png'));
+  }
+
+  return frames;
+}
+
+function generateGifPromise(photos: string[], config: any, metadata: any): Promise<Blob> {
+  return new Promise(async (resolve, reject) => {
     if (photos.length === 0) {
       resolve(new Blob());
       return;
     }
-    gifshot.createGIF({
-      images: photos,
-      gifWidth: 640,
-      gifHeight: 640,
-      interval: 0.5,
-      numWorkers: 2
-    }, (result) => {
-      if (result.error) {
-        reject(new Error(result.errorMsg || 'Failed to generate GIF'));
-      } else {
-        fetch(result.image)
-          .then(res => res.blob())
-          .then(resolve)
-          .catch(reject);
-      }
-    });
+    try {
+      const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+      const frames = await compileIgStoryFrames(photos, logoUrl, config, metadata);
+
+      gifshot.createGIF({
+        images: frames,
+        gifWidth: 540,
+        gifHeight: 960,
+        interval: 0.5,
+        numWorkers: 2
+      }, (result) => {
+        if (result.error) {
+          reject(new Error(result.errorMsg || 'Failed to generate GIF'));
+        } else {
+          fetch(result.image)
+            .then(res => res.blob())
+            .then(resolve)
+            .catch(reject);
+        }
+      });
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
@@ -456,7 +658,7 @@ export class PreviewView extends BaseView {
           let gifBlob: Blob | null = null;
           if (this.activeSession.capturedPhotos && this.activeSession.capturedPhotos.length > 0) {
             try {
-              gifBlob = await generateGifPromise(this.activeSession.capturedPhotos);
+              gifBlob = await generateGifPromise(this.activeSession.capturedPhotos, config, this.activeSession.metadata);
             } catch (gifErr) {
               console.warn('Background GIF generation failed, proceeding without GIF:', gifErr);
             }

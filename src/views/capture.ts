@@ -261,8 +261,22 @@ export class CaptureView extends BaseView {
       // Shutter flash & capture
       this.triggerFlash();
       if (this.videoElement) {
-        const frameData = this.cameraService.capture(this.videoElement);
-        this.activeSession.capturedPhotos[targetIdx] = frameData;
+        if (totalShots === 1) {
+          // Solo photo: capture a burst of 4 frames for the animated GIF
+          const burstFrames: string[] = [];
+          for (let b = 0; b < 4; b++) {
+            if (this.videoElement) {
+              burstFrames.push(this.cameraService.capture(this.videoElement));
+            }
+            if (b < 3) {
+              await new Promise((r) => setTimeout(r, 120));
+            }
+          }
+          this.activeSession.capturedPhotos = burstFrames;
+        } else {
+          const frameData = this.cameraService.capture(this.videoElement);
+          this.activeSession.capturedPhotos[targetIdx] = frameData;
+        }
       }
 
       this.renderPhotoStrip(totalShots, targetIdx);
@@ -293,8 +307,22 @@ export class CaptureView extends BaseView {
       // 3. Shutter flash effect & capture frame
       this.triggerFlash();
       if (this.videoElement) {
-        const frameData = this.cameraService.capture(this.videoElement);
-        this.activeSession.capturedPhotos.push(frameData);
+        if (totalShots === 1) {
+          // Solo photo: capture a burst of 4 frames for the animated GIF
+          const burstFrames: string[] = [];
+          for (let b = 0; b < 4; b++) {
+            if (this.videoElement) {
+              burstFrames.push(this.cameraService.capture(this.videoElement));
+            }
+            if (b < 3) {
+              await new Promise((r) => setTimeout(r, 120));
+            }
+          }
+          this.activeSession.capturedPhotos = burstFrames;
+        } else {
+          const frameData = this.cameraService.capture(this.videoElement);
+          this.activeSession.capturedPhotos.push(frameData);
+        }
       }
 
       // 4. Update slot state to captured
