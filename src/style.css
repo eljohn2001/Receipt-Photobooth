@@ -6462,26 +6462,24 @@ body:not(.dark-theme) .mode-option-card.selected {
 }
 
 .stickers-layout-container {
+  flex-grow: 1;
   width: 100%;
-  max-width: 600px;
-  height: 480px;
   position: relative;
   overflow: hidden;
   background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
   display: flex;
   justify-content: center;
   padding: 20px;
   box-sizing: border-box;
-  margin-bottom: 10px;
 }
 
 .stickers-paper-scroll-wrapper {
   width: 100%;
+  max-width: 380px;
   height: 100%;
   overflow-y: auto;
-  padding-bottom: 10px;
+  padding-bottom: 20px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
