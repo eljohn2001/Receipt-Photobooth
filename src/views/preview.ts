@@ -217,13 +217,23 @@ function generateGifPromise(photos: string[], config: any, metadata: any): Promi
     }
     try {
       const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
-      const frames = await compileIgStoryFrames(photos, logoUrl, config, metadata);
+      const baseFrames = await compileIgStoryFrames(photos, logoUrl, config, metadata);
+
+      // Loop/duplicate the frames sequence to ensure total duration is at least 15 seconds
+      const frameDuration = 0.5; // 0.5s per frame
+      const baseDuration = baseFrames.length * frameDuration;
+      const repeats = Math.ceil(15 / baseDuration);
+
+      let frames: string[] = [];
+      for (let r = 0; r < repeats; r++) {
+        frames = frames.concat(baseFrames);
+      }
 
       gifshot.createGIF({
         images: frames,
         gifWidth: 540,
         gifHeight: 960,
-        interval: 0.5,
+        interval: frameDuration,
         numWorkers: 2
       }, (result) => {
         if (result.error) {
