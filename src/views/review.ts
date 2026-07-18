@@ -89,7 +89,7 @@ export class ReviewView extends BaseView {
     const proceedBtn = this.element.querySelector('#btn-review-proceed');
     proceedBtn?.addEventListener('click', () => {
       audioManager.playBeep();
-      this.navigateTo('preview');
+      this.navigateTo('stickers');
     });
   }
 }

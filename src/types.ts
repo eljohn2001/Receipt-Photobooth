@@ -7,6 +7,7 @@ export type AppState =
   | 'order-summary'
   | 'camera-capture'
   | 'review'
+  | 'stickers'
   | 'preview'
   | 'printing'
   | 'finished';

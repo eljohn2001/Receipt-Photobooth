@@ -10,6 +10,7 @@ import { PreviewView } from './views/preview';
 import { PrintingView } from './views/printing';
 import { FinishedView } from './views/finished';
 import { ReviewView } from './views/review';
+import { StickersView } from './views/stickers';
 import { BaseView } from './views/base';
 import { ModeSelectionView } from './views/mode-selection';
 import { AdminPanelView } from './views/admin-panel';
@@ -381,9 +382,10 @@ const stateIndexMap: Record<AppState, number> = {
   'order-summary': 5,
   'camera-capture': 6,
   'review': 7,
-  'preview': 8,
-  'printing': 9,
-  'finished': 10
+  'stickers': 8,
+  'preview': 9,
+  'printing': 10,
+  'finished': 11
 };
 
 let activeBgObjectUrl: string | null = null;
@@ -545,6 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'order-summary': new OrderSummaryView(document.getElementById('view-order-summary')!, navigateTo, session),
     'camera-capture': new CaptureView(document.getElementById('view-camera-capture')!, navigateTo, session),
     'review': new ReviewView(document.getElementById('view-review')!, navigateTo, session),
+    'stickers': new StickersView(document.getElementById('view-stickers')!, navigateTo, session),
     'preview': new PreviewView(document.getElementById('view-preview')!, navigateTo, session),
     'printing': new PrintingView(document.getElementById('view-printing')!, navigateTo, session),
     'finished': new FinishedView(document.getElementById('view-finished')!, navigateTo, session)
