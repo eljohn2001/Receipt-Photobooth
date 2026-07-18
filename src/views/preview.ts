@@ -1,5 +1,6 @@
 import { BaseView } from './base';
 import { ditherImage } from '../services/dither';
+import gifshot from 'gifshot';
 import { generateQRCode } from '../services/qr';
 import { getTemplateById } from '../templates';
 import type { AppSession, ReceiptMetadata } from '../types';
@@ -12,6 +13,31 @@ import quotesRaw from '../Quotes.txt?raw';
 import { THEMES_BY_TEMPLATE } from '../themes';
 import { audioManager } from '../services/audio';
 import { hapticService } from '../services/haptics';
+
+function generateGifPromise(photos: string[]): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    if (photos.length === 0) {
+      resolve(new Blob());
+      return;
+    }
+    gifshot.createGIF({
+      images: photos,
+      gifWidth: 640,
+      gifHeight: 640,
+      interval: 0.5,
+      numWorkers: 2
+    }, (result) => {
+      if (result.error) {
+        reject(new Error(result.errorMsg || 'Failed to generate GIF'));
+      } else {
+        fetch(result.image)
+          .then(res => res.blob())
+          .then(resolve)
+          .catch(reject);
+      }
+    });
+  });
+}
 
 export class PreviewView extends BaseView {
   private activeSession: AppSession;
@@ -427,7 +453,16 @@ export class PreviewView extends BaseView {
           this.activeSession.bwBlob = bwBlob;
           this.activeSession.colorBlob = colorBlob;
           
-          const shareId = await uploadReceiptPhotos(bwBlob, colorBlob, this.activeSession.shareId);
+          let gifBlob: Blob | null = null;
+          if (this.activeSession.capturedPhotos && this.activeSession.capturedPhotos.length > 0) {
+            try {
+              gifBlob = await generateGifPromise(this.activeSession.capturedPhotos);
+            } catch (gifErr) {
+              console.warn('Background GIF generation failed, proceeding without GIF:', gifErr);
+            }
+          }
+          
+          const shareId = await uploadReceiptPhotos(bwBlob, colorBlob, gifBlob, this.activeSession.shareId);
           
           const baseUrl = 'https://photoreceipt.stoodioph.com';
           const hybridUrl = `${baseUrl}/?id=${shareId}`;

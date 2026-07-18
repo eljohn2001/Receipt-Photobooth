@@ -51,19 +51,9 @@ export function renderReceiptDivider(): string {
   return `<div class="receipt-divider">${dots}</div>`;
 }
 
-export function renderReceiptQR(metadata: ReceiptMetadata): string {
-  const config = loadKioskConfig();
-  if (config.enableQrCode === false || !metadata.qrCodeUrl) {
-    return '';
-  }
-  return `
-    ${renderReceiptDivider()}
-    <div class="receipt-qr-block">
-      <div class="qr-info-text">SCAN FOR DIGITAL COPY</div>
-      <img class="receipt-qr-image" src="${metadata.qrCodeUrl}" alt="QR Link" />
-      <div class="qr-web-link">photoreceipt.stoodioph.com</div>
-    </div>
-  `;
+export function renderReceiptQR(_metadata: ReceiptMetadata): string {
+  // Always return an empty string to prevent the QR code from appearing on physical printout and collage files
+  return '';
 }
 
 export function renderReceiptFortune(session: AppSession): string {

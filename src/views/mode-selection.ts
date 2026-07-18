@@ -216,7 +216,7 @@ export class ModeSelectionView extends BaseView {
           this.activeSession.bwBlob = bwBlob;
           this.activeSession.colorBlob = colorBlob;
           
-          const shareId = await uploadReceiptPhotos(bwBlob, colorBlob, this.activeSession.shareId);
+          const shareId = await uploadReceiptPhotos(bwBlob, colorBlob, null, this.activeSession.shareId);
           
           const hybridUrl = `${baseUrl}/?id=${shareId}`;
           const finalQrUrl = await generateQRCode(hybridUrl);

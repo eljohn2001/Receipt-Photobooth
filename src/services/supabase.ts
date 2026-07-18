@@ -138,11 +138,15 @@ export async function uploadReceiptPhoto(blob: Blob, path: string): Promise<stri
 /**
  * Uploads a file blob to the Supabase Storage bucket without generating a signed URL.
  */
-export async function uploadRawReceiptPhoto(blob: Blob, path: string): Promise<void> {
+export async function uploadRawReceiptPhoto(
+  blob: Blob, 
+  path: string, 
+  contentType = 'image/png'
+): Promise<void> {
   const { error } = await supabase.storage
     .from('receipts')
     .upload(path, blob, {
-      contentType: 'image/png',
+      contentType: contentType,
       upsert: false,
     });
 
@@ -175,20 +179,32 @@ export interface ShareRecord {
  * Uploads both B&W and Color receipt images, creates a short-ID share record,
  * and returns the short share ID.
  */
-export async function createShareRecord(bwBlob: Blob, colorBlob: Blob, customShareId?: string): Promise<string> {
+export async function createShareRecord(
+  bwBlob: Blob, 
+  colorBlob: Blob, 
+  gifBlob?: Blob | null,
+  customShareId?: string
+): Promise<string> {
   const shareId = customShareId || generateShortId(6);
   const fileId = `${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
   
   const bwPath = `receipts/${fileId}-bw.png`;
   const colorPath = `receipts/${fileId}-color.png`;
+  const gifPath = `receipts/${fileId}-animation.gif`;
 
   console.log(`Uploading files and creating share: ${shareId}...`);
 
-  // Upload in parallel
-  await Promise.all([
+  const uploadPromises: Promise<any>[] = [
     uploadRawReceiptPhoto(bwBlob, bwPath),
     uploadRawReceiptPhoto(colorBlob, colorPath)
-  ]);
+  ];
+
+  if (gifBlob) {
+    uploadPromises.push(uploadRawReceiptPhoto(gifBlob, gifPath, 'image/gif'));
+  }
+
+  // Upload in parallel
+  await Promise.all(uploadPromises);
 
   // Insert share record in Supabase
   const { error } = await supabase

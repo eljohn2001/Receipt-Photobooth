@@ -35,7 +35,8 @@ const DirectPrinter = registerPlugin<DirectPrinterPlugin>('DirectPrinter');
 function renderDownloadPage(
   photoUrl: string | null,
   photoBw: string | null = null,
-  photoColor: string | null = null
+  photoColor: string | null = null,
+  photoGif: string | null = null
 ) {
   const isTabbed = !!(photoBw && photoColor);
   const activePhoto = photoBw || photoUrl || '';
@@ -52,6 +53,7 @@ function renderDownloadPage(
         <div class="download-toggle-tabs">
           <button class="tab-btn active" id="tab-bw">🖤 VINTAGE B&W</button>
           <button class="tab-btn" id="tab-color">💛 ORIGINAL COLOR</button>
+          ${photoGif ? `<button class="tab-btn" id="tab-gif">🎬 ANIMATED GIF</button>` : ''}
         </div>
         ` : ''}
         
@@ -59,6 +61,7 @@ function renderDownloadPage(
           ${isTabbed ? `
           <img class="download-receipt-image" id="receipt-img-bw" src="${photoBw}" alt="Vintage B&W Receipt" onerror="const card = this.closest('.download-page-card'); if (card) { card.innerHTML = \`<div class=&quot;download-page-header&quot;><h1 class=&quot;download-title&quot; style=&quot;color: #e03131; font-weight: 700;&quot;>⚠️ DOWNLOAD EXPIRED</h1><p class=&quot;download-subtitle&quot;>Digital copies are only available for 1 hour.</p></div><div style=&quot;font-size: 64px; margin: 30px 0;&quot;>⏳</div><p style=&quot;font-size: 13px; color: #555; line-height: 1.6; max-width: 300px; margin: 0 auto 24px;&quot;>For privacy and security, softcopies are deleted automatically 1 hour after printing.</p><div class=&quot;download-page-footer&quot;>powered by blcklabs</div>\`; }" />
           <img class="download-receipt-image hidden" id="receipt-img-color" src="${photoColor}" alt="Color Receipt" onerror="const card = this.closest('.download-page-card'); if (card) { card.innerHTML = \`<div class=&quot;download-page-header&quot;><h1 class=&quot;download-title&quot; style=&quot;color: #e03131; font-weight: 700;&quot;>⚠️ DOWNLOAD EXPIRED</h1><p class=&quot;download-subtitle&quot;>Digital copies are only available for 1 hour.</p></div><div style=&quot;font-size: 64px; margin: 30px 0;&quot;>⏳</div><p style=&quot;font-size: 13px; color: #555; line-height: 1.6; max-width: 300px; margin: 0 auto 24px;&quot;>For privacy and security, softcopies are deleted automatically 1 hour after printing.</p><div class=&quot;download-page-footer&quot;>powered by blcklabs</div>\`; }" />
+          ${photoGif ? `<img class="download-receipt-image hidden" id="receipt-img-gif" src="${photoGif}" alt="Animated GIF" style="width: 100%; height: auto;" />` : ''}
           ` : `
           <img class="download-receipt-image" src="${photoUrl}" alt="Photo Receipt" onerror="const card = this.closest('.download-page-card'); if (card) { card.innerHTML = \`<div class=&quot;download-page-header&quot;><h1 class=&quot;download-title&quot; style=&quot;color: #e03131; font-weight: 700;&quot;>⚠️ DOWNLOAD EXPIRED</h1><p class=&quot;download-subtitle&quot;>Digital copies are only available for 1 hour.</p></div><div style=&quot;font-size: 64px; margin: 30px 0;&quot;>⏳</div><p style=&quot;font-size: 13px; color: #555; line-height: 1.6; max-width: 300px; margin: 0 auto 24px;&quot;>For privacy and security, softcopies are deleted automatically 1 hour after printing.</p><div class=&quot;download-page-footer&quot;>powered by blcklabs</div>\`; }" />
           `}
@@ -226,16 +229,22 @@ function renderDownloadPage(
   if (isTabbed) {
     const tabBw = document.getElementById('tab-bw');
     const tabColor = document.getElementById('tab-color');
+    const tabGif = document.getElementById('tab-gif');
     const imgBw = document.getElementById('receipt-img-bw');
     const imgColor = document.getElementById('receipt-img-color');
+    const imgGif = document.getElementById('receipt-img-gif');
     const downloadLink = document.getElementById('btn-download-link');
 
     if (tabBw && tabColor && imgBw && imgColor && downloadLink) {
       tabBw.addEventListener('click', () => {
         tabBw.classList.add('active');
         tabColor.classList.remove('active');
+        if (tabGif) tabGif.classList.remove('active');
+        
         imgBw.classList.remove('hidden');
         imgColor.classList.add('hidden');
+        if (imgGif) imgGif.classList.add('hidden');
+        
         downloadLink.setAttribute('href', photoBw || '');
         downloadLink.setAttribute('download', 'receipt-bw.png');
         downloadLink.innerHTML = '💾 DOWNLOAD VINTAGE B&W';
@@ -244,12 +253,32 @@ function renderDownloadPage(
       tabColor.addEventListener('click', () => {
         tabColor.classList.add('active');
         tabBw.classList.remove('active');
+        if (tabGif) tabGif.classList.remove('active');
+        
         imgColor.classList.remove('hidden');
         imgBw.classList.add('hidden');
+        if (imgGif) imgGif.classList.add('hidden');
+        
         downloadLink.setAttribute('href', photoColor || '');
         downloadLink.setAttribute('download', 'receipt-color.png');
         downloadLink.innerHTML = '💾 DOWNLOAD COLOR PHOTO';
       });
+
+      if (tabGif && imgGif) {
+        tabGif.addEventListener('click', () => {
+          tabGif.classList.add('active');
+          tabBw.classList.remove('active');
+          tabColor.classList.remove('active');
+          
+          imgGif.classList.remove('hidden');
+          imgBw.classList.add('hidden');
+          imgColor.classList.add('hidden');
+          
+          downloadLink.setAttribute('href', photoGif || '');
+          downloadLink.setAttribute('download', 'receipt-animation.gif');
+          downloadLink.innerHTML = '💾 DOWNLOAD ANIMATED GIF';
+        });
+      }
     }
   }
 }
@@ -297,7 +326,17 @@ if (isAdminRoute) {
     if (record) {
       const bwUrl = getPublicStorageUrl(record.bw_path);
       const colorUrl = getPublicStorageUrl(record.color_path);
-      renderDownloadPage(null, bwUrl, colorUrl);
+      const gifPath = record.color_path.replace('-color.png', '-animation.gif');
+      const gifUrl = getPublicStorageUrl(gifPath);
+      
+      // Verify if animated GIF exists in storage via a quick HEAD request
+      fetch(gifUrl, { method: 'HEAD' })
+        .then((res) => {
+          renderDownloadPage(null, bwUrl, colorUrl, res.ok ? gifUrl : null);
+        })
+        .catch(() => {
+          renderDownloadPage(null, bwUrl, colorUrl, null);
+        });
     } else {
       // Show expired screen
       document.body.innerHTML = `
@@ -1401,7 +1440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let successCount = 0;
     for (const share of shares) {
       try {
-        await uploadReceiptPhotos(share.bwBlob, share.colorBlob, share.id);
+        await uploadReceiptPhotos(share.bwBlob, share.colorBlob, null, share.id);
         await deleteOfflineShare(share.id);
         successCount++;
       } catch (err) {

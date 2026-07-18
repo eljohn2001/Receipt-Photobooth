@@ -21,10 +21,6 @@ export class FinishedView extends BaseView {
   }
 
   mount(): void {
-    const config = loadKioskConfig();
-    const socialTag = config.socialTag || 'beansandbites';
-    const cleanTag = socialTag.startsWith('@') ? socialTag : `@${socialTag}`;
-
     this.element.innerHTML = `
       <div class="finished-screen-content">
         <div class="success-banner">
@@ -33,12 +29,8 @@ export class FinishedView extends BaseView {
           <p class="finished-subtitle">Tear your print carefully from the slot</p>
         </div>
 
-        <div class="finished-download-card">
-          <p class="download-label">Scan to download digital copy</p>
-          <div class="finished-qr-container">
-            <img class="finished-qr-image" id="finished-qr-img" src="" alt="Download QR" />
-          </div>
-          <p class="cafe-tag">Share the joy! Tag us at <strong>${cleanTag}</strong></p>
+        <div class="finished-download-card" id="finished-card-container">
+          <!-- Visual receipt card injected here -->
         </div>
 
         <div class="finished-controls">
@@ -63,142 +55,115 @@ export class FinishedView extends BaseView {
     // 0. Play high-quality physical paper tear audio
     audioManager.playPaperTear();
 
-    // 1. Load config and update the social tag dynamically
+    // 1. Load config and update values dynamically
     const config = loadKioskConfig();
     const socialTag = config.socialTag || 'beansandbites';
     const cleanTag = socialTag.startsWith('@') ? socialTag : `@${socialTag}`;
-    const tagStrong = this.element.querySelector('.cafe-tag strong');
-    if (tagStrong) {
-      tagStrong.textContent = cleanTag;
-    }
 
-    // 2. Reset visual state to initial clean state on every enter
-    const downloadLabel = this.element.querySelector('.download-label');
-    if (downloadLabel) {
-      downloadLabel.textContent = 'Scan to download digital copy';
-    }
-    const qrContainer = this.element.querySelector('.finished-qr-container') as HTMLElement;
-    if (qrContainer) {
-      qrContainer.style.display = 'flex';
-      const loadingTxts = qrContainer.querySelectorAll('div');
-      loadingTxts.forEach(txt => txt.remove());
-    }
-    const qrImg = this.element.querySelector('#finished-qr-img') as HTMLImageElement;
-    if (qrImg) {
-      qrImg.src = '';
-      qrImg.classList.add('hidden');
-    }
-    const offlineWarning = this.element.querySelector('.offline-warning-card');
-    if (offlineWarning) {
-      offlineWarning.remove();
-    }
-    this.element.querySelector('.finished-strip-preview')?.remove();
-    this.element.querySelector('.finished-thank-you-card')?.remove();
+    const cardContainer = this.element.querySelector('#finished-card-container');
+    if (!cardContainer) return;
 
-    // If QR code feature is disabled, render the Branded Thank You card and return early
-    if (config.enableQrCode === false) {
-      if (downloadLabel) {
-        downloadLabel.innerHTML = '';
-      }
-      if (qrContainer) {
-        qrContainer.style.display = 'none';
-      }
-      if (qrImg) {
-        qrImg.classList.add('hidden');
-      }
+    cardContainer.innerHTML = ''; // Clear previous content
 
-      // Render Branded Cafe / Thank You Card
-      const downloadCard = this.element.querySelector('.finished-download-card');
-      const cafeTag = this.element.querySelector('.cafe-tag');
+    const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+    const logoHtml = logoUrl 
+      ? `<img src="${logoUrl}" class="thank-you-logo" />` 
+      : `<div class="thank-you-logo-placeholder">☕️</div>`;
       
-      if (downloadCard && cafeTag) {
-        const thankYouCard = document.createElement('div');
-        thankYouCard.className = 'finished-thank-you-card animate-pop-in';
-        
-        const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
-        const logoHtml = logoUrl 
-          ? `<img src="${logoUrl}" class="thank-you-logo" />` 
-          : `<div class="thank-you-logo-placeholder">☕️</div>`;
-          
-        const dateStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
-        const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-        const printsCount = this.activeSession.copiesCount || 1;
-        const printsStr = `${printsCount} ${printsCount === 1 ? 'COPY' : 'COPIES'}`;
+    const dateStr = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+    const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const printsCount = this.activeSession.copiesCount || 1;
+    const printsStr = `${printsCount} ${printsCount === 1 ? 'COPY' : 'COPIES'}`;
 
-        thankYouCard.innerHTML = `
-          <!-- Circular cutouts for receipt appearance -->
-          <div class="receipt-cutout left"></div>
-          <div class="receipt-cutout right"></div>
+    const hasQr = config.enableQrCode !== false;
 
-          ${logoHtml}
-          <h3 class="thank-you-cafe-name">THANK YOU</h3>
-          <p class="thank-you-message">Your print memory has been processed successfully.</p>
-          
-          <div class="thank-you-divider"></div>
-          
-          <div class="receipt-meta-grid">
-            <div class="receipt-meta-item">
-              <span class="receipt-meta-label">LOCATION</span>
-              <span class="receipt-meta-val">${config.cafeAddress}</span>
-            </div>
-            <div class="receipt-meta-item" style="text-align: right;">
-              <span class="receipt-meta-label">PRINTS</span>
-              <span class="receipt-meta-val">${printsStr}</span>
-            </div>
-            <div class="receipt-meta-item" style="grid-column: span 2; margin-top: 6px;">
-              <span class="receipt-meta-label">DATE & TIME</span>
-              <span class="receipt-meta-val">${dateStr} | ${timeStr}</span>
-            </div>
-          </div>
-          
-          <div class="thank-you-divider"></div>
-          
-          <div class="thank-you-barcode">
-            <svg viewBox="0 0 100 30" width="100%" height="45">
-              <rect x="0" y="0" width="2" height="22" fill="#000" />
-              <rect x="3" y="0" width="1" height="22" fill="#000" />
-              <rect x="6" y="0" width="3" height="22" fill="#000" />
-              <rect x="11" y="0" width="1" height="22" fill="#000" />
-              <rect x="14" y="0" width="2" height="22" fill="#000" />
-              <rect x="18" y="0" width="4" height="22" fill="#000" />
-              <rect x="24" y="0" width="1" height="22" fill="#000" />
-              <rect x="27" y="0" width="2" height="22" fill="#000" />
-              <rect x="31" y="0" width="3" height="22" fill="#000" />
-              <rect x="36" y="0" width="1" height="22" fill="#000" />
-              <rect x="39" y="0" width="2" height="22" fill="#000" />
-              <rect x="43" y="0" width="4" height="22" fill="#000" />
-              <rect x="49" y="0" width="1" height="22" fill="#000" />
-              <rect x="52" y="0" width="2" height="22" fill="#000" />
-              <rect x="56" y="0" width="3" height="22" fill="#000" />
-              <rect x="61" y="0" width="1" height="22" fill="#000" />
-              <rect x="64" y="0" width="2" height="22" fill="#000" />
-              <rect x="68" y="0" width="4" height="22" fill="#000" />
-              <rect x="74" y="0" width="1" height="22" fill="#000" />
-              <rect x="77" y="0" width="2" height="22" fill="#000" />
-              <rect x="81" y="0" width="3" height="22" fill="#000" />
-              <rect x="86" y="0" width="1" height="22" fill="#000" />
-              <rect x="89" y="0" width="2" height="22" fill="#000" />
-              <rect x="93" y="0" width="4" height="22" fill="#000" />
-              <text x="50" y="28" font-size="5" text-anchor="middle" font-family="Courier New, monospace" font-weight="bold" fill="#000">${config.cafeName.toUpperCase()}</text>
-            </svg>
-          </div>
+    const thankYouCard = document.createElement('div');
+    thankYouCard.className = 'finished-thank-you-card animate-pop-in';
+    thankYouCard.innerHTML = `
+      <!-- Circular cutouts for receipt appearance -->
+      <div class="receipt-cutout left"></div>
+      <div class="receipt-cutout right"></div>
 
-          <!-- Jagged scallops at bottom -->
-          <div class="receipt-bottom-scallops"></div>
-        `;
-
-        downloadCard.insertBefore(thankYouCard, cafeTag);
-      }
+      ${logoHtml}
+      <h3 class="thank-you-cafe-name">THANK YOU</h3>
+      <p class="thank-you-message">Your print memory has been processed successfully.</p>
       
-      // Explode confetti!
+      ${hasQr ? `
+        <div class="thank-you-divider"></div>
+        <div class="finished-qr-section" style="width: 100%;">
+          <p class="download-label" style="font-family: var(--font-ui); font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">Scan to download digital copy</p>
+          <div class="finished-qr-container" style="display: flex; justify-content: center; align-items: center; margin: 0 auto 15px auto; width: 180px; height: 180px; border: 1.5px solid var(--border-primary); padding: 8px; background: #ffffff; position: relative; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+            <img class="finished-qr-image" id="finished-qr-img" src="" alt="Download QR" style="width: 100%; height: 100%; object-fit: contain;" />
+          </div>
+          <p class="cafe-tag" style="font-family: var(--font-ui); font-size: 12px; color: var(--text-secondary); margin: 0 0 10px 0;">Share the joy! Tag us at <strong>${cleanTag}</strong></p>
+        </div>
+      ` : ''}
+      
+      <div class="thank-you-divider"></div>
+      
+      <div class="receipt-meta-grid">
+        <div class="receipt-meta-item">
+          <span class="receipt-meta-label">LOCATION</span>
+          <span class="receipt-meta-val">${config.cafeAddress}</span>
+        </div>
+        <div class="receipt-meta-item" style="text-align: right;">
+          <span class="receipt-meta-label">PRINTS</span>
+          <span class="receipt-meta-val">${printsStr}</span>
+        </div>
+        <div class="receipt-meta-item" style="grid-column: span 2; margin-top: 6px;">
+          <span class="receipt-meta-label">DATE & TIME</span>
+          <span class="receipt-meta-val">${dateStr} | ${timeStr}</span>
+        </div>
+      </div>
+      
+      <div class="thank-you-divider"></div>
+      
+      <div class="thank-you-barcode">
+        <svg viewBox="0 0 100 30" width="100%" height="45">
+          <rect x="0" y="0" width="2" height="22" fill="#000" />
+          <rect x="3" y="0" width="1" height="22" fill="#000" />
+          <rect x="6" y="0" width="3" height="22" fill="#000" />
+          <rect x="11" y="0" width="1" height="22" fill="#000" />
+          <rect x="14" y="0" width="2" height="22" fill="#000" />
+          <rect x="18" y="0" width="4" height="22" fill="#000" />
+          <rect x="24" y="0" width="1" height="22" fill="#000" />
+          <rect x="27" y="0" width="2" height="22" fill="#000" />
+          <rect x="31" y="0" width="3" height="22" fill="#000" />
+          <rect x="36" y="0" width="1" height="22" fill="#000" />
+          <rect x="39" y="0" width="2" height="22" fill="#000" />
+          <rect x="43" y="0" width="4" height="22" fill="#000" />
+          <rect x="49" y="0" width="1" height="22" fill="#000" />
+          <rect x="52" y="0" width="2" height="22" fill="#000" />
+          <rect x="56" y="0" width="3" height="22" fill="#000" />
+          <rect x="61" y="0" width="1" height="22" fill="#000" />
+          <rect x="64" y="0" width="2" height="22" fill="#000" />
+          <rect x="68" y="0" width="4" height="22" fill="#000" />
+          <rect x="74" y="0" width="1" height="22" fill="#000" />
+          <rect x="77" y="0" width="2" height="22" fill="#000" />
+          <rect x="81" y="0" width="3" height="22" fill="#000" />
+          <rect x="86" y="0" width="1" height="22" fill="#000" />
+          <rect x="89" y="0" width="2" height="22" fill="#000" />
+          <rect x="93" y="0" width="4" height="22" fill="#000" />
+          <text x="50" y="28" font-size="5" text-anchor="middle" font-family="Courier New, monospace" font-weight="bold" fill="#000">${config.cafeName.toUpperCase()}</text>
+        </svg>
+      </div>
+
+      <!-- Jagged scallops at bottom -->
+      <div class="receipt-bottom-scallops"></div>
+    `;
+    cardContainer.appendChild(thankYouCard);
+
+    // If QR code feature is disabled, return early
+    if (!hasQr) {
       this.triggerConfetti();
-
-      // Start auto-reset timer (20 seconds)
       this.startResetTimer(20);
       return;
     }
 
-    // 3. Set QR code source from metadata (awaiting background upload if active)
+    // Dynamic QR resolution bindings
+    const qrContainer = this.element.querySelector('.finished-qr-container') as HTMLElement;
+    const qrImg = this.element.querySelector('#finished-qr-img') as HTMLImageElement;
+
     let loadingText: HTMLDivElement | null = null;
     if (qrContainer && this.activeSession.uploadPromise) {
       loadingText = document.createElement('div');
@@ -207,6 +172,7 @@ export class FinishedView extends BaseView {
       loadingText.style.color = 'var(--text-primary)';
       loadingText.style.textAlign = 'center';
       loadingText.style.fontWeight = 'bold';
+      loadingText.style.position = 'absolute';
       loadingText.innerHTML = `⏳ GENERATING QR CODE...`;
       qrContainer.appendChild(loadingText);
     }
@@ -220,7 +186,6 @@ export class FinishedView extends BaseView {
             qrImg.classList.remove('hidden');
           }
         } else {
-          // If url is null (meaning upload failed in background)
           this.showOfflineNotice();
         }
       }).catch((err) => {
@@ -229,14 +194,10 @@ export class FinishedView extends BaseView {
         this.showOfflineNotice();
       });
     } else {
-      // No upload promise
       this.showOfflineNotice();
     }
 
-    // 4. Explode confetti!
     this.triggerConfetti();
-
-    // 5. Start auto-reset timer (20 seconds)
     this.startResetTimer(20);
   }
 
