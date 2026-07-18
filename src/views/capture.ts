@@ -4,6 +4,7 @@ import { getTemplateById } from '../templates';
 import type { AppSession } from '../types';
 import { audioManager } from '../services/audio';
 import { hapticService } from '../services/haptics';
+import { loadKioskConfig } from '../services/config';
 
 export class CaptureView extends BaseView {
   private cameraService: CameraService;
@@ -164,6 +165,12 @@ export class CaptureView extends BaseView {
     // Start video
     const statusTag = this.element.querySelector('#camera-status');
     if (this.videoElement) {
+      const config = loadKioskConfig();
+      if (config.cameraFilter === 'bw') {
+        this.videoElement.style.filter = 'grayscale(100%)';
+      } else {
+        this.videoElement.style.filter = '';
+      }
       try {
         const { isMock } = await this.cameraService.start(this.videoElement);
         if (statusTag) {

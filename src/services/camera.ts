@@ -2,6 +2,8 @@
  * Camera Service for accessing user webcam or providing an animated mock stream fallback.
  */
 
+import { loadKioskConfig } from './config';
+
 export class CameraService {
   private stream: MediaStream | null = null;
   private mockIntervalId: number | null = null;
@@ -56,6 +58,12 @@ export class CameraService {
     // Flip horizontally for natural mirror preview in kiosk
     ctx.translate(width, 0);
     ctx.scale(-1, 1);
+
+    const config = loadKioskConfig();
+    if (config.cameraFilter === 'bw') {
+      ctx.filter = 'grayscale(100%)';
+    }
+
     ctx.drawImage(videoElement, 0, 0, width, height);
 
     return canvas.toDataURL('image/png');

@@ -37,6 +37,7 @@ export interface KioskConfig {
   accentColor?: string;
   paperWidth?: '58mm' | '80mm';
   saveToGallery?: boolean;
+  cameraFilter?: 'bw' | 'color';
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -66,6 +67,7 @@ export const DEFAULT_CONFIG: KioskConfig = {
   printerMode: 'usb',
   paperWidth: '80mm',
   saveToGallery: true,
+  cameraFilter: 'color',
   sessionPrice: 30.00,
   profitSharePercent: 60.00,
   maxPrintsAllowed: 4,
