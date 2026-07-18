@@ -38,6 +38,7 @@ export interface KioskConfig {
   paperWidth?: '58mm' | '80mm';
   saveToGallery?: boolean;
   cameraFilter?: 'bw' | 'color';
+  enableStickers?: boolean;
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -68,6 +69,7 @@ export const DEFAULT_CONFIG: KioskConfig = {
   paperWidth: '80mm',
   saveToGallery: true,
   cameraFilter: 'color',
+  enableStickers: true,
   sessionPrice: 30.00,
   profitSharePercent: 60.00,
   maxPrintsAllowed: 4,

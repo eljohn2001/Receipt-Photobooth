@@ -2,6 +2,7 @@ import { BaseView } from './base';
 import { getTemplateById } from '../templates';
 import type { AppSession } from '../types';
 import { audioManager } from '../services/audio';
+import { loadKioskConfig } from '../services/config';
 
 export class ReviewView extends BaseView {
   private activeSession: AppSession;
@@ -89,7 +90,9 @@ export class ReviewView extends BaseView {
     const proceedBtn = this.element.querySelector('#btn-review-proceed');
     proceedBtn?.addEventListener('click', () => {
       audioManager.playBeep();
-      this.navigateTo('stickers');
+      const config = loadKioskConfig();
+      const nextState = config.enableStickers !== false ? 'stickers' : 'preview';
+      this.navigateTo(nextState);
     });
   }
 }

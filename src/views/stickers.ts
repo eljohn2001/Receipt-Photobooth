@@ -86,8 +86,8 @@ export class StickersView extends BaseView {
     const totalPhotos = template.photoCount;
     const activePhotoSrc = this.originalPhotosBackup[this.activePhotoIndex];
 
-    // Responsive aspect ratio matching workspace container width of 340px
-    const workspaceWidth = 340;
+    // Responsive aspect ratio matching workspace container width of 420px
+    const workspaceWidth = 420;
     const workspaceHeight = workspaceWidth / template.aspectRatio;
 
     this.element.innerHTML = `
@@ -98,44 +98,43 @@ export class StickersView extends BaseView {
           <p class="view-subtitle" style="margin-top: 6px;">Tap stickers to add, drag to move, pinch/drag handles to scale & rotate!</p>
         </div>
 
-        <div class="stickers-main-layout">
-          <!-- Left/Center Workspace -->
-          <div class="stickers-workspace-panel">
+        <div class="stickers-vertical-layout">
+          <!-- Centered Workspace -->
+          <div class="stickers-workspace-container">
             <div class="sticker-workspace-wrapper">
               <div class="sticker-workspace" id="sticker-workspace" style="width: ${workspaceWidth}px; height: ${workspaceHeight}px;">
                 <img src="${activePhotoSrc}" class="workspace-bg-image" />
                 <div id="placed-stickers-layer" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none;"></div>
               </div>
             </div>
-
-            <!-- Switch Photo Thumbnail Bar (if multiple photos exist) -->
-            ${totalPhotos > 1 ? `
-              <div class="stickers-photo-selector">
-                ${this.originalPhotosBackup.map((photo, i) => `
-                  <div class="sticker-photo-thumb ${i === this.activePhotoIndex ? 'active' : ''}" data-index="${i}">
-                    <img src="${photo}" />
-                    <span class="thumb-badge">${i + 1}</span>
-                  </div>
-                `).join('')}
-              </div>
-            ` : ''}
           </div>
 
-          <!-- Right/Bottom Stickers Drawer -->
-          <div class="stickers-drawer-panel">
-            <div class="drawer-header">STICKER DRAWER</div>
-            <div class="stickers-drawer-grid">
+          <!-- Switch Photo Thumbnail Bar (if multiple photos exist) -->
+          ${totalPhotos > 1 ? `
+            <div class="stickers-photo-selector">
+              ${this.originalPhotosBackup.map((photo, i) => `
+                <div class="sticker-photo-thumb ${i === this.activePhotoIndex ? 'active' : ''}" data-index="${i}">
+                  <img src="${photo}" />
+                  <span class="thumb-badge">${i + 1}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <!-- Horizontal Stickers Carousel below the photo -->
+          <div class="stickers-carousel-container">
+            <div class="stickers-carousel-track">
               ${STICKERS.map(s => `
-                <button class="btn-drawer-sticker" data-emoji="${s.emoji}">
+                <button class="btn-carousel-sticker" data-emoji="${s.emoji}">
                   <span class="emoji-preview">${s.emoji}</span>
                 </button>
               `).join('')}
             </div>
+          </div>
 
-            <div class="stickers-actions-row">
-              <button class="btn btn-secondary" id="btn-stickers-clear" style="flex: 1;">🗑 CLEAR CURRENT</button>
-              <button class="btn btn-primary btn-glow" id="btn-stickers-proceed" style="flex: 1.5;">PROCEED TO PRINT ➔</button>
-            </div>
+          <div class="stickers-actions-footer">
+            <button class="btn btn-secondary" id="btn-stickers-clear">🗑 CLEAR ALL</button>
+            <button class="btn btn-primary btn-glow" id="btn-stickers-proceed">PROCEED TO PRINT ➔</button>
           </div>
         </div>
       </div>
@@ -366,16 +365,16 @@ export class StickersView extends BaseView {
       });
     });
 
-    // 3. Sticker Drawer Buttons Click
-    const drawerStickers = this.element.querySelectorAll('.btn-drawer-sticker');
+    // 3. Sticker Carousel Buttons Click
+    const drawerStickers = this.element.querySelectorAll('.btn-carousel-sticker');
     drawerStickers.forEach(btn => {
       btn.addEventListener('click', (e) => {
         const emoji = (e.currentTarget as HTMLElement).getAttribute('data-emoji') || '✨';
         audioManager.playBeep();
 
         const workspaceEl = this.element.querySelector('#sticker-workspace') as HTMLElement;
-        const workspaceW = 340;
-        const workspaceH = workspaceEl ? workspaceEl.offsetHeight : 340;
+        const workspaceW = 420;
+        const workspaceH = workspaceEl ? workspaceEl.offsetHeight : 420;
 
         // Position placed sticker in the middle initially (sticker size is 64x64, center is (w/2 - 32))
         const newSticker: PlacedSticker = {
@@ -431,7 +430,7 @@ export class StickersView extends BaseView {
     const template = getTemplateById(this.activeSession.selectedTemplateId || '');
     if (!template) return;
 
-    const workspaceW = 340;
+    const workspaceW = 420;
     const workspaceH = workspaceW / template.aspectRatio;
 
     // Process all captured photos

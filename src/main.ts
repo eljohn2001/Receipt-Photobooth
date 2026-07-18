@@ -960,6 +960,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const cameraFilterBwInput = document.getElementById('input-camera-filter-bw') as HTMLInputElement;
     if (cameraFilterBwInput) cameraFilterBwInput.checked = config.cameraFilter === 'bw';
 
+    const enableStickersInput = document.getElementById('input-enable-stickers') as HTMLInputElement;
+    if (enableStickersInput) enableStickersInput.checked = config.enableStickers !== false;
+
     const imgurClientIdInput = document.getElementById('input-imgur-client-id') as HTMLInputElement;
     if (imgurClientIdInput) imgurClientIdInput.value = config.imgurClientId || '';
 
@@ -1670,6 +1673,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const curtainColorInput = document.getElementById('input-curtain-color') as HTMLInputElement;
     const accentColorInput = document.getElementById('input-accent-color') as HTMLInputElement;
     const cameraFilterBwInput = document.getElementById('input-camera-filter-bw') as HTMLInputElement;
+    const enableStickersInput = document.getElementById('input-enable-stickers') as HTMLInputElement;
 
     // Handle background media save
     let resolvedBgType: 'image' | 'video' | null = bgFileType;
@@ -1716,6 +1720,7 @@ document.addEventListener('DOMContentLoaded', () => {
       enableComfortCards: enableComfortInput ? enableComfortInput.checked : true,
       saveToGallery: saveGalleryInput ? saveGalleryInput.checked : true,
       cameraFilter: cameraFilterBwInput && cameraFilterBwInput.checked ? 'bw' : 'color',
+      enableStickers: enableStickersInput ? enableStickersInput.checked : true,
       printContrast: printContrastSelect ? (printContrastSelect.value as 'light' | 'medium' | 'dark' | 'deep') : 'medium',
       printerMode: printModeSelect ? (printModeSelect.value as 'usb' | 'bluetooth') : 'usb',
       paperWidth: paperWidthSelect ? (paperWidthSelect.value as '58mm' | '80mm') : '80mm',
