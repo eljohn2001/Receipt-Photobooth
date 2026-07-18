@@ -99,12 +99,32 @@ export class StickersView extends BaseView {
         </div>
 
         <div class="stickers-vertical-layout">
-          <!-- Centered Workspace -->
-          <div class="stickers-workspace-container">
-            <div class="sticker-workspace-wrapper">
-              <div class="sticker-workspace" id="sticker-workspace" style="width: ${workspaceWidth}px; height: ${workspaceHeight}px;">
-                <img src="${activePhotoSrc}" class="workspace-bg-image" />
-                <div id="placed-stickers-layer" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none;"></div>
+          <!-- Dark Preview-like container wrapper -->
+          <div class="stickers-layout-container">
+            <div class="stickers-paper-scroll-wrapper">
+              <div class="thermal-paper" style="max-width: 440px; padding: 25px 15px; margin: 0 auto; box-sizing: border-box; position: relative;">
+                <div class="receipt-footer-tear"></div>
+                
+                <!-- Receipt Header Mock -->
+                <div style="text-align: center; margin-bottom: 20px; font-family: var(--font-receipt); color: #000000; user-select: none;">
+                  <div style="font-weight: bold; font-size: 16px; letter-spacing: 1px;">DECORATE STEP</div>
+                  <div style="font-size: 9px; opacity: 0.8; margin-top: 3px; letter-spacing: 0.5px;">CUSTOMIZE YOUR KEEPSAKE</div>
+                  <div style="border-top: 1.5px dashed #222222; margin: 15px 10px 0 10px;"></div>
+                </div>
+
+                <!-- Centered Workspace -->
+                <div class="sticker-workspace-wrapper" style="box-shadow: none; border: none; padding: 0; background: transparent; display: flex; justify-content: center; margin-bottom: 0;">
+                  <div class="sticker-workspace" id="sticker-workspace" style="width: ${workspaceWidth}px; height: ${workspaceHeight}px; border: 1.5px solid #000000; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: relative; overflow: hidden; background: #000000; border-radius: 6px;">
+                    <img src="${activePhotoSrc}" class="workspace-bg-image" />
+                    <div id="placed-stickers-layer" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none;"></div>
+                  </div>
+                </div>
+
+                <!-- Receipt Footer Mock -->
+                <div style="text-align: center; margin-top: 20px; font-family: var(--font-receipt); color: #000000; user-select: none;">
+                  <div style="border-top: 1.5px dashed #222222; margin: 0 10px 15px 10px;"></div>
+                  <div style="font-size: 10px; font-weight: bold; letter-spacing: 1px;">PHOTO ${this.activePhotoIndex + 1} OF ${totalPhotos}</div>
+                </div>
               </div>
             </div>
           </div>
