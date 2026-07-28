@@ -298,7 +298,10 @@ public class MainActivity extends BridgeActivity {
             }
 
             Log.i("MainActivity", "Successfully printed " + offset + " bytes to Bluetooth device");
-            Thread.sleep(800);
+            if (outputStream != null) {
+                outputStream.flush();
+            }
+            Thread.sleep(1200);
 
             if (pendingBluetoothPluginCall != null) {
                 pendingBluetoothPluginCall.resolve();
@@ -319,6 +322,7 @@ public class MainActivity extends BridgeActivity {
                 pendingBluetoothPluginCall = null;
             }
         } finally {
+            try { Thread.sleep(600); } catch (Exception ignored) {}
             if (outputStream != null) {
                 try { outputStream.close(); } catch (IOException e) {}
             }
@@ -541,9 +545,9 @@ public class MainActivity extends BridgeActivity {
                 pendingPluginCall = null;
             }
         } finally {
-            try { Thread.sleep(500); } catch (Exception ignored) {}
-            connection.releaseInterface(usbInterface);
-            connection.close();
+            try { Thread.sleep(1200); } catch (Exception ignored) {}
+            try { connection.releaseInterface(usbInterface); } catch (Exception ignored) {}
+            try { connection.close(); } catch (Exception ignored) {}
         }
     }
 

@@ -117,39 +117,6 @@ export class PrintingView extends BaseView {
     const isNative = Capacitor.isNativePlatform();
 
     if (isNative) {
-      // Auto-save branded full-color receipt collage to native gallery silently in the background
-      (async () => {
-        const config = loadKioskConfig();
-        if (config.saveToGallery === false) {
-          console.log('Auto-save to gallery is disabled in admin settings.');
-          return;
-        }
-
-        try {
-          console.log('Generating full-color receipt collage for gallery auto-save...');
-          let colorBlob = this.activeSession.colorBlob;
-          if (!colorBlob) {
-            colorBlob = await generateReceiptBlob(this.activeSession, 'color');
-          }
-          
-          const base64Data = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const dataUrl = reader.result as string;
-              const base64 = dataUrl.split(',')[1];
-              resolve(base64);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(colorBlob!);
-          });
-
-          await DirectPrinter.savePhotoToGallery({ base64Data });
-          console.log('Branded full-color receipt collage auto-saved to gallery successfully.');
-        } catch (err) {
-          console.error('Error auto-saving receipt collage to gallery:', err);
-        }
-      })();
-
       const copies = this.activeSession.copiesCount || 1;
       try {
         if (headlineEl) {
@@ -207,6 +174,36 @@ export class PrintingView extends BaseView {
         }
         
         audioManager.stopDispenser();
+
+        // Auto-save branded full-color receipt collage to native gallery after print completes
+        if (config.saveToGallery !== false) {
+          (async () => {
+            try {
+              console.log('Generating full-color receipt collage for gallery auto-save...');
+              let colorBlob = this.activeSession.colorBlob;
+              if (!colorBlob) {
+                colorBlob = await generateReceiptBlob(this.activeSession, 'color');
+              }
+              
+              const base64Data = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const dataUrl = reader.result as string;
+                  const base64 = dataUrl.split(',')[1];
+                  resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(colorBlob!);
+              });
+
+              await DirectPrinter.savePhotoToGallery({ base64Data });
+              console.log('Branded full-color receipt collage auto-saved to gallery successfully.');
+            } catch (err) {
+              console.error('Error auto-saving receipt collage to gallery:', err);
+            }
+          })();
+        }
+
       } catch (e: any) {
         const config = loadKioskConfig();
         const isBluetooth = config.printerMode === 'bluetooth';
