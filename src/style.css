@@ -97,6 +97,12 @@ body {
   box-sizing: border-box;
   will-change: transform, opacity;
   transform: translate3d(0, 0, 0);
+  
+  /* GPU acceleration enhancements for smooth rendering on Android WebViews */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 .view-panel.active-slide {
@@ -106,31 +112,48 @@ body {
   opacity: 1;
 }
 
-/* iOS Slide Transitions */
+/* iOS Snappy Slide Transitions */
 .view-panel.slide-out-left {
   display: flex !important;
   z-index: 1;
-  animation: ios-slide-out-left 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation: ios-slide-out-left 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .view-panel.slide-in-right {
   display: flex !important;
   z-index: 3; /* Render on top of the outgoing view */
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
-  animation: ios-slide-in-right 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08); /* Lighter shadow to avoid layout repaint overhead */
+  animation: ios-slide-in-right 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .view-panel.slide-out-right {
   display: flex !important;
   z-index: 3; /* Keep on top during back transition */
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
-  animation: ios-slide-out-right 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
+  animation: ios-slide-out-right 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .view-panel.slide-in-left {
   display: flex !important;
   z-index: 1;
-  animation: ios-slide-in-left 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  animation: ios-slide-in-left 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Disable backdrop-filter during transitions for extreme performance on Android WebView */
+.views-slider.transitioning * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Solid background fallbacks during transitions to maintain visibility without blur */
+.views-slider.transitioning .screen-header,
+.views-slider.transitioning .preview-options-panel,
+.views-slider.transitioning .sticker-drawer,
+.views-slider.transitioning .package-card-option,
+.views-slider.transitioning .order-summary-card,
+.views-slider.transitioning .floating-paper-badge {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 @keyframes ios-slide-in-right {

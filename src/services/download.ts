@@ -379,7 +379,7 @@ export async function renderReceiptToCanvas(
       ctx.save();
       ctx.font = `900 ${Math.round(42 * scale)}px "Space Grotesk", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText('DXB  ✈  HKG', width / 2, y + Math.round(36 * scale));
+      ctx.fillText('CLV  ✈  PFC', width / 2, y + Math.round(36 * scale));
       
       ctx.font = `bold ${Math.round(12 * scale)}px "Space Grotesk", sans-serif`;
       ctx.fillText('B O A R D I N G   P A S S', width / 2, y + Math.round(54 * scale));
@@ -759,13 +759,10 @@ export async function generateReceiptBlob(
 }
 
 /**
- * Renders the receipt template HTML to raw ESC/POS bit-image binary commands.
+ * Converts a HTMLCanvasElement into sliced ESC/POS raster bit-image commands (GS v 0).
+ * Slices long bitmaps into 48-line vertical bands to prevent thermal printer buffer overflows.
  */
-export async function generateReceiptEscPos(session: AppSession): Promise<Uint8Array> {
-  const canvas = document.createElement('canvas');
-  await renderReceiptToCanvas(session, canvas);
-  ditherCanvas(canvas);
-  
+export function convertCanvasToEscPos(canvas: HTMLCanvasElement): Uint8Array {
   const width = canvas.width;
   const height = canvas.height;
   const ctx = canvas.getContext('2d');
@@ -776,48 +773,84 @@ export async function generateReceiptEscPos(session: AppSession): Promise<Uint8A
   const imgData = ctx.getImageData(0, 0, width, height);
   const data = imgData.data;
 
-  // Prepend ESC @ to initialize printer before sending GS v 0 raster command
-  const header = new Uint8Array([
-    0x1B, 0x40, // ESC @ (Initialize printer)
-    0x1D, 0x76, 0x30, 0x00, // GS v 0 0
-    widthBytes & 0xFF, (widthBytes >> 8) & 0xFF, // xL xH
-    height & 0xFF, (height >> 8) & 0xFF // yL yH
-  ]);
+  // Maximum vertical lines per raster band slice (48 lines is universally supported by thermal receipt printers)
+  const MAX_SLICE_HEIGHT = 48;
 
-  const body = new Uint8Array(widthBytes * height);
+  const chunks: Uint8Array[] = [];
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < paddedWidth; x++) {
-      let bit = 0; // 0 = white (blank)
-      if (x < width) {
-        const idx = (y * width + x) * 4;
-        const r = data[idx];
-        if (r < 128) {
-          bit = 1; // 1 = black (print)
+  // Job Header: Initialize printer state and set line spacing to 0
+  chunks.push(new Uint8Array([
+    0x1B, 0x40,        // ESC @ (Initialize printer)
+    0x1B, 0x33, 0x00   // ESC 3 0 (Set line spacing to 0)
+  ]));
+
+  for (let y = 0; y < height; y += MAX_SLICE_HEIGHT) {
+    const sliceHeight = Math.min(MAX_SLICE_HEIGHT, height - y);
+    const sliceBodySize = widthBytes * sliceHeight;
+    
+    // GS v 0 0 xL xH yL yH
+    const sliceHeader = new Uint8Array([
+      0x1D, 0x76, 0x30, 0x00,
+      widthBytes & 0xFF, (widthBytes >> 8) & 0xFF,
+      sliceHeight & 0xFF, (sliceHeight >> 8) & 0xFF
+    ]);
+    
+    const sliceBody = new Uint8Array(sliceBodySize);
+
+    for (let sy = 0; sy < sliceHeight; sy++) {
+      const pixelY = y + sy;
+      for (let x = 0; x < paddedWidth; x++) {
+        let bit = 0;
+        if (x < width && pixelY < height) {
+          const idx = (pixelY * width + x) * 4;
+          if (data[idx] < 128) {
+            bit = 1; // black dot
+          }
+        }
+
+        if (bit === 1) {
+          const byteIdx = sy * widthBytes + Math.floor(x / 8);
+          const bitIdx = 7 - (x % 8);
+          sliceBody[byteIdx] |= (1 << bitIdx);
         }
       }
-
-      const byteIdx = y * widthBytes + Math.floor(x / 8);
-      const bitIdx = 7 - (x % 8);
-      if (bit === 1) {
-        body[byteIdx] |= (1 << bitIdx);
-      }
     }
+
+    chunks.push(sliceHeader);
+    chunks.push(sliceBody);
   }
 
-  // Paper cut command & printer initialization
-  const footer = new Uint8Array([
-    0x0A, 0x0A, 0x0A, 0x0A, // 4 lines feed
-    0x1D, 0x56, 0x42, 0x00, // GS V 66 0 (cut)
-    0x1B, 0x40 // ESC @ (initialize)
-  ]);
+  // Job Footer: Reset line spacing, feed paper past cutter/tear bar, cut paper cleanly, reset printer state
+  chunks.push(new Uint8Array([
+    0x1B, 0x32,                  // ESC 2 (Reset line spacing to 1/6 inch default)
+    0x0A, 0x0A, 0x0A, 0x0A, 0x0A, // Feed 5 lines (feeds receipt clear of paper slot)
+    0x1D, 0x56, 0x01,            // GS V 1 (Partial paper cut - universal binary non-text command)
+    0x1B, 0x40                   // ESC @ (Initialize printer for clean state)
+  ]));
 
-  const result = new Uint8Array(header.length + body.length + footer.length);
-  result.set(header, 0);
-  result.set(body, header.length);
-  result.set(footer, header.length + body.length);
+  let totalBytes = 0;
+  for (const chunk of chunks) {
+    totalBytes += chunk.length;
+  }
+
+  const result = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
 
   return result;
+}
+
+/**
+ * Renders the receipt template HTML to raw ESC/POS bit-image binary commands.
+ */
+export async function generateReceiptEscPos(session: AppSession): Promise<Uint8Array> {
+  const canvas = document.createElement('canvas');
+  await renderReceiptToCanvas(session, canvas);
+  ditherCanvas(canvas);
+  return convertCanvasToEscPos(canvas);
 }
 
 /**
@@ -930,50 +963,20 @@ export async function generateTestPrintEscPos(): Promise<Uint8Array> {
   ctx.fillText('THANK YOU FOR PARTNERING!', width / 2, logoY);
   
   ditherCanvas(canvas);
-  
-  const widthBytes = Math.ceil(width / 8);
-  const paddedWidth = widthBytes * 8;
-  const imgData = ctx.getImageData(0, 0, width, canvas.height);
-  const data = imgData.data;
-
-  const header = new Uint8Array([
-    0x1B, 0x40, // ESC @ (Initialize printer)
-    0x1D, 0x76, 0x30, 0x00, // GS v 0 0
-    widthBytes & 0xFF, (widthBytes >> 8) & 0xFF, // xL xH
-    canvas.height & 0xFF, (canvas.height >> 8) & 0xFF // yL yH
-  ]);
-
-  const body = new Uint8Array(widthBytes * canvas.height);
-
-  for (let y = 0; y < canvas.height; y++) {
-    for (let x = 0; x < paddedWidth; x++) {
-      let bit = 0;
-      if (x < width) {
-        const idx = (y * width + x) * 4;
-        const r = data[idx];
-        if (r < 128) {
-          bit = 1;
-        }
-      }
-
-      const byteIdx = y * widthBytes + Math.floor(x / 8);
-      const bitIdx = 7 - (x % 8);
-      if (bit === 1) {
-        body[byteIdx] |= (1 << bitIdx);
-      }
-    }
-  }
-
-  const footer = new Uint8Array([
-    0x0A, 0x0A, 0x0A, 0x0A, // 4 lines feed
-    0x1D, 0x56, 0x42, 0x00  // GS V B 00 (Partial cut command)
-  ]);
-
-  const totalLength = header.length + body.length + footer.length;
-  const escPosBytes = new Uint8Array(totalLength);
-  escPosBytes.set(header, 0);
-  escPosBytes.set(body, header.length);
-  escPosBytes.set(footer, header.length + body.length);
-
-  return escPosBytes;
+  return convertCanvasToEscPos(canvas);
 }
+
+/**
+ * Safely converts a Uint8Array into a Base64 string without stack overflow or loop slowdown.
+ */
+export function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const len = bytes.byteLength;
+  const CHUNK_SIZE = 0x8000;
+  for (let i = 0; i < len; i += CHUNK_SIZE) {
+    const chunk = bytes.subarray(i, i + CHUNK_SIZE);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  return btoa(binary);
+}
+

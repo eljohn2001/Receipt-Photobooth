@@ -39,6 +39,7 @@ export interface KioskConfig {
   saveToGallery?: boolean;
   cameraFilter?: 'bw' | 'color';
   enableStickers?: boolean;
+  enableEventMode?: boolean;
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -70,6 +71,7 @@ export const DEFAULT_CONFIG: KioskConfig = {
   saveToGallery: true,
   cameraFilter: 'color',
   enableStickers: true,
+  enableEventMode: false,
   sessionPrice: 30.00,
   profitSharePercent: 60.00,
   maxPrintsAllowed: 4,

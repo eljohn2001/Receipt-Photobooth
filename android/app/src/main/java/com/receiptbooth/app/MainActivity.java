@@ -287,18 +287,18 @@ public class MainActivity extends BridgeActivity {
                 }
             });
 
-            int chunkSize = 2048;
+            int chunkSize = 1024;
             int offset = 0;
             while (offset < bytes.length) {
                 int len = Math.min(chunkSize, bytes.length - offset);
                 outputStream.write(bytes, offset, len);
                 outputStream.flush();
                 offset += len;
-                Thread.sleep(50);
+                Thread.sleep(30);
             }
 
             Log.i("MainActivity", "Successfully printed " + offset + " bytes to Bluetooth device");
-            Thread.sleep(500);
+            Thread.sleep(800);
 
             if (pendingBluetoothPluginCall != null) {
                 pendingBluetoothPluginCall.resolve();
@@ -500,7 +500,7 @@ public class MainActivity extends BridgeActivity {
             }
         });
 
-        int chunkSize = 4096;
+        int chunkSize = 2048;
         int offset = 0;
         
         try {
@@ -509,7 +509,7 @@ public class MainActivity extends BridgeActivity {
                 byte[] chunk = new byte[length];
                 System.arraycopy(bytes, offset, chunk, 0, length);
                 
-                int transferred = connection.bulkTransfer(outEndpoint, chunk, length, 10000);
+                int transferred = connection.bulkTransfer(outEndpoint, chunk, length, 5000);
                 if (transferred < 0) {
                     Log.e("MainActivity", "USB bulk transfer failed at offset " + offset);
                     runOnUiThread(new Runnable() {
@@ -525,6 +525,9 @@ public class MainActivity extends BridgeActivity {
                     break;
                 }
                 offset += transferred;
+                try {
+                    Thread.sleep(15);
+                } catch (InterruptedException ignored) {}
             }
             Log.i("MainActivity", "Successfully printed " + offset + " bytes to USB device");
             if (pendingPluginCall != null) {
@@ -538,6 +541,7 @@ public class MainActivity extends BridgeActivity {
                 pendingPluginCall = null;
             }
         } finally {
+            try { Thread.sleep(500); } catch (Exception ignored) {}
             connection.releaseInterface(usbInterface);
             connection.close();
         }

@@ -340,17 +340,25 @@ export class PreviewView extends BaseView {
     
     // Reset session variables
     this.activeSession.isMirrored = false;
+    const config = loadKioskConfig();
+    const isEventMode = config.enableEventMode === true;
+
     const pkg = this.activeSession.selectedPackage;
-    this.activeSession.copiesCount = pkg ? pkg.printsCount : 1;
+    this.activeSession.copiesCount = isEventMode ? 1 : (pkg ? pkg.printsCount : 1);
     this.activeSession.shareId = generateShortId(6);
     this.activeSession.selectedThemeId = 'default';
 
-    // Hide quantity adjustment buttons to enforce package locks
+    // Hide/show quantity adjustment buttons depending on mode
     const qtyMinusBtn = this.element.querySelector('#btn-qty-minus') as HTMLElement;
     const qtyPlusBtn = this.element.querySelector('#btn-qty-plus') as HTMLElement;
     if (qtyMinusBtn && qtyPlusBtn) {
-      qtyMinusBtn.style.display = 'none';
-      qtyPlusBtn.style.display = 'none';
+      if (isEventMode) {
+        qtyMinusBtn.style.display = 'flex';
+        qtyPlusBtn.style.display = 'flex';
+      } else {
+        qtyMinusBtn.style.display = 'none';
+        qtyPlusBtn.style.display = 'none';
+      }
     }
 
     // Reset options UI defaults
@@ -520,16 +528,31 @@ export class PreviewView extends BaseView {
         current--;
         this.activeSession.copiesCount = current;
         if (qtyVal) qtyVal.textContent = current.toString();
+        hapticService.impactLight();
+        audioManager.playBeep();
       }
     });
 
     plusBtn?.addEventListener('click', () => {
+      const config = loadKioskConfig();
+      const maxPrints = config.maxPrintsAllowed || 4;
+      const paperRemaining = config.paperPrintsRemaining !== undefined ? config.paperPrintsRemaining : 150;
+
       let current = this.activeSession.copiesCount || 1;
-      if (current < 5) {
-        current++;
-        this.activeSession.copiesCount = current;
-        if (qtyVal) qtyVal.textContent = current.toString();
+      if (current >= maxPrints) {
+        hapticService.impactLight();
+        return;
       }
+      if (current >= paperRemaining) {
+        alert(`⚠️ Paper Roll Low: This kiosk only has ${paperRemaining} prints remaining.`);
+        return;
+      }
+
+      current++;
+      this.activeSession.copiesCount = current;
+      if (qtyVal) qtyVal.textContent = current.toString();
+      hapticService.impactLight();
+      audioManager.playBeep();
     });
 
     // Mirror image toggle switch
@@ -654,6 +677,28 @@ export class PreviewView extends BaseView {
 
   private triggerPrintFlow(): void {
     const config = loadKioskConfig();
+    const paperRemaining = config.paperPrintsRemaining !== undefined ? config.paperPrintsRemaining : 150;
+    const copies = this.activeSession.copiesCount || 1;
+
+    if (copies > paperRemaining) {
+      alert(`⚠️ Paper Roll Low: This kiosk only has ${paperRemaining} prints remaining. Please select ${paperRemaining} or fewer copies, or notify café staff.`);
+      // Reset swipe thumb gesture
+      const thumb = this.element.querySelector('#swipe-print-thumb') as HTMLElement;
+      if (thumb) {
+        thumb.style.left = '5px';
+        thumb.classList.add('hint');
+      }
+      const track = this.element.querySelector('#swipe-print') as HTMLElement;
+      if (track) {
+        track.classList.remove('swiped');
+        track.style.pointerEvents = 'auto';
+        track.style.opacity = '1';
+      }
+      const label = track?.querySelector('.swipe-print-label') as HTMLElement;
+      if (label) label.style.opacity = '1';
+      return;
+    }
+
     if (config.enableQrCode !== false) {
       // 1. Kick off background upload before transitioning
       this.activeSession.uploadPromise = (async () => {

@@ -1,7 +1,7 @@
 import { BaseView } from './base';
 import { audioManager } from '../services/audio';
 import type { AppSession } from '../types';
-import { generateReceiptEscPos, generateReceiptBlob } from '../services/download';
+import { generateReceiptEscPos, generateReceiptBlob, uint8ArrayToBase64 } from '../services/download';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { loadKioskConfig, saveKioskConfig } from '../services/config';
 import { saveLocalSession } from '../services/db';
@@ -167,12 +167,7 @@ export class PrintingView extends BaseView {
           escPosBytes.set(singleCopyBytes, i * singleCopyBytes.length);
         }
         
-        let binaryString = '';
-        const len = escPosBytes.byteLength;
-        for (let j = 0; j < len; j++) {
-          binaryString += String.fromCharCode(escPosBytes[j]);
-        }
-        const base64Data = btoa(binaryString);
+        const base64Data = uint8ArrayToBase64(escPosBytes);
         
         const config = loadKioskConfig();
         const isBluetooth = config.printerMode === 'bluetooth';
@@ -257,7 +252,11 @@ export class PrintingView extends BaseView {
       let packageName = null;
       let packagePrice = null;
       
-      if (this.activeSession.selectedTemplateId === 'comfort-card') {
+      if (config.enableEventMode === true) {
+        totalAmount = 0;
+        packageName = 'Event Mode Print';
+        packagePrice = 0;
+      } else if (this.activeSession.selectedTemplateId === 'comfort-card') {
         totalAmount = 0; // Comfort Affirmations are free
         packageName = 'Comfort Card';
         packagePrice = 0;

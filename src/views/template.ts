@@ -162,7 +162,12 @@ export class TemplateView extends BaseView {
       overlay.style.opacity = '0';
 
       setTimeout(() => {
-        this.navigateTo('package-selection');
+        const config = loadKioskConfig();
+        if (config.enableEventMode === true) {
+          this.navigateTo('camera-capture');
+        } else {
+          this.navigateTo('package-selection');
+        }
         // Clean up
         overlay.remove();
         clone.remove();

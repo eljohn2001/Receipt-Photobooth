@@ -23,7 +23,7 @@ import { getShareRecord, getPublicStorageUrl, supabase } from './services/supaba
 import { syncPendingSessions, updateBoothTelemetry } from './services/sync';
 import { requestWakeLock } from './services/wake-lock';
 import { registerPlugin } from '@capacitor/core';
-import { generateTestPrintEscPos } from './services/download';
+import { generateTestPrintEscPos, uint8ArrayToBase64 } from './services/download';
 import defaultSnapHome from './assets/Snap Home.png';
 
 interface DirectPrinterPlugin {
@@ -669,6 +669,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       clearTransitions();
 
+      const slider = document.getElementById('views-slider');
+      slider?.classList.add('transitioning');
+
       if (prevPanel && nextPanel) {
         if (isForward) {
           prevPanel.classList.add('slide-out-left');
@@ -692,6 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         if (currentActiveState === nextState) {
           clearTransitions();
+          slider?.classList.remove('transitioning');
         }
       }, 500);
     }
@@ -962,6 +966,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const enableStickersInput = document.getElementById('input-enable-stickers') as HTMLInputElement;
     if (enableStickersInput) enableStickersInput.checked = config.enableStickers !== false;
+
+    const enableEventModeInput = document.getElementById('input-enable-event-mode') as HTMLInputElement;
+    if (enableEventModeInput) enableEventModeInput.checked = config.enableEventMode === true;
 
     const imgurClientIdInput = document.getElementById('input-imgur-client-id') as HTMLInputElement;
     if (imgurClientIdInput) imgurClientIdInput.value = config.imgurClientId || '';
@@ -1505,12 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
       audioManager.playDispenser();
       const escPosBytes = await generateTestPrintEscPos();
       
-      let binaryString = '';
-      const len = escPosBytes.byteLength;
-      for (let j = 0; j < len; j++) {
-        binaryString += String.fromCharCode(escPosBytes[j]);
-      }
-      const base64Data = btoa(binaryString);
+      const base64Data = uint8ArrayToBase64(escPosBytes);
       
       const config = loadKioskConfig();
       const isBluetooth = config.printerMode === 'bluetooth';
@@ -1674,6 +1676,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const accentColorInput = document.getElementById('input-accent-color') as HTMLInputElement;
     const cameraFilterBwInput = document.getElementById('input-camera-filter-bw') as HTMLInputElement;
     const enableStickersInput = document.getElementById('input-enable-stickers') as HTMLInputElement;
+    const enableEventModeInput = document.getElementById('input-enable-event-mode') as HTMLInputElement;
 
     // Handle background media save
     let resolvedBgType: 'image' | 'video' | null = bgFileType;
@@ -1721,6 +1724,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveToGallery: saveGalleryInput ? saveGalleryInput.checked : true,
       cameraFilter: cameraFilterBwInput && cameraFilterBwInput.checked ? 'bw' : 'color',
       enableStickers: enableStickersInput ? enableStickersInput.checked : true,
+      enableEventMode: enableEventModeInput ? enableEventModeInput.checked : false,
       printContrast: printContrastSelect ? (printContrastSelect.value as 'light' | 'medium' | 'dark' | 'deep') : 'medium',
       printerMode: printModeSelect ? (printModeSelect.value as 'usb' | 'bluetooth') : 'usb',
       paperWidth: paperWidthSelect ? (paperWidthSelect.value as '58mm' | '80mm') : '80mm',
