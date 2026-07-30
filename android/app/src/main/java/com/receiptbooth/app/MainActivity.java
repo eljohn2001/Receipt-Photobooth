@@ -287,6 +287,13 @@ public class MainActivity extends BridgeActivity {
                 }
             });
 
+            // Hardware Warm-Up: Send hardware reset (ESC @) and allow printer micro-controller 150ms to stabilize after Bluetooth connection setup
+            try {
+                outputStream.write(new byte[]{0x1B, 0x40});
+                outputStream.flush();
+                Thread.sleep(150);
+            } catch (Exception ignored) {}
+
             int chunkSize = 4096;
             int offset = 0;
             while (offset < bytes.length) {
@@ -503,6 +510,13 @@ public class MainActivity extends BridgeActivity {
                 Toast.makeText(MainActivity.this, "Sending photo to printer...", Toast.LENGTH_SHORT).show();
             }
         });
+
+        // Hardware Warm-Up: Send hardware reset (ESC @) over claimed interface and allow printer micro-controller 150ms to stabilize after Android USB interface claiming
+        try {
+            byte[] initCmd = new byte[]{0x1B, 0x40};
+            connection.bulkTransfer(outEndpoint, initCmd, initCmd.length, 1000);
+            Thread.sleep(150);
+        } catch (Exception ignored) {}
 
         int chunkSize = 16384;
         int offset = 0;

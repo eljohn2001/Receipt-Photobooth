@@ -128,11 +128,19 @@ export class PrintingView extends BaseView {
         // Generate single copy ESC/POS bytes
         const singleCopyBytes = await generateReceiptEscPos(this.activeSession);
         
-        // Concatenate copies into a single print stream
-        const totalLength = singleCopyBytes.length * copies;
+        // Concatenate copies into a single print stream with clean copy separator line feed
+        const copySeparator = new Uint8Array([0x0A]);
+        const copyLen = singleCopyBytes.length;
+        const totalLength = (copyLen + copySeparator.length) * copies - copySeparator.length;
         const escPosBytes = new Uint8Array(totalLength);
+        let offset = 0;
         for (let i = 0; i < copies; i++) {
-          escPosBytes.set(singleCopyBytes, i * singleCopyBytes.length);
+          escPosBytes.set(singleCopyBytes, offset);
+          offset += copyLen;
+          if (i < copies - 1) {
+            escPosBytes.set(copySeparator, offset);
+            offset += copySeparator.length;
+          }
         }
         
         const base64Data = uint8ArrayToBase64(escPosBytes);

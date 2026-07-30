@@ -83,7 +83,8 @@ export async function renderReceiptToCanvas(
 
   // Dynamic canvas scaling based on printer paper width (58mm = 384px, 80mm = 576px)
   const scale = config.paperWidth === '58mm' ? 1.0 : 1.5;
-  const width = Math.round(384 * scale);
+  const rawWidth = Math.round(384 * scale);
+  const width = Math.floor(rawWidth / 8) * 8; // Snap canvas width to exact multiple of 8 bytes
   canvas.width = width;
 
   const templateId = session.selectedTemplateId || '';
@@ -778,12 +779,10 @@ export function convertCanvasToEscPos(canvas: HTMLCanvasElement): Uint8Array {
 
   const chunks: Uint8Array[] = [];
 
-  // Job Header: Clear receive buffer, cancel any hanging raster mode, and reset printer hardware state cleanly
+  // Job Header: Clean ESC/POS hardware initialization (ESC @) and line spacing setup (ESC 3 0)
   chunks.push(new Uint8Array([
-    0x00, 0x00, 0x00, 0x00, // NULL bytes (flushes leftover serial/USB buffer garbage)
-    0x18,                   // CAN (Cancel any pending graphics/raster state)
-    0x1B, 0x40,             // ESC @ (Initialize printer hardware state)
-    0x1B, 0x33, 0x00        // ESC 3 0 (Set line spacing to 0 for bitmap band rendering)
+    0x1B, 0x40,        // ESC @ (Initialize printer hardware state cleanly)
+    0x1B, 0x33, 0x00   // ESC 3 0 (Set line spacing to 0 for bitmap band rendering)
   ]));
 
   for (let y = 0; y < height; y += MAX_SLICE_HEIGHT) {
@@ -805,8 +804,17 @@ export function convertCanvasToEscPos(canvas: HTMLCanvasElement): Uint8Array {
         let bit = 0;
         if (x < width && pixelY < height) {
           const idx = (pixelY * width + x) * 4;
-          if (data[idx] < 128) {
-            bit = 1; // black dot
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const a = data[idx + 3];
+
+          // Only process opaque pixels (alpha > 50) to prevent transparent canvas pixels from rendering as black noise
+          if (a > 50) {
+            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+            if (luminance < 128) {
+              bit = 1; // black dot
+            }
           }
         }
 
@@ -822,14 +830,11 @@ export function convertCanvasToEscPos(canvas: HTMLCanvasElement): Uint8Array {
     chunks.push(sliceBody);
   }
 
-  // Job Footer: Reset line spacing to default 1/6 inch, feed 5 lines clear of tear slot, execute full paper cut, and reset printer state cleanly for next job
+  // Job Footer: Reset line spacing to default 1/6 inch, feed 5 lines clear of tear slot, and execute paper cut (strictly terminates print stream)
   chunks.push(new Uint8Array([
     0x1B, 0x32,                  // ESC 2 (Reset line spacing to 1/6 inch default)
     0x0A, 0x0A, 0x0A, 0x0A, 0x0A, // Feed 5 lines (feeds receipt clear of paper slot)
-    0x1D, 0x56, 0x00,            // GS V 0 (Standard ESC/POS full paper cut)
-    0x00, 0x00, 0x00, 0x00,      // NULL bytes (flush buffer post-cut)
-    0x18,                        // CAN (Cancel raster mode)
-    0x1B, 0x40                   // ESC @ (Initialize printer hardware state for next session)
+    0x1D, 0x56, 0x00             // GS V 0 (Standard ESC/POS full paper cut)
   ]));
 
   let totalBytes = 0;
