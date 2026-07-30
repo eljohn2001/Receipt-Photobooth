@@ -18,7 +18,7 @@ export class OrderSummaryView extends BaseView {
 
   mount(): void {
     const config = loadKioskConfig();
-    const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+    const logoUrl = config.logoDataUrl || config.logoScreenDataUrl;
     const logoHtml = logoUrl 
       ? `<img src="${logoUrl}" class="thank-you-logo" />` 
       : `<div class="thank-you-logo-placeholder">☕️</div>`;
@@ -26,8 +26,9 @@ export class OrderSummaryView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="template-screen-header">
-          <h2 class="template-choose-title">ORDER <span class="script-title">Summary</span></h2>
-          <p style="margin-top: 8px; font-size: 16px; color: var(--text-secondary);">Please verify your selection before capturing.</p>
+          <button class="btn-back" id="btn-summary-back">← BACK</button>
+          <h2 class="template-choose-title">Order Summary</h2>
+          <p class="view-subtitle">Please verify your selection before capturing</p>
         </div>
 
         <div class="order-summary-printer-container">
@@ -43,7 +44,7 @@ export class OrderSummaryView extends BaseView {
               <div class="receipt-cutout right"></div>
 
               ${logoHtml}
-              <h3 class="receipt-cafe-name" style="font-family: var(--font-ui); font-size: 12px; font-weight: 700; color: #888888; text-transform: uppercase; letter-spacing: 1px; margin: 4px 0 0 0;">${config.cafeName}</h3>
+              <h3 class="receipt-cafe-name">${config.cafeName}</h3>
               <h4 class="receipt-order-title">ORDER SUMMARY</h4>
               
               <div class="thank-you-divider"></div>
@@ -84,8 +85,8 @@ export class OrderSummaryView extends BaseView {
               <div class="thank-you-divider"></div>
 
               <div class="order-receipt-payment-info">
-                ☕ <strong>Cashier Payment</strong><br/>
-                Please pay at the cashier together with your café order. No activation code or confirmation is needed!
+                <div class="payment-badge-pill">☕ CASHIER PAYMENT</div>
+                <p style="margin-top: 6px;">Pay together with your café order. No activation code required!</p>
               </div>
 
               <!-- Scalloped bottom -->
@@ -96,7 +97,6 @@ export class OrderSummaryView extends BaseView {
 
         <div class="order-summary-footer">
           <button class="btn btn-primary btn-wide" id="btn-summary-start" type="button">⚡ START CAPTURE</button>
-          <button class="btn btn-secondary btn-wide" id="btn-summary-back" type="button">← CHANGE SELECTION</button>
         </div>
       </div>
     `;

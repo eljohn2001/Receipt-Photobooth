@@ -26,7 +26,9 @@ export class TemplateView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="template-screen-header">
-          <h2 class="template-choose-title">CHOOSE A <span class="script-title">Layout</span></h2>
+          <button class="btn-back" id="btn-tmpl-back">← BACK</button>
+          <h2 class="template-choose-title">Choose Layout</h2>
+          <p class="view-subtitle">Select a photo strip layout template</p>
         </div>
 
         <!-- Static 2x2 Grid Layout for the 4 Mockup Cards -->
@@ -34,10 +36,6 @@ export class TemplateView extends BaseView {
           <div class="templates-static-grid">
             <!-- Populated dynamically by renderTemplatesGrid in onEnter -->
           </div>
-        </div>
-
-        <div class="selection-footer">
-          <button class="btn btn-secondary btn-wide" id="btn-tmpl-back">← GO BACK</button>
         </div>
       </div>
     `;
@@ -267,7 +265,7 @@ export class TemplateView extends BaseView {
   }
 
   private renderOverlayLogo(config: any): string {
-    const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+    const logoUrl = config.logoDataUrl || config.logoScreenDataUrl;
     if (logoUrl) {
       return `<img class="overlay-cafe-logo" src="${logoUrl}" alt="${config.cafeName}" />`;
     }

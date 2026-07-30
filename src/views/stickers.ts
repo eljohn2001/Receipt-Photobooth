@@ -94,8 +94,8 @@ export class StickersView extends BaseView {
       <div class="stickers-screen-content">
         <div class="template-screen-header">
           <button class="btn-back" id="btn-stickers-back">← BACK</button>
-          <h2 class="template-choose-title" style="justify-content: center;">DECORATE <span class="script-title">Photos</span></h2>
-          <p class="view-subtitle" style="margin-top: 6px;">Tap stickers to add, drag to move, pinch/drag handles to scale & rotate!</p>
+          <h2 class="template-choose-title">Decorate Photos</h2>
+          <p class="view-subtitle">Tap stickers to add, drag to move, and pinch handles to scale & rotate</p>
         </div>
 
         <div class="stickers-vertical-layout">
@@ -190,9 +190,9 @@ export class StickersView extends BaseView {
       stickerDiv.style.justifyContent = 'center';
 
       stickerDiv.innerHTML = `
-        <span class="sticker-emoji" style="font-size: 40px; user-select: none; pointer-events: none;">${sticker.emoji}</span>
-        <div class="sticker-control delete-btn" style="position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-danger); color: #ffffff; font-size: 14px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; border: 1.5px solid #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">×</div>
-        <div class="sticker-control resize-btn" style="position: absolute; bottom: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-primary); color: #ffffff; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: nwse-resize; border: 1.5px solid #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">⤗</div>
+        <span class="sticker-emoji" style="font-size: 44px; user-select: none; pointer-events: none;">${sticker.emoji}</span>
+        <div class="sticker-control delete-btn" style="position: absolute; top: -14px; right: -14px; width: 34px; height: 34px; border-radius: 50%; background: var(--accent-danger); color: #ffffff; font-size: 18px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; border: 2px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.25); z-index: 10;">×</div>
+        <div class="sticker-control resize-btn" style="position: absolute; bottom: -14px; right: -14px; width: 34px; height: 34px; border-radius: 50%; background: var(--accent-color); color: #ffffff; font-size: 14px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: nwse-resize; border: 2px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.25); z-index: 10;">⤗</div>
       `;
 
       layer.appendChild(stickerDiv);

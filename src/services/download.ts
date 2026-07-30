@@ -186,7 +186,7 @@ export async function renderReceiptToCanvas(
   const isPrint = (mode === 'print');
   const paddingTop = isPrint ? 0 : Math.round(25 * scale);
   const paddingBottom = Math.round(25 * scale);
-  const bottomMargin = isPrint ? Math.round(45 * scale) : 0; // Extra margin at bottom to prevent cutter from clipping footer info
+  const bottomMargin = isPrint ? Math.round(65 * scale) : 0; // Extra margin at bottom to prevent thermal cutter blade from clipping footer barcode/text
 
   const height = paddingTop + paddingBottom + headerHeight + spacingAfterHeader + gridHeight + spacingAfterGrid + qrHeight + footerHeight + fortuneHeight + comfortHeight + bottomMargin;
 
@@ -773,15 +773,17 @@ export function convertCanvasToEscPos(canvas: HTMLCanvasElement): Uint8Array {
   const imgData = ctx.getImageData(0, 0, width, height);
   const data = imgData.data;
 
-  // Maximum vertical lines per raster band slice (48 lines is universally supported by thermal receipt printers)
-  const MAX_SLICE_HEIGHT = 48;
+  // Maximum vertical lines per raster band slice (24 lines guarantees each slice packet remains <= 1736 bytes, fitting safely inside standard USB and Bluetooth buffers)
+  const MAX_SLICE_HEIGHT = 24;
 
   const chunks: Uint8Array[] = [];
 
-  // Job Header: Initialize printer hardware state cleanly and set line spacing to 0
+  // Job Header: Clear receive buffer, cancel any hanging raster mode, and reset printer hardware state cleanly
   chunks.push(new Uint8Array([
-    0x1B, 0x40,        // ESC @ (Initialize printer hardware state)
-    0x1B, 0x33, 0x00   // ESC 3 0 (Set line spacing to 0 for bitmap band rendering)
+    0x00, 0x00, 0x00, 0x00, // NULL bytes (flushes leftover serial/USB buffer garbage)
+    0x18,                   // CAN (Cancel any pending graphics/raster state)
+    0x1B, 0x40,             // ESC @ (Initialize printer hardware state)
+    0x1B, 0x33, 0x00        // ESC 3 0 (Set line spacing to 0 for bitmap band rendering)
   ]));
 
   for (let y = 0; y < height; y += MAX_SLICE_HEIGHT) {
@@ -820,11 +822,14 @@ export function convertCanvasToEscPos(canvas: HTMLCanvasElement): Uint8Array {
     chunks.push(sliceBody);
   }
 
-  // Job Footer: Reset line spacing to default 1/6 inch, feed 5 lines clear of tear slot, and execute standard full paper cut
+  // Job Footer: Reset line spacing to default 1/6 inch, feed 5 lines clear of tear slot, execute full paper cut, and reset printer state cleanly for next job
   chunks.push(new Uint8Array([
     0x1B, 0x32,                  // ESC 2 (Reset line spacing to 1/6 inch default)
     0x0A, 0x0A, 0x0A, 0x0A, 0x0A, // Feed 5 lines (feeds receipt clear of paper slot)
-    0x1D, 0x56, 0x00             // GS V 0 (Standard ESC/POS full paper cut)
+    0x1D, 0x56, 0x00,            // GS V 0 (Standard ESC/POS full paper cut)
+    0x00, 0x00, 0x00, 0x00,      // NULL bytes (flush buffer post-cut)
+    0x18,                        // CAN (Cancel raster mode)
+    0x1B, 0x40                   // ESC @ (Initialize printer hardware state for next session)
   ]));
 
   let totalBytes = 0;

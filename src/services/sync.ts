@@ -172,7 +172,44 @@ export async function updateBoothTelemetry(deviceId: string): Promise<void> {
     } else {
       console.log('[Sync] Booth telemetry successfully updated.');
     }
+
+    // Flush any pending offline cash collections to cloud
+    await syncPendingCollections();
   } catch (err) {
     console.error('[Sync] Failed to update booth telemetry exception:', err);
+  }
+}
+
+/**
+ * Pushes any offline logged cash collections to Supabase collections table.
+ */
+export async function syncPendingCollections(): Promise<void> {
+  if (!navigator.onLine) return;
+  const pendingAmountStr = localStorage.getItem('kiosk_pending_collection_amount');
+  const pendingTimeStr = localStorage.getItem('kiosk_pending_collection_time');
+
+  if (pendingAmountStr && pendingTimeStr) {
+    try {
+      const deviceId = await getDeviceUUID();
+      const amount = parseFloat(pendingAmountStr);
+      const { error } = await supabase
+        .from('collections')
+        .insert({
+          booth_id: deviceId,
+          collected_at: pendingTimeStr,
+          amount_collected: amount,
+          collector_name: 'Kiosk Operator'
+        });
+
+      if (!error) {
+        console.log('[Sync] Pending offline collection successfully uploaded to Supabase!');
+        localStorage.removeItem('kiosk_pending_collection_amount');
+        localStorage.removeItem('kiosk_pending_collection_time');
+      } else {
+        console.warn('[Sync] Failed to upload pending collection:', error);
+      }
+    } catch (err) {
+      console.error('[Sync] Exception during syncPendingCollections:', err);
+    }
   }
 }

@@ -287,7 +287,7 @@ public class MainActivity extends BridgeActivity {
                 }
             });
 
-            int chunkSize = 1024;
+            int chunkSize = 4096;
             int offset = 0;
             while (offset < bytes.length) {
                 int len = Math.min(chunkSize, bytes.length - offset);
@@ -504,7 +504,7 @@ public class MainActivity extends BridgeActivity {
             }
         });
 
-        int chunkSize = 2048;
+        int chunkSize = 16384;
         int offset = 0;
         
         try {

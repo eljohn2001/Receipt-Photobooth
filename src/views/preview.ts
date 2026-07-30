@@ -45,10 +45,12 @@ async function compileIgStoryFrames(
   const timeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 
   const canvas = document.createElement('canvas');
-  canvas.width = 540;
-  canvas.height = 960;
+  canvas.width = 360;
+  canvas.height = 640;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not get 2D context');
+
+  ctx.scale(360 / 540, 640 / 960);
 
   const frames: string[] = [];
 
@@ -216,23 +218,22 @@ function generateGifPromise(photos: string[], config: any, metadata: any): Promi
       return;
     }
     try {
-      const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+      const logoUrl = config.logoDataUrl || config.logoScreenDataUrl;
       const baseFrames = await compileIgStoryFrames(photos, logoUrl, config, metadata);
 
-      // Loop/duplicate the frames sequence to ensure total duration is at least 15 seconds
+      // Loop sequence up to max 12 frames (~6 seconds duration) to stay within low RAM constraints
       const frameDuration = 0.5; // 0.5s per frame
-      const baseDuration = baseFrames.length * frameDuration;
-      const repeats = Math.ceil(15 / baseDuration);
-
+      const maxTotalFrames = 12;
       let frames: string[] = [];
-      for (let r = 0; r < repeats; r++) {
+      while (frames.length < maxTotalFrames && baseFrames.length > 0) {
         frames = frames.concat(baseFrames);
       }
+      frames = frames.slice(0, maxTotalFrames);
 
       gifshot.createGIF({
         images: frames,
-        gifWidth: 540,
-        gifHeight: 960,
+        gifWidth: 360,
+        gifHeight: 640,
         interval: frameDuration,
         numWorkers: 2
       }, (result) => {
@@ -268,8 +269,8 @@ export class PreviewView extends BaseView {
       <div class="preview-screen-content">
         <div class="template-screen-header">
           <button class="btn-back" id="btn-preview-retake-header">← RETAKE</button>
-          <h2 class="template-choose-title" style="justify-content: center;">PREVIEW <span class="script-title">Print</span></h2>
-          <p class="view-subtitle" style="margin-top: 6px;">Review your thermal receipt memory</p>
+          <h2 class="template-choose-title">Preview Receipt</h2>
+          <p class="view-subtitle">Review your thermal receipt memory</p>
         </div>
 
         <div class="preview-layout-container">

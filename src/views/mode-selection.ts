@@ -26,7 +26,9 @@ export class ModeSelectionView extends BaseView {
     this.element.innerHTML = `
       <div class="mode-selection-screen">
         <div class="template-screen-header">
-          <h2 class="template-choose-title">CHOOSE AN <span class="script-title">Experience</span></h2>
+          <button class="btn-back" id="btn-mode-back">← BACK</button>
+          <h2 class="template-choose-title">Choose Experience</h2>
+          <p class="view-subtitle">Select photo receipt or comfort affirmation card</p>
         </div>
 
         <div class="mode-options-container">
@@ -81,6 +83,12 @@ export class ModeSelectionView extends BaseView {
   }
 
   private setupEvents(): void {
+    const backBtn = this.element.querySelector('#btn-mode-back');
+    backBtn?.addEventListener('click', () => {
+      audioManager.playBeep();
+      this.navigateTo('idle');
+    });
+
     // Swipe-to-go-back interaction
     this.setupSwipeBack('swipe-back-mode', () => {
       audioManager.playBeep();

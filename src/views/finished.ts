@@ -25,8 +25,8 @@ export class FinishedView extends BaseView {
       <div class="finished-screen-content">
         <div class="success-banner">
           <div class="success-icon">✓</div>
-          <h2 class="finished-title">YOUR MEMORY IS READY!</h2>
-          <p class="finished-subtitle">Tear your print carefully from the slot</p>
+          <h2 class="finished-title">Thank You</h2>
+          <p class="finished-subtitle">Tear your receipt print carefully from the slot</p>
         </div>
 
         <div class="finished-download-card" id="finished-card-container">
@@ -65,7 +65,7 @@ export class FinishedView extends BaseView {
 
     cardContainer.innerHTML = ''; // Clear previous content
 
-    const logoUrl = config.logoScreenDataUrl || config.logoDataUrl;
+    const logoUrl = config.logoDataUrl || config.logoScreenDataUrl;
     const logoHtml = logoUrl 
       ? `<img src="${logoUrl}" class="thank-you-logo" />` 
       : `<div class="thank-you-logo-placeholder">☕️</div>`;

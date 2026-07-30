@@ -392,12 +392,17 @@ let activeBgObjectUrl: string | null = null;
 
 // Global theme application helper
 function getLighterColor(hex: string): string {
-  if (!hex.startsWith('#')) return hex;
+  if (!hex || !hex.startsWith('#')) return hex;
   try {
-    const rawHex = hex.slice(1);
-    let r = parseInt(rawHex.slice(0, 2), 16);
-    let g = parseInt(rawHex.slice(2, 4), 16);
-    let b = parseInt(rawHex.slice(4, 6), 16);
+    let rawHex = hex.slice(1).trim();
+    if (rawHex.length === 3) {
+      rawHex = rawHex.split('').map(c => c + c).join('');
+    }
+    if (rawHex.length !== 6) return hex;
+    const r = parseInt(rawHex.slice(0, 2), 16);
+    const g = parseInt(rawHex.slice(2, 4), 16);
+    const b = parseInt(rawHex.slice(4, 6), 16);
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return hex;
     const lighten = (val: number) => Math.min(255, Math.round(val + (255 - val) * 0.25));
     const lr = lighten(r).toString(16).padStart(2, '0');
     const lg = lighten(g).toString(16).padStart(2, '0');
@@ -713,9 +718,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 4. Global Kiosk Inactivity Reset
-  // If the kiosk sits on any interactive page (non-idle) without touch for 60s, return to attract screen.
+  // Automatically returns kiosk to idle attract screen if left unattended on selection screens.
+  // Paused during active photo capture, review, sticker editing, preview, and printing.
   let inactivityTimeoutId: number | null = null;
-  const INACTIVITY_TIMEOUT = 60000; // 60 seconds
+  const INACTIVITY_TIMEOUT = 90000; // 90 seconds
 
   function resetInactivityTimer() {
     if (inactivityTimeoutId !== null) {
@@ -723,10 +729,11 @@ document.addEventListener('DOMContentLoaded', () => {
       inactivityTimeoutId = null;
     }
 
-    // We only time out if the screen is NOT already idle and NOT the activation screen
-    if (currentActiveState !== 'idle' && currentActiveState !== 'activation') {
+    // Do NOT auto-reset during camera capture, printing, review, stickers, preview, idle, or activation
+    const protectedStates: AppState[] = ['idle', 'activation', 'camera-capture', 'printing', 'review', 'stickers', 'preview'];
+    if (!protectedStates.includes(currentActiveState)) {
       inactivityTimeoutId = window.setTimeout(() => {
-        console.warn('Kiosk inactive. Auto-returning to attracts loop...');
+        console.warn('Kiosk inactive on selection view. Auto-returning to attracts loop...');
         navigateTo('idle');
       }, INACTIVITY_TIMEOUT);
     }
@@ -789,8 +796,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <td style="padding: 10px; text-align: right; font-family: monospace;">${currency}${pkg.price.toFixed(2)}</td>
           <td style="padding: 10px; text-align: center;">${statusBadge}</td>
           <td style="padding: 10px; text-align: center; display: flex; gap: 5px; justify-content: center;">
-            <button type="button" class="btn-admin" data-action="edit" data-id="${pkg.id}" style="padding: 2px 6px; font-size: 10px; border-radius: 4px;">Edit</button>
-            <button type="button" class="btn-admin" data-action="delete" data-id="${pkg.id}" style="padding: 2px 6px; font-size: 10px; border-radius: 4px; background: #e03131; color: white;">Delete</button>
+            <button type="button" class="btn-admin btn-admin-action" data-action="edit" data-id="${pkg.id}" style="padding: 8px 14px; font-size: 12px; min-height: 38px; min-width: 60px; border-radius: 6px;">Edit</button>
+            <button type="button" class="btn-admin btn-admin-action" data-action="delete" data-id="${pkg.id}" style="padding: 8px 14px; font-size: 12px; min-height: 38px; min-width: 60px; border-radius: 6px; background: #e03131; color: white;">Delete</button>
           </td>
         </tr>
       `;

@@ -41,22 +41,27 @@ export class CameraService {
 
   /**
    * Captures a frame from the video element and returns a base64 PNG data URL.
+   * Guarantees exact 1:1 square center cropping to prevent stretching on 16:9 or 4:3 webcam sensors.
    */
   capture(videoElement: HTMLVideoElement): string {
     const canvas = document.createElement('canvas');
-    // Match the active video resolution
-    const width = videoElement.videoWidth || 640;
-    const height = videoElement.videoHeight || 640;
-    canvas.width = width;
-    canvas.height = height;
+    const targetSize = 640;
+    canvas.width = targetSize;
+    canvas.height = targetSize;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) {
       throw new Error('Failed to get canvas context');
     }
 
+    const vw = videoElement.videoWidth || targetSize;
+    const vh = videoElement.videoHeight || targetSize;
+    const minDim = Math.min(vw, vh);
+    const sx = (vw - minDim) / 2;
+    const sy = (vh - minDim) / 2;
+
     // Flip horizontally for natural mirror preview in kiosk
-    ctx.translate(width, 0);
+    ctx.translate(targetSize, 0);
     ctx.scale(-1, 1);
 
     const config = loadKioskConfig();
@@ -64,7 +69,7 @@ export class CameraService {
       ctx.filter = 'grayscale(100%)';
     }
 
-    ctx.drawImage(videoElement, 0, 0, width, height);
+    ctx.drawImage(videoElement, sx, sy, minDim, minDim, 0, 0, targetSize, targetSize);
 
     return canvas.toDataURL('image/png');
   }

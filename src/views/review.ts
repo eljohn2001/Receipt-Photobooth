@@ -34,8 +34,8 @@ export class ReviewView extends BaseView {
       <div class="review-screen-content">
         <div class="template-screen-header">
           <button class="btn-back" id="btn-review-back">← CANCEL</button>
-          <h2 class="template-choose-title" style="justify-content: center;">REVIEW <span class="script-title">Photos</span></h2>
-          <p class="view-subtitle" style="margin-top: 6px;">Tap any photo you want to retake</p>
+          <h2 class="template-choose-title">Review Photos</h2>
+          <p class="view-subtitle">Tap any photo you want to retake</p>
         </div>
 
         <div class="review-grid-container">
