@@ -25,10 +25,11 @@ export class TemplateView extends BaseView {
   mount(): void {
     this.element.innerHTML = `
       <div class="template-screen-content">
-        <div class="template-screen-header">
-          <button class="btn-back" id="btn-tmpl-back">← BACK</button>
-          <h2 class="template-choose-title">Choose Layout</h2>
-          <p class="view-subtitle">Select a photo strip layout template</p>
+        <div class="kiosk-app-bar">
+          <div class="kiosk-app-bar-titles">
+            <h2 class="kiosk-screen-title">Choose Layout</h2>
+            <p class="kiosk-screen-subtitle">Select a photo strip layout template</p>
+          </div>
         </div>
 
         <!-- Static 2x2 Grid Layout for the 4 Mockup Cards -->
@@ -36,6 +37,10 @@ export class TemplateView extends BaseView {
           <div class="templates-static-grid">
             <!-- Populated dynamically by renderTemplatesGrid in onEnter -->
           </div>
+        </div>
+
+        <div class="selection-footer">
+          <button class="btn btn-secondary btn-wide" id="btn-tmpl-back" type="button">← GO BACK</button>
         </div>
       </div>
     `;

@@ -25,7 +25,7 @@ export class FinishedView extends BaseView {
       <div class="finished-screen-content">
         <div class="success-banner">
           <div class="success-icon">✓</div>
-          <h2 class="finished-title">Thank You</h2>
+          <h2 class="finished-title">Your Memory Is Ready</h2>
           <p class="finished-subtitle">Tear your receipt print carefully from the slot</p>
         </div>
 

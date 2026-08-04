@@ -19,10 +19,15 @@ export class PackageSelectionView extends BaseView {
   mount(): void {
     this.element.innerHTML = `
       <div class="template-screen-content">
-        <div class="template-screen-header">
-          <button class="btn-back" id="btn-pkg-back">← BACK</button>
-          <h2 class="template-choose-title">Choose Package</h2>
-          <p class="view-subtitle">Select the number of prints for your receipt photo strip</p>
+        <div class="kiosk-app-bar">
+          <button class="kiosk-back-btn" id="btn-pkg-back" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>BACK</span>
+          </button>
+          <div class="kiosk-app-bar-titles">
+            <h2 class="kiosk-screen-title">Choose Package</h2>
+            <p class="kiosk-screen-subtitle">Select the number of prints for your receipt photo strip</p>
+          </div>
         </div>
 
         <div class="packages-grid-wrapper">

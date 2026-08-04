@@ -92,10 +92,15 @@ export class StickersView extends BaseView {
 
     this.element.innerHTML = `
       <div class="stickers-screen-content">
-        <div class="template-screen-header">
-          <button class="btn-back" id="btn-stickers-back">← BACK</button>
-          <h2 class="template-choose-title">Decorate Photos</h2>
-          <p class="view-subtitle">Tap stickers to add, drag to move, and pinch handles to scale & rotate</p>
+        <div class="kiosk-app-bar">
+          <button class="kiosk-back-btn" id="btn-stickers-back" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>BACK</span>
+          </button>
+          <div class="kiosk-app-bar-titles">
+            <h2 class="kiosk-screen-title">Decorate Photos</h2>
+            <p class="kiosk-screen-subtitle">Tap stickers to add, drag to move, and pinch handles to scale & rotate</p>
+          </div>
         </div>
 
         <div class="stickers-vertical-layout">

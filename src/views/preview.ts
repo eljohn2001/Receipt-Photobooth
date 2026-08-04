@@ -267,10 +267,15 @@ export class PreviewView extends BaseView {
   mount(): void {
     this.element.innerHTML = `
       <div class="preview-screen-content">
-        <div class="template-screen-header">
-          <button class="btn-back" id="btn-preview-retake-header">← RETAKE</button>
-          <h2 class="template-choose-title">Preview Receipt</h2>
-          <p class="view-subtitle">Review your thermal receipt memory</p>
+        <div class="kiosk-app-bar">
+          <button class="kiosk-back-btn" id="btn-preview-retake-header" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>RETAKE</span>
+          </button>
+          <div class="kiosk-app-bar-titles">
+            <h2 class="kiosk-screen-title">Preview Receipt</h2>
+            <p class="kiosk-screen-subtitle">Review your thermal receipt memory</p>
+          </div>
         </div>
 
         <div class="preview-layout-container">

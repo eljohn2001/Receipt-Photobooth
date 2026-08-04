@@ -217,58 +217,95 @@ body {
   box-sizing: border-box;
 }
 
-.header-titles {
-  text-align: center;
-  flex-grow: 1;
+/* Standardized Global Kiosk App Bar Header System */
+.kiosk-app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  min-height: 72px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
-.view-title,
-.template-choose-title,
-.screen-title,
-.printing-headline,
-.finished-title {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+.kiosk-app-bar-titles {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.kiosk-screen-title {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif !important;
   font-size: 28px !important;
   font-weight: 700 !important;
   letter-spacing: -0.4px !important;
-  text-transform: none !important;
   color: #1c1c1e !important;
   margin: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
   text-align: center !important;
 }
 
-.view-title .script-title,
-.script-title {
-  font-family: inherit !important;
-  font-size: inherit !important;
-  font-weight: inherit !important;
-  letter-spacing: inherit !important;
-  text-transform: inherit !important;
-  color: inherit !important;
-  background: none !important;
-  -webkit-background-clip: initial !important;
-  -webkit-text-fill-color: initial !important;
-  margin-left: 0.25em !important;
-  display: inline !important;
-  vertical-align: baseline !important;
-}
-
-.view-subtitle,
-.template-choose-subtitle,
-.screen-subtitle,
-.printing-subline,
-.finished-subtitle {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+.kiosk-screen-subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   color: #8e8e93 !important;
-  margin-top: 6px !important;
+  margin-top: 4px !important;
   margin-bottom: 0 !important;
-  letter-spacing: -0.1px !important;
   text-align: center !important;
+}
+
+@media (min-width: 768px) {
+  .kiosk-screen-title {
+    font-size: 38px !important;
+    letter-spacing: -0.5px !important;
+  }
+  
+  .kiosk-screen-subtitle {
+    font-size: 16px !important;
+    margin-top: 6px !important;
+  }
+}
+
+/* Prominent High-Visibility Kiosk Back Button */
+.kiosk-back-btn {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  color: #1c1c1e;
+  padding: 10px 20px;
+  min-height: 48px;
+  min-width: 96px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background-color 0.2s ease;
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 20;
+}
+
+.kiosk-back-btn:hover {
+  background: #f8f9fa;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.kiosk-back-btn:active {
+  transform: translateY(-50%) scale(0.94) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
 }
 
 .btn-back {
@@ -1877,12 +1914,14 @@ body {
 }
 
 .virtual-printer-box {
-  width: 320px;
+  width: 340px;
   height: 380px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  align-items: center;
   position: relative;
+  margin: auto 0;
 }
 
 .printer-body {
@@ -1908,8 +1947,8 @@ body {
   position: absolute;
   left: 45px;
   right: 45px;
-  bottom: 78px;
-  height: 250px;
+  top: 45px;
+  height: 280px;
   overflow: hidden;
   z-index: 10;
   pointer-events: none;
@@ -1919,34 +1958,14 @@ body {
   width: 100%;
   padding: 20px 15px;
   border: 1px solid #000;
-
+  background: #ffffff;
   animation: receipt-eject 3s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
-  transform: translateY(100%);
+  transform: translateY(-100%);
 }
 
 @keyframes receipt-eject {
   0% {
-    transform: translateY(100%);
-  }
-
-  15% {
-    transform: translateY(80%);
-  }
-
-  30% {
-    transform: translateY(60%);
-  }
-
-  50% {
-    transform: translateY(40%);
-  }
-
-  70% {
-    transform: translateY(15%);
-  }
-
-  90% {
-    transform: translateY(0%);
+    transform: translateY(-100%);
   }
 
   100% {

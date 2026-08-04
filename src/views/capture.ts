@@ -31,10 +31,15 @@ export class CaptureView extends BaseView {
   mount(): void {
     this.element.innerHTML = `
       <div class="capture-screen-content">
-        <div class="template-screen-header">
-          <button class="btn-back" id="btn-capture-back">← CANCEL</button>
-          <h2 class="template-choose-title" id="capture-title">Get Ready</h2>
-          <p class="view-subtitle" id="capture-subtitle">Strike a pose!</p>
+        <div class="kiosk-app-bar">
+          <button class="kiosk-back-btn" id="btn-capture-back" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>CANCEL</span>
+          </button>
+          <div class="kiosk-app-bar-titles">
+            <h2 class="kiosk-screen-title" id="capture-title">Get Ready</h2>
+            <p class="kiosk-screen-subtitle" id="capture-subtitle">Strike a pose!</p>
+          </div>
         </div>
 
         <div class="camera-viewport-container">

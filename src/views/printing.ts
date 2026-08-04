@@ -33,10 +33,11 @@ export class PrintingView extends BaseView {
   mount(): void {
     this.element.innerHTML = `
       <div class="printing-screen-content">
-        <div class="printing-status-container">
-          <div class="spinner spinner-accent" id="printing-spinner"></div>
-          <h2 class="printing-headline">Printing Receipt</h2>
-          <p class="printing-subline">Virtually feeding thermal paper</p>
+        <div class="kiosk-app-bar">
+          <div class="kiosk-app-bar-titles">
+            <h2 class="kiosk-screen-title printing-headline">Printing Receipt</h2>
+            <p class="kiosk-screen-subtitle printing-subline">Virtually feeding thermal paper</p>
+          </div>
         </div>
 
         <!-- Virtual Printer Hardware Mock -->
@@ -46,7 +47,7 @@ export class PrintingView extends BaseView {
             
             <!-- Paper rolls up out of the slot -->
             <div class="printed-paper-delivery">
-              <div class="thermal-paper" id="delivery-paper-content" style="transform: translateY(100%);">
+              <div class="thermal-paper" id="delivery-paper-content" style="transform: translateY(-100%);">
                 <!-- Injected dynamically on enter -->
               </div>
             </div>
@@ -82,36 +83,29 @@ export class PrintingView extends BaseView {
     const sublineEl = this.element.querySelector('.printing-subline');
     const hintBoxEl = this.element.querySelector('#printing-hint-box');
     
-    // 1. Reset visual elements and animation classes
-    if (deliveryContent) {
-      deliveryContent.classList.remove('printed-paper-animation');
-      deliveryContent.style.transform = 'translateY(100%)';
+    // 1. Immediately inject receipt HTML content into the delivery paper and trigger downward feeding animation right away
+    if (deliveryContent && previewContent) {
+      deliveryContent.innerHTML = previewContent.innerHTML;
+      deliveryContent.classList.add('printed-paper-animation');
     }
     if (proceedContainer) proceedContainer.classList.add('hidden');
     if (printingSpinner) printingSpinner.classList.remove('hidden');
-    if (headlineEl) headlineEl.textContent = 'PREPARING YOUR PRINT...';
-    if (sublineEl) sublineEl.textContent = 'Please check the print window';
+    if (headlineEl) headlineEl.textContent = 'PRINTING RECEIPT...';
+    if (sublineEl) sublineEl.textContent = 'Virtually feeding thermal paper';
     if (hintBoxEl) {
-      hintBoxEl.innerHTML = '<p>Please complete the system print dialog.</p>';
+      hintBoxEl.innerHTML = '<p>Please collect your print when paper stops feeding.</p>';
     }
+
+    // Play physical motor hum sound right away as paper starts feeding
+    audioManager.playDispenser();
 
     // Wait for the background QR code upload to complete if active, to ensure the correct QR code is printed
     if (this.activeSession.uploadPromise) {
-      if (headlineEl) headlineEl.textContent = 'GENERATING QR CODE...';
-      if (sublineEl) sublineEl.textContent = 'Connecting to cloud storage...';
       try {
         await this.activeSession.uploadPromise;
       } catch (err) {
         console.error('Failed to resolve uploadPromise during printing:', err);
       }
-      // Restore headline/subline
-      if (headlineEl) headlineEl.textContent = 'PREPARING YOUR PRINT...';
-      if (sublineEl) sublineEl.textContent = 'Please check the print window';
-    }
-
-    if (deliveryContent && previewContent) {
-      // Inject receipt HTML content into the delivery paper
-      deliveryContent.innerHTML = previewContent.innerHTML;
     }
 
     const isNative = Capacitor.isNativePlatform();
