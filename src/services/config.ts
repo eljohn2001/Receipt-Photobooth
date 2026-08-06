@@ -141,3 +141,22 @@ export function saveKioskConfig(config: KioskConfig): void {
 export function resetKioskConfig(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
+
+export async function factoryResetKioskApp(): Promise<void> {
+  try {
+    localStorage.clear();
+  } catch (e) {
+    console.warn('[FactoryReset] Error clearing localStorage:', e);
+  }
+
+  try {
+    if (typeof indexedDB !== 'undefined') {
+      indexedDB.deleteDatabase('receipt_booth_db');
+      indexedDB.deleteDatabase('receipt_booth_sessions');
+    }
+  } catch (e) {
+    console.warn('[FactoryReset] Error deleting IndexedDB:', e);
+  }
+
+  window.location.reload();
+}

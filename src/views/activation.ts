@@ -1,6 +1,6 @@
 import { BaseView } from './base';
 import { activateLicense, getDeviceUUID, getCachedLicense } from '../services/license';
-import { loadKioskConfig, saveKioskConfig } from '../services/config';
+import { loadKioskConfig, saveKioskConfig, factoryResetKioskApp } from '../services/config';
 import { updateBoothTelemetry } from '../services/sync';
 import { audioManager } from '../services/audio';
 
@@ -41,6 +41,12 @@ export class ActivationView extends BaseView {
               ⚡ ACTIVATE DEVICE
             </button>
           </form>
+
+          <div style="margin-top: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+            <button type="button" class="btn btn-secondary btn-full" id="btn-factory-reset-activation" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 600; font-size: 13px;">
+              🧹 Factory Reset Kiosk (Clear Previous Data & Revenue)
+            </button>
+          </div>
         </div>
 
         <div class="device-info-footer">
@@ -103,6 +109,13 @@ export class ActivationView extends BaseView {
     const submitBtn = this.element.querySelector('#btn-activate-submit') as HTMLButtonElement;
     const statusMsg = this.element.querySelector('.activation-status-message') as HTMLElement;
     const card = this.element.querySelector('#activation-card') as HTMLElement;
+
+    const resetBtn = this.element.querySelector('#btn-factory-reset-activation');
+    resetBtn?.addEventListener('click', async () => {
+      if (confirm('🚨 WARNING: This will permanently wipe all local session earnings, stored audit logs, paper roll counters, and custom branding for a 100% fresh start.\n\nAre you sure you want to Factory Reset this kiosk?')) {
+        await factoryResetKioskApp();
+      }
+    });
 
     // Help format the key as the user types (capitalize and format hyphens if useful, or just uppercase)
     input?.addEventListener('input', () => {
