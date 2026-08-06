@@ -26,10 +26,6 @@ export class TemplateView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="kiosk-app-bar">
-          <button class="kiosk-back-btn" id="btn-tmpl-back" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            <span>BACK</span>
-          </button>
           <div class="kiosk-app-bar-titles">
             <h2 class="kiosk-screen-title">Choose Layout</h2>
             <p class="kiosk-screen-subtitle">Select a photo strip layout template to start</p>
@@ -41,6 +37,14 @@ export class TemplateView extends BaseView {
           <div class="templates-static-grid">
             <!-- Populated dynamically by renderTemplatesGrid in onEnter -->
           </div>
+        </div>
+
+        <!-- Floating Bottom Back Navigation Pill -->
+        <div class="kiosk-floating-bottom-bar">
+          <button class="kiosk-floating-bottom-back" id="btn-tmpl-back" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>Back to Payment Methods</span>
+          </button>
         </div>
       </div>
     `;

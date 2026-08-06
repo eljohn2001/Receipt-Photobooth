@@ -18,7 +18,7 @@ import { PaymentMethodView } from './views/payment-method';
 import { CashInstructionView } from './views/cash-instruction';
 import { QrScannerView } from './views/qr-scanner';
 import { AdminPanelView } from './views/admin-panel';
-import { loadKioskConfig, saveKioskConfig, resetKioskConfig, type KioskConfig } from './services/config';
+import { loadKioskConfig, saveKioskConfig, resetKioskConfig, factoryResetKioskApp, type KioskConfig } from './services/config';
 import { getBackgroundMedia, saveBackgroundMedia, deleteBackgroundMedia, listOfflineShares, deleteOfflineShare, listLocalSessions } from './services/db';
 import { checkLicenseOnStartup, deactivateLicense, getDeviceUUID } from './services/license';
 import { uploadReceiptPhotos } from './services/upload';
@@ -1961,6 +1961,41 @@ if (isAdminRoute) {
 
         closeModal();
       }
+    });
+
+    // Factory reset kiosk & wipe all telemetry data
+    const triggerFactoryReset = async () => {
+      if (confirm('🚨 CRITICAL WARNING: This will permanently wipe all session earnings, local telemetry logs, paper roll counters, and custom branding to restore factory state.\n\nAre you sure you want to Factory Reset this kiosk?')) {
+        await factoryResetKioskApp();
+      }
+    };
+    document.getElementById('admin-factory-reset-btn')?.addEventListener('click', triggerFactoryReset);
+    document.getElementById('btn-admin-factory-reset')?.addEventListener('click', triggerFactoryReset);
+
+    // Online OTA update & Cache Purge Refresh
+    document.getElementById('admin-ota-update-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('admin-ota-update-btn') as HTMLButtonElement;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '🔄 CHECKING FOR ONLINE UPDATES...';
+      }
+
+      try {
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+      } catch (err) {
+        console.warn('[OTA Update] Cache purge warning:', err);
+      }
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     });
 
     // Deactivate license key

@@ -1,5 +1,6 @@
 import { supabase } from '../services/supabase';
 import { portalDb } from '../portal/services/portal-db';
+import { factoryResetKioskApp } from '../services/config';
 
 export class AdminPanelView {
   private container: HTMLElement;
@@ -1015,8 +1016,27 @@ export class AdminPanelView {
           </div>
 
         </div>
+
+        <!-- System Factory Reset & Data Wipe Panel -->
+        <div class="glassmorphic-card" style="padding: 24px; margin-top: 24px; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.03);">
+          <h3 style="font-size: 16px; font-weight: 700; color: #ef4444; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <span>🧹</span> System Factory Reset & Data Wipe
+          </h3>
+          <p style="font-size: 13px; color: #666; margin-bottom: 16px; line-height: 1.4;">
+            Wipe all local session histories, revenue statistics, paper roll counters, local database caches, and custom branding for a 100% fresh kiosk start.
+          </p>
+          <button type="button" id="btn-admin-tab-factory-reset" class="btn" style="padding: 14px 24px; font-weight: 700; font-size: 13.5px; background: #ef4444; color: #ffffff; border: none; border-radius: 99px; cursor: pointer; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);">
+            🧹 FACTORY RESET KIOSK & WIPE ALL DATA
+          </button>
+        </div>
       </div>
     `;
+
+    container.querySelector('#btn-admin-tab-factory-reset')?.addEventListener('click', async () => {
+      if (confirm('🚨 CRITICAL WARNING: This will permanently wipe all local session earnings, stored audit logs, paper roll counters, local database caches, and custom branding for a 100% fresh kiosk start.\n\nAre you sure you want to Factory Reset this kiosk?')) {
+        await factoryResetKioskApp();
+      }
+    });
   }
 
   private async loadBoothsTab(container: Element): Promise<void> {

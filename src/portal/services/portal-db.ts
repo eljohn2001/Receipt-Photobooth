@@ -468,12 +468,58 @@ export class PortalDatabaseService {
 
     const orgBooths = this.customBoothsByOrg[this.activeOrg.id] || [];
     const allCustom = Object.values(this.customBoothsByOrg).flat();
-    const fallbackList = orgBooths.length > 0 ? orgBooths : allCustom.filter(b => b.assignedCafe === this.activeOrg.name || b.branch === this.activeBranch);
+    const fallbackList = orgBooths.length > 0 ? orgBooths : allCustom;
 
     // Merge and de-duplicate by ID
     const map = new Map<string, Booth>();
     [...supabaseBooths, ...fallbackList].forEach(b => map.set(b.id, b));
-    const combinedFleet = Array.from(map.values());
+    let combinedFleet = Array.from(map.values());
+
+    // Guarantee the active organization always has at least 1 booth branch visible
+    if (combinedFleet.length === 0) {
+      const defaultBooth: Booth = {
+        id: `booth-${this.activeOrg.slug}-1`,
+        name: `${this.activeOrg.name} Booth 1`,
+        assignedCafe: this.activeOrg.name,
+        location: `${this.activeOrg.branches[1] || 'Main Branch'}`,
+        branch: `${this.activeOrg.branches[1] || 'Main Branch'}`,
+        status: 'online',
+        lastSyncAt: new Date().toISOString(),
+        appVersion: 'v1.5.0',
+        activationStatus: 'activated',
+        activationKey: `ACT-${this.activeOrg.slug.toUpperCase()}-1001`,
+        businessModel: 'profit_share',
+        isFreeEventMode: false,
+        pricingPerSession: 99,
+        profitSharePercent: 60,
+        todayRevenue: 0,
+        todaySessions: 0,
+        todayPrints: 0,
+        paperMaxPrints: 150,
+        paperPrintsRemaining: 150,
+        paperRefilledAt: new Date().toISOString(),
+        currentTheme: 'Classic Thermal',
+        activePackageCount: 4,
+        telemetry: {
+          cameraStatus: 'online',
+          cameraFps: 30,
+          printerStatus: 'ready',
+          printerModel: 'ESC/POS Thermal 80mm',
+          paperRemainingPercent: 100,
+          paperPrintsRemaining: 150,
+          storageUsedGb: 0.4,
+          storageTotalGb: 64,
+          memoryUsedMb: 420,
+          memoryTotalMb: 4096,
+          cpuTempC: 38.5,
+          internetLatencyMs: 18,
+          internetType: 'wifi'
+        }
+      };
+      this.customBoothsByOrg[this.activeOrg.id] = [defaultBooth];
+      this.saveBooths();
+      combinedFleet = [defaultBooth];
+    }
 
     return this.filterByBranch(combinedFleet);
   }

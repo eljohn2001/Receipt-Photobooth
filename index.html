@@ -407,7 +407,8 @@
                 <div class="package-form-editor"
                   style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); padding: 15px; border-radius: 8px;">
                   <h6 id="package-form-title"
-                    style="margin: 0 0 10px; font-size: 12px; font-weight: 700; color: var(--text-primary);">EDIT PACKAGE CONFIGURATION</h6>
+                    style="margin: 0 0 10px; font-size: 12px; font-weight: 700; color: var(--text-primary);">EDIT
+                    PACKAGE CONFIGURATION</h6>
                   <input type="hidden" id="editor-package-id" />
 
                   <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
@@ -439,7 +440,8 @@
                       <input type="text" id="editor-package-qr-data" placeholder="e.g. PACKAGE_A|PRINTS=1"
                         style="padding: 6px; font-size: 12px; font-family: monospace; font-weight: bold;" />
                     </div>
-                    <div class="form-group" style="margin: 0; display: flex; flex-direction: column; justify-content: flex-end;">
+                    <div class="form-group"
+                      style="margin: 0; display: flex; flex-direction: column; justify-content: flex-end;">
                       <label class="toggle-switch" style="align-self: flex-start; margin-bottom: 4px;">
                         <input type="checkbox" id="editor-package-enabled" checked />
                         <span class="toggle-slider"></span>
@@ -548,6 +550,21 @@
                   <button type="button" id="btn-admin-test-print" class="btn-admin btn-admin-primary"
                     style="padding: 10px 18px; font-weight: 800; font-size: 12px; width: 100%;">
                     🖨️ SEND DIAGNOSTIC TEST PRINT
+                  </button>
+                </div>
+
+                <h5
+                  style="font-size: 13px; font-weight: 700; margin: 20px 0 10px; color: #ef4444; text-transform: uppercase;">
+                  System Factory Reset & Data Wipe</h5>
+                <div
+                  style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.3); padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
+                  <p style="font-size: 11.5px; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+                    Permanently wipe all local session earnings, stored audit logs, paper roll counters, local database
+                    caches, and custom branding for a 100% fresh kiosk start.
+                  </p>
+                  <button type="button" id="btn-admin-factory-reset" class="btn-admin"
+                    style="padding: 12px 18px; font-weight: 800; font-size: 12px; width: 100%; background: #ef4444; color: #ffffff; border: none; border-radius: 6px; cursor: pointer;">
+                    🧹 FACTORY RESET KIOSK & WIPE ALL DATA
                   </button>
                 </div>
               </div>
@@ -759,7 +776,21 @@
                     style="width: auto;">Reset stock</button>
                 </div>
 
-                <div class="form-group" style="border: 1px dashed rgba(230, 149, 0, 0.3); padding: 15px;">
+                <div class="form-group" style="border: 1px solid rgba(0, 122, 255, 0.3); background: rgba(0, 122, 255, 0.05); padding: 16px; border-radius: 12px; margin-bottom: 15px;">
+                  <label style="color: #007aff; font-size: 13px; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <span>🔄 Check Online OTA Updates & Force Refresh</span>
+                  </label>
+                  <p style="font-size: 12px; color: #555; margin-bottom: 14px; line-height: 1.4;">
+                    Purge cached web assets, clear Service Workers, and fetch the latest GitHub / Capgo software build online without reinstalling APK.
+                  </p>
+                  <button type="button" id="admin-ota-update-btn" class="btn-admin"
+                    style="width: 100%; background: #007aff; color: #ffffff; border: none; padding: 12px 18px; font-weight: 800; font-size: 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">
+                    🔄 CHECK FOR UPDATES & REFRESH APP
+                  </button>
+                </div>
+
+                <div class="form-group"
+                  style="border: 1px dashed rgba(230, 149, 0, 0.3); padding: 15px; margin-bottom: 15px;">
                   <label style="color: #e69500; font-size: 12px; margin-bottom: 8px; display: block;">Deactivate
                     License</label>
                   <p style="font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.4;">
@@ -768,6 +799,22 @@
                   </p>
                   <button type="button" id="admin-deactivate-btn" class="btn-admin btn-admin-warning"
                     style="width: auto;">Deactivate License</button>
+                </div>
+
+                <div class="form-group"
+                  style="border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05); padding: 16px; border-radius: 12px;">
+                  <label
+                    style="color: #ef4444; font-size: 13px; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <span>🧹 Factory Reset Kiosk & Data Wipe</span>
+                  </label>
+                  <p style="font-size: 12px; color: #555; margin-bottom: 14px; line-height: 1.4;">
+                    Permanently wipe all session histories, earnings statistics, paper roll counters, local database
+                    caches, and custom branding for a 100% fresh kiosk start.
+                  </p>
+                  <button type="button" id="admin-factory-reset-btn" class="btn-admin"
+                    style="width: 100%; background: #ef4444; color: #ffffff; border: none; padding: 12px 18px; font-weight: 800; font-size: 12px; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">
+                    🧹 Factory Reset Kiosk & Wipe All Data
+                  </button>
                 </div>
               </div>
 
@@ -821,40 +868,51 @@
                   </p>
                 </div>
 
-                <h5 style="font-size: 13px; font-weight: 700; margin: 25px 0 12px; color: var(--text-primary); text-transform: uppercase; border-top: 1px solid var(--border-primary); padding-top: 15px;">
+                <h5
+                  style="font-size: 13px; font-weight: 700; margin: 25px 0 12px; color: var(--text-primary); text-transform: uppercase; border-top: 1px solid var(--border-primary); padding-top: 15px;">
                   📱 Print Packages & Package-Specific QR Codes
                 </h5>
                 <p style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.4;">
-                  Customize pricing, print counts, inclusions, and upload dedicated QR Code graphics for Package A, B, C, and D.
+                  Customize pricing, print counts, inclusions, and upload dedicated QR Code graphics for Package A, B,
+                  C, and D.
                 </p>
 
                 <div id="kiosk-packages-setup-list" style="display: flex; flex-direction: column; gap: 16px;">
                   <!-- Package A Card -->
-                  <div class="package-setup-card" style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                      <strong style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE A</strong>
-                      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                  <div class="package-setup-card"
+                    style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
+                    <div
+                      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <strong
+                        style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE
+                        A</strong>
+                      <label
+                        style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
                         <input type="checkbox" id="input-pkg-enabled-pkg-a" checked /> Enable Package
                       </label>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-name-pkg-a" style="font-size: 11px;">Package Name</label>
-                        <input type="text" id="input-pkg-name-pkg-a" value="Package A" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="text" id="input-pkg-name-pkg-a" value="Package A"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-price-pkg-a" style="font-size: 11px;">Price (₱)</label>
-                        <input type="number" id="input-pkg-price-pkg-a" value="50" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="number" id="input-pkg-price-pkg-a" value="50"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-prints-pkg-a" style="font-size: 11px;">Prints Count</label>
-                        <input type="number" id="input-pkg-prints-pkg-a" value="1" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="number" id="input-pkg-prints-pkg-a" value="1"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-inclusions-pkg-a" style="font-size: 11px;">Inclusions</label>
-                        <input type="text" id="input-pkg-inclusions-pkg-a" value="1 Thermal Print + Digital Softcopy" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="text" id="input-pkg-inclusions-pkg-a" value="1 Thermal Print + Digital Softcopy"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                     </div>
                     <div class="form-group" style="margin: 0;">
@@ -870,31 +928,40 @@
                   </div>
 
                   <!-- Package B Card -->
-                  <div class="package-setup-card" style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                      <strong style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE B</strong>
-                      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                  <div class="package-setup-card"
+                    style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
+                    <div
+                      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <strong
+                        style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE
+                        B</strong>
+                      <label
+                        style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
                         <input type="checkbox" id="input-pkg-enabled-pkg-b" checked /> Enable Package
                       </label>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-name-pkg-b" style="font-size: 11px;">Package Name</label>
-                        <input type="text" id="input-pkg-name-pkg-b" value="Package B" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="text" id="input-pkg-name-pkg-b" value="Package B"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-price-pkg-b" style="font-size: 11px;">Price (₱)</label>
-                        <input type="number" id="input-pkg-price-pkg-b" value="99" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="number" id="input-pkg-price-pkg-b" value="99"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-prints-pkg-b" style="font-size: 11px;">Prints Count</label>
-                        <input type="number" id="input-pkg-prints-pkg-b" value="2" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="number" id="input-pkg-prints-pkg-b" value="2"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-inclusions-pkg-b" style="font-size: 11px;">Inclusions</label>
-                        <input type="text" id="input-pkg-inclusions-pkg-b" value="2 Thermal Prints + Digital Softcopy" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="text" id="input-pkg-inclusions-pkg-b" value="2 Thermal Prints + Digital Softcopy"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                     </div>
                     <div class="form-group" style="margin: 0;">
@@ -910,31 +977,40 @@
                   </div>
 
                   <!-- Package C Card -->
-                  <div class="package-setup-card" style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                      <strong style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE C</strong>
-                      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                  <div class="package-setup-card"
+                    style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
+                    <div
+                      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <strong
+                        style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE
+                        C</strong>
+                      <label
+                        style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
                         <input type="checkbox" id="input-pkg-enabled-pkg-c" checked /> Enable Package
                       </label>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-name-pkg-c" style="font-size: 11px;">Package Name</label>
-                        <input type="text" id="input-pkg-name-pkg-c" value="Package C" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="text" id="input-pkg-name-pkg-c" value="Package C"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-price-pkg-c" style="font-size: 11px;">Price (₱)</label>
-                        <input type="number" id="input-pkg-price-pkg-c" value="149" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="number" id="input-pkg-price-pkg-c" value="149"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-prints-pkg-c" style="font-size: 11px;">Prints Count</label>
-                        <input type="number" id="input-pkg-prints-pkg-c" value="3" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="number" id="input-pkg-prints-pkg-c" value="3"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-inclusions-pkg-c" style="font-size: 11px;">Inclusions</label>
-                        <input type="text" id="input-pkg-inclusions-pkg-c" value="3 Thermal Prints + Digital Softcopy" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="text" id="input-pkg-inclusions-pkg-c" value="3 Thermal Prints + Digital Softcopy"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                     </div>
                     <div class="form-group" style="margin: 0;">
@@ -950,31 +1026,40 @@
                   </div>
 
                   <!-- Package D Card -->
-                  <div class="package-setup-card" style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                      <strong style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE D</strong>
-                      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                  <div class="package-setup-card"
+                    style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
+                    <div
+                      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <strong
+                        style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE
+                        D</strong>
+                      <label
+                        style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
                         <input type="checkbox" id="input-pkg-enabled-pkg-d" checked /> Enable Package
                       </label>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-name-pkg-d" style="font-size: 11px;">Package Name</label>
-                        <input type="text" id="input-pkg-name-pkg-d" value="Package D" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="text" id="input-pkg-name-pkg-d" value="Package D"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-price-pkg-d" style="font-size: 11px;">Price (₱)</label>
-                        <input type="number" id="input-pkg-price-pkg-d" value="199" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="number" id="input-pkg-price-pkg-d" value="199"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-prints-pkg-d" style="font-size: 11px;">Prints Count</label>
-                        <input type="number" id="input-pkg-prints-pkg-d" value="4" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="number" id="input-pkg-prints-pkg-d" value="4"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                       <div class="form-group" style="margin: 0;">
                         <label for="input-pkg-inclusions-pkg-d" style="font-size: 11px;">Inclusions</label>
-                        <input type="text" id="input-pkg-inclusions-pkg-d" value="4 Thermal Prints + Digital Softcopy" style="font-size: 12px; padding: 6px 8px;" />
+                        <input type="text" id="input-pkg-inclusions-pkg-d" value="4 Thermal Prints + Digital Softcopy"
+                          style="font-size: 12px; padding: 6px 8px;" />
                       </div>
                     </div>
                     <div class="form-group" style="margin: 0;">
