@@ -110,7 +110,6 @@ export class PrintingView extends BaseView {
     }
 
     const isNative = Capacitor.isNativePlatform();
-    let printSucceeded = false;
 
     if (isNative) {
       const copies = this.activeSession.copiesCount || 1;
@@ -177,7 +176,6 @@ export class PrintingView extends BaseView {
           throw printError || new Error('Direct print transfer failed');
         }
         
-        printSucceeded = true;
         audioManager.stopDispenser();
 
         // Auto-save branded full-color receipt collage to native gallery after print completes
@@ -232,19 +230,17 @@ export class PrintingView extends BaseView {
             await new Promise((resolve) => setTimeout(resolve, 1500));
           }
         }
-        printSucceeded = true;
       } catch (e) {
         console.error('Error during printing loop:', e);
       }
     }
 
     // --- Print loop is finished ---
-    // Record session transaction locally in IndexedDB (Offline-First) if print succeeded or on web
-    if (printSucceeded || !isNative) {
-      try {
-        const config = loadKioskConfig();
-        const deviceId = await getDeviceUUID();
-        const pkg = this.activeSession.selectedPackage;
+    // Always record session transaction locally in IndexedDB (Offline-First)
+    try {
+      const config = loadKioskConfig();
+      const deviceId = await getDeviceUUID();
+      const pkg = this.activeSession.selectedPackage;
       const copies = this.activeSession.copiesCount || (pkg ? pkg.printsCount : 1);
 
       // Decrement paper roll counter
@@ -270,7 +266,7 @@ export class PrintingView extends BaseView {
         packagePrice = pkg.price;
       } else {
         // Fallback for older sessions or custom setups
-        totalAmount = config.sessionPrice !== undefined ? config.sessionPrice : 30.00;
+        totalAmount = config.sessionPrice !== undefined ? config.sessionPrice : 99.00;
         packageName = 'Standard Package';
         packagePrice = totalAmount;
       }
@@ -300,9 +296,8 @@ export class PrintingView extends BaseView {
       }).catch(err => {
         console.error('[Printing] Auto-sync background error:', err);
       });
-      } catch (err) {
-        console.error('[Printing] Failed to log transaction locally:', err);
-      }
+    } catch (err) {
+      console.error('[Printing] Failed to log transaction locally:', err);
     }
 
     // Now trigger the screen eject animation and physical tear guidelines!

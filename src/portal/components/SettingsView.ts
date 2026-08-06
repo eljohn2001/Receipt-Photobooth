@@ -65,6 +65,14 @@ export function renderSettingsView(settings: RemoteSettings): string {
             </div>
 
             <div class="form-group">
+              <label>Commercial Agreement Model</label>
+              <select id="setting-business-model" class="form-control">
+                <option value="profit_share" ${settings.businessModel !== 'flat_rental' ? 'selected' : ''}>🤝 Profit Sharing Split (% Share)</option>
+                <option value="flat_rental" ${settings.businessModel === 'flat_rental' ? 'selected' : ''}>🏢 Fixed Rental Plan (100% Cafe Revenue Keep)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
               <label>Partner Revenue Share (%)</label>
               <input type="number" id="setting-profit-share" class="form-control" value="${100 - settings.profitSharePercent}" disabled />
             </div>

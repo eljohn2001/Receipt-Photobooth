@@ -114,6 +114,7 @@ export interface RemoteSettings {
   enablePaywall: boolean;
   cameraFilterBw: boolean;
   homeMode: 'graphic' | 'layout' | 'curtain';
+  businessModel: 'profit_share' | 'flat_rental';
 }
 
 export interface NotificationItem {

@@ -319,11 +319,20 @@ export class PortalDatabaseService {
     return newBooth;
   }
 
+  private deletedBoothIds: Set<string> = new Set();
+
   public deleteBooth(boothId: string): void {
-    if (this.customBoothsByOrg[this.activeOrg.id]) {
-      this.customBoothsByOrg[this.activeOrg.id] = this.customBoothsByOrg[this.activeOrg.id].filter(b => b.id !== boothId);
-      this.saveBooths();
+    this.deletedBoothIds.add(boothId);
+
+    if (!this.customBoothsByOrg[this.activeOrg.id]) {
+      this.customBoothsByOrg[this.activeOrg.id] = [];
     }
+
+    Object.keys(this.customBoothsByOrg).forEach(orgKey => {
+      this.customBoothsByOrg[orgKey] = this.customBoothsByOrg[orgKey].filter(b => b.id !== boothId);
+    });
+
+    this.saveBooths();
 
     if (navigator.onLine) {
       void supabase.from('booths').delete().eq('id', boothId).then(({ error }) => {
@@ -423,6 +432,7 @@ export class PortalDatabaseService {
 
           let hasUpdated = false;
           listToCheck.forEach(b => {
+            if (this.deletedBoothIds.has(b.id)) return;
             // Match by key, ID substring, key substring, or any active license in Supabase
             const matchedLicense = licensesData.find((l: any) => {
               if (!l.is_active && !l.device_id) return false;
@@ -472,11 +482,15 @@ export class PortalDatabaseService {
 
     // Merge and de-duplicate by ID
     const map = new Map<string, Booth>();
-    [...supabaseBooths, ...fallbackList].forEach(b => map.set(b.id, b));
+    [...supabaseBooths, ...fallbackList].forEach(b => {
+      if (!this.deletedBoothIds.has(b.id)) {
+        map.set(b.id, b);
+      }
+    });
     let combinedFleet = Array.from(map.values());
 
-    // Guarantee the active organization always has at least 1 booth branch visible
-    if (combinedFleet.length === 0) {
+    // Only create initial default booth on very first launch if org has NEVER had any booth array defined
+    if (combinedFleet.length === 0 && this.customBoothsByOrg[this.activeOrg.id] === undefined) {
       const defaultBooth: Booth = {
         id: `booth-${this.activeOrg.slug}-1`,
         name: `${this.activeOrg.name} Booth 1`,
@@ -548,6 +562,10 @@ export class PortalDatabaseService {
   public async getSessions(): Promise<SessionRecord[]> {
     let supabaseSessions: SessionRecord[] = [];
 
+    const booths = await this.getBooths();
+    const primaryBooth = booths[0];
+    const isRental = primaryBooth ? primaryBooth.businessModel === 'flat_rental' : false;
+
     try {
       if (navigator.onLine) {
         const { data, error } = await supabase
@@ -556,25 +574,31 @@ export class PortalDatabaseService {
           .limit(100);
 
         if (!error && data && data.length > 0) {
-          supabaseSessions = data.map((s: any) => ({
-            id: s.id || `sess-live-${Math.random().toString(36).substring(2, 6)}`,
-            boothId: s.booth_id || 'booth-1',
-            boothName: `${this.activeOrg.name} Booth`,
-            location: 'Branch',
-            createdAt: s.created_at || new Date().toISOString(),
-            layoutType: s.layout_type || 'Duet Grid',
-            templateId: s.template_id || 'Classic Thermal',
-            printsCount: s.prints_count || 1,
-            additionalPrints: 0,
-            totalAmount: parseFloat(s.total_amount) || 99,
-            snapShare: parseFloat(s.total_amount) * 0.6 || 59.4,
-            partnerShare: parseFloat(s.total_amount) * 0.4 || 39.6,
-            shareId: s.share_id || 'sh-live',
-            packageName: 'Package B (Double)',
-            packagePrice: 149,
-            paymentMethod: 'gcash',
-            completionStatus: 'completed'
-          }));
+          supabaseSessions = data.map((s: any) => {
+            const total = parseFloat(s.total_amount) || 99;
+            const snap = isRental ? 0 : (total * 0.6);
+            const partner = isRental ? total : (total * 0.4);
+
+            return {
+              id: s.id || `sess-live-${Math.random().toString(36).substring(2, 6)}`,
+              boothId: s.booth_id || 'booth-1',
+              boothName: `${this.activeOrg.name} Booth`,
+              location: 'Branch',
+              createdAt: s.created_at || new Date().toISOString(),
+              layoutType: s.layout_type || 'Duet Grid',
+              templateId: s.template_id || 'Classic Thermal',
+              printsCount: s.prints_count || 1,
+              additionalPrints: 0,
+              totalAmount: total,
+              snapShare: snap,
+              partnerShare: partner,
+              shareId: s.share_id || 'sh-live',
+              packageName: 'Package B (Double)',
+              packagePrice: 149,
+              paymentMethod: 'gcash',
+              completionStatus: 'completed'
+            };
+          });
         }
       }
     } catch (e) {
@@ -704,6 +728,9 @@ export class PortalDatabaseService {
   }
 
   public getRemoteSettings(): RemoteSettings {
+    const booths = this.customBoothsByOrg[this.activeOrg.id] || [];
+    const primaryBooth = booths[0];
+
     return {
       pricingPerSession: 99,
       profitSharePercent: 60,
@@ -723,7 +750,8 @@ export class PortalDatabaseService {
       enableEventMode: false,
       enablePaywall: true,
       cameraFilterBw: false,
-      homeMode: 'graphic'
+      homeMode: 'graphic',
+      businessModel: primaryBooth ? primaryBooth.businessModel : 'profit_share'
     };
   }
 
