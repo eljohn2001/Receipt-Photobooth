@@ -21,10 +21,6 @@ export class PaymentMethodView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content payment-method-screen-wrapper">
         <div class="kiosk-app-bar">
-          <button class="kiosk-back-btn" id="btn-pm-back" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            <span>BACK</span>
-          </button>
           <div class="kiosk-app-bar-titles">
             <h2 class="kiosk-screen-title">Select Payment Method</h2>
             <p class="kiosk-screen-subtitle">Choose how you would like to pay for your photo booth session</p>
@@ -67,6 +63,14 @@ export class PaymentMethodView extends BaseView {
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- Floating Bottom Back Navigation Pill -->
+        <div class="kiosk-floating-bottom-bar">
+          <button class="kiosk-floating-bottom-back" id="btn-pm-back" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>Back to Main Menu</span>
+          </button>
         </div>
       </div>
     `;

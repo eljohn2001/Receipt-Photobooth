@@ -44,10 +44,6 @@ export class OrderSummaryView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="kiosk-app-bar">
-          <button class="kiosk-back-btn" id="btn-summary-back" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            <span>BACK</span>
-          </button>
           <div class="kiosk-app-bar-titles">
             <h2 class="kiosk-screen-title">Order Summary</h2>
             <p class="kiosk-screen-subtitle">Please verify your selection before proceeding</p>
@@ -117,6 +113,14 @@ export class OrderSummaryView extends BaseView {
 
         <div class="order-summary-footer">
           <button class="btn btn-primary btn-wide" id="btn-summary-start" type="button">${buttonLabel}</button>
+        </div>
+
+        <!-- Floating Bottom Back Navigation Pill -->
+        <div class="kiosk-floating-bottom-bar">
+          <button class="kiosk-floating-bottom-back" id="btn-summary-back" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>Back to Packages</span>
+          </button>
         </div>
       </div>
     `;

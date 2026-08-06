@@ -27,10 +27,6 @@ export class ModeSelectionView extends BaseView {
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="kiosk-app-bar">
-          <button class="kiosk-back-btn" id="btn-mode-back" type="button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            <span>BACK</span>
-          </button>
           <div class="kiosk-app-bar-titles">
             <h2 class="kiosk-screen-title">Choose Experience</h2>
             <p class="kiosk-screen-subtitle">Select photo booth mode or comfort card</p>
@@ -53,12 +49,12 @@ export class ModeSelectionView extends BaseView {
           </div>
         </div>
 
-        <!-- Touch-friendly swipe gesture to return home -->
-        <div class="swipe-back-track hint" id="swipe-back-mode">
-          <div class="swipe-back-thumb" id="swipe-back-mode-thumb">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          </div>
-          <span class="swipe-back-text">SWIPE TO CANCEL & RETURN HOME</span>
+        <!-- Floating Bottom Back Navigation Pill -->
+        <div class="kiosk-floating-bottom-bar">
+          <button class="kiosk-floating-bottom-back" id="btn-mode-back" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span>Back to Home</span>
+          </button>
         </div>
       </div>
     `;

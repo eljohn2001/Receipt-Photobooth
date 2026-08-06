@@ -335,6 +335,54 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
 }
 
+/* Floating Bottom Navbar Pill for Kiosk Customer-Facing Steps */
+.kiosk-floating-bottom-bar {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  width: auto;
+}
+
+.kiosk-floating-bottom-back {
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.08);
+  color: #1c1c1e;
+  padding: 14px 28px;
+  min-height: 52px;
+  border-radius: 999px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+  letter-spacing: -0.2px;
+}
+
+.kiosk-floating-bottom-back:hover {
+  background: #ffffff;
+  transform: scale(1.03);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18);
+}
+
+.kiosk-floating-bottom-back:active {
+  transform: scale(0.95) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
 .btn-back {
   position: absolute;
   left: 20px;
