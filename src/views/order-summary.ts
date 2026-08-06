@@ -23,6 +23,24 @@ export class OrderSummaryView extends BaseView {
       ? `<img src="${logoUrl}" class="thank-you-logo" />` 
       : `<div class="thank-you-logo-placeholder">☕️</div>`;
 
+    const isPaywallEnabled = config.enablePaywall === true;
+
+    const paymentBadgeHtml = isPaywallEnabled
+      ? `
+        <div class="order-receipt-payment-info">
+          <div class="payment-badge-pill" style="background: #007aff;">💳 SCAN TO PAY REQUIRED</div>
+          <p style="margin-top: 6px;">Proceed to the next screen to scan the QR code and verify payment.</p>
+        </div>
+      `
+      : `
+        <div class="order-receipt-payment-info">
+          <div class="payment-badge-pill">☕ CASHIER PAYMENT</div>
+          <p style="margin-top: 6px;">Pay together with your café order. No activation code required!</p>
+        </div>
+      `;
+
+    const buttonLabel = isPaywallEnabled ? '💳 PROCEED TO PAYMENT' : '⚡ START CAPTURE';
+
     this.element.innerHTML = `
       <div class="template-screen-content">
         <div class="kiosk-app-bar">
@@ -32,7 +50,7 @@ export class OrderSummaryView extends BaseView {
           </button>
           <div class="kiosk-app-bar-titles">
             <h2 class="kiosk-screen-title">Order Summary</h2>
-            <p class="kiosk-screen-subtitle">Please verify your selection before capturing</p>
+            <p class="kiosk-screen-subtitle">Please verify your selection before proceeding</p>
           </div>
         </div>
 
@@ -89,10 +107,7 @@ export class OrderSummaryView extends BaseView {
 
               <div class="thank-you-divider"></div>
 
-              <div class="order-receipt-payment-info">
-                <div class="payment-badge-pill">☕ CASHIER PAYMENT</div>
-                <p style="margin-top: 6px;">Pay together with your café order. No activation code required!</p>
-              </div>
+              ${paymentBadgeHtml}
 
               <!-- Scalloped bottom -->
               <div class="receipt-bottom-scallops"></div>
@@ -101,7 +116,7 @@ export class OrderSummaryView extends BaseView {
         </div>
 
         <div class="order-summary-footer">
-          <button class="btn btn-primary btn-wide" id="btn-summary-start" type="button">⚡ START CAPTURE</button>
+          <button class="btn btn-primary btn-wide" id="btn-summary-start" type="button">${buttonLabel}</button>
         </div>
       </div>
     `;
@@ -112,6 +127,7 @@ export class OrderSummaryView extends BaseView {
   unmount(): void {}
 
   onEnter(): void {
+    this.mount();
     this.updateSummaryDetails();
   }
 
@@ -123,11 +139,18 @@ export class OrderSummaryView extends BaseView {
       this.navigateTo('package-selection');
     });
 
-    const startBtn = this.element.querySelector('#btn-summary-start');
+    const startBtn = this.element.querySelector('#btn-summary-start') as HTMLButtonElement;
+    const config = loadKioskConfig();
+
     startBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       audioManager.playBeep();
-      this.navigateTo('camera-capture');
+
+      if (config.enablePaywall === true) {
+        this.navigateTo('payment');
+      } else {
+        this.navigateTo('camera-capture');
+      }
     });
   }
 

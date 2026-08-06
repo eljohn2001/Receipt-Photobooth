@@ -1,8 +1,9 @@
 import { supabase } from '../services/supabase';
+import { portalDb } from '../portal/services/portal-db';
 
 export class AdminPanelView {
   private container: HTMLElement;
-  private currentTab: 'dashboard' | 'analytics' | 'booths' | 'licenses' | 'sessions' | 'revenue' | 'maintenance' | 'settings' = 'dashboard';
+  private currentTab: 'dashboard' | 'analytics' | 'booths' | 'licenses' | 'sessions' | 'revenue' | 'maintenance' | 'settings' | 'client-accounts' = 'dashboard';
   private userSession: any = null;
   private isOfflineMode = false;
   private lastCacheTime: string | null = null;
@@ -146,6 +147,9 @@ export class AdminPanelView {
             </button>
             <button class="nav-item ${this.currentTab === 'licenses' ? 'active' : ''}" data-tab="licenses">
               <span class="nav-icon">🔑</span> Cafés & Licenses
+            </button>
+            <button class="nav-item ${this.currentTab === 'client-accounts' ? 'active' : ''}" data-tab="client-accounts">
+              <span class="nav-icon">🏢</span> Partner Client Accounts
             </button>
             <button class="nav-item ${this.currentTab === 'sessions' ? 'active' : ''}" data-tab="sessions">
               <span class="nav-icon">🎞</span> Session History
@@ -556,6 +560,8 @@ export class AdminPanelView {
         await this.loadMaintenanceTab(contentBody);
       } else if (this.currentTab === 'settings') {
         await this.loadSettingsTab(contentBody);
+      } else if (this.currentTab === 'client-accounts') {
+        await this.loadClientAccountsTab(contentBody);
       }
 
       // Apply fade-slide-in
@@ -1463,6 +1469,22 @@ export class AdminPanelView {
           </p>
 
           <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Payment Packages & QR Codes Configuration Section -->
+            <div style="background: #ffffff; border: 1px solid var(--border-primary); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+              <h4 style="margin: 0 0 8px 0; font-size: 15px; font-weight: bold; color: #1c1c1e;">📱 Payment Packages & QR Codes</h4>
+              <p style="margin: 0 0 20px 0; font-size: 13px; color: #666; line-height: 1.4;">
+                Configure independent payment QR Codes, pricing, print counts, and inclusions for Packages A, B, C, and D.
+              </p>
+
+              <div id="packages-config-list" style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Filled dynamically by JavaScript -->
+              </div>
+
+              <button type="button" id="btn-save-packages-config" class="btn-primary-action" style="background: #007aff; color: #fff; border: none; padding: 14px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; width: 100%; margin-top: 20px;">
+                💾 Save Payment Packages & QR Codes
+              </button>
+            </div>
+
             <!-- Profile Info Section -->
             <div style="background: #f8f9fa; border: 1px solid var(--border-primary); padding: 18px; border-radius: 8px;">
               <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">👤 Admin Account Session</h4>
@@ -1501,6 +1523,110 @@ export class AdminPanelView {
         </div>
       </div>
     `;
+
+    // Populate packages configuration list
+    const packagesListContainer = container.querySelector('#packages-config-list');
+    const currentConfigStr = localStorage.getItem('kiosk_config');
+    let currentConfig = currentConfigStr ? JSON.parse(currentConfigStr) : {};
+    
+    let pkgs = currentConfig.packages || [
+      { id: 'pkg-a', name: 'Package A', printsCount: 1, price: 50, isEnabled: true, qrCodeDataUrl: null, inclusions: '1 Thermal Print + Digital Softcopy' },
+      { id: 'pkg-b', name: 'Package B', printsCount: 2, price: 99, isEnabled: true, qrCodeDataUrl: null, inclusions: '2 Thermal Prints + Digital Softcopy' },
+      { id: 'pkg-c', name: 'Package C', printsCount: 3, price: 149, isEnabled: true, qrCodeDataUrl: null, inclusions: '3 Thermal Prints + Digital Softcopy' },
+      { id: 'pkg-d', name: 'Package D', printsCount: 4, price: 199, isEnabled: true, qrCodeDataUrl: null, inclusions: '4 Thermal Prints + Digital Softcopy' }
+    ];
+
+    if (packagesListContainer) {
+      packagesListContainer.innerHTML = pkgs.map((pkg: any, idx: number) => {
+        const qrPreview = pkg.qrCodeDataUrl 
+          ? `<img src="${pkg.qrCodeDataUrl}" style="width: 70px; height: 70px; object-fit: contain; border-radius: 8px; border: 1px solid #ccc; background: #fff;" />` 
+          : `<div style="width: 70px; height: 70px; border: 1.5px dashed #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #aaa;">📱</div>`;
+
+        return `
+          <div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 16px; border-radius: 10px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; font-weight: bold; color: #007aff; text-transform: uppercase;">PACKAGE ${String.fromCharCode(65 + idx)}</span>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">
+                <input type="checkbox" id="pkg-enabled-${pkg.id}" ${pkg.isEnabled !== false ? 'checked' : ''} /> Enable Package
+              </label>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 11px; font-weight: bold;">Package Name</label>
+                <input type="text" id="pkg-name-${pkg.id}" value="${pkg.name || 'Package ' + String.fromCharCode(65 + idx)}" style="padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;" />
+              </div>
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 11px; font-weight: bold;">Price (₱)</label>
+                <input type="number" id="pkg-price-${pkg.id}" value="${pkg.price}" style="padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;" />
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 11px; font-weight: bold;">Prints Count</label>
+                <input type="number" id="pkg-prints-${pkg.id}" value="${pkg.printsCount}" style="padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;" />
+              </div>
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 11px; font-weight: bold;">Package Inclusions</label>
+                <input type="text" id="pkg-inclusions-${pkg.id}" value="${pkg.inclusions || pkg.printsCount + ' Thermal Prints + Digital Softcopy'}" style="padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;" />
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px; margin-top: 4px;">
+              <div id="qr-preview-box-${pkg.id}">${qrPreview}</div>
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 11px; font-weight: bold;">Upload Package QR Code Image</label>
+                <input type="file" id="file-pkg-qr-${pkg.id}" accept="image/*" style="font-size: 12px;" />
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Add FileReader listeners for QR Code image uploads per package
+      pkgs.forEach((pkg: any) => {
+        const fileInput = container.querySelector(`#file-pkg-qr-${pkg.id}`) as HTMLInputElement;
+        const previewBox = container.querySelector(`#qr-preview-box-${pkg.id}`);
+        fileInput?.addEventListener('change', () => {
+          const file = fileInput.files?.[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const dataUrl = e.target?.result as string;
+              pkg.qrCodeDataUrl = dataUrl;
+              if (previewBox) {
+                previewBox.innerHTML = `<img src="${dataUrl}" style="width: 70px; height: 70px; object-fit: contain; border-radius: 8px; border: 1px solid #ccc; background: #fff;" />`;
+              }
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      });
+    }
+
+    // Save Package Config Button Event Handler
+    const savePkgsBtn = container.querySelector('#btn-save-packages-config');
+    savePkgsBtn?.addEventListener('click', () => {
+      pkgs.forEach((pkg: any) => {
+        const nameInput = container.querySelector(`#pkg-name-${pkg.id}`) as HTMLInputElement;
+        const priceInput = container.querySelector(`#pkg-price-${pkg.id}`) as HTMLInputElement;
+        const printsInput = container.querySelector(`#pkg-prints-${pkg.id}`) as HTMLInputElement;
+        const inclusionsInput = container.querySelector(`#pkg-inclusions-${pkg.id}`) as HTMLInputElement;
+        const enabledCheck = container.querySelector(`#pkg-enabled-${pkg.id}`) as HTMLInputElement;
+
+        if (nameInput) pkg.name = nameInput.value.trim();
+        if (priceInput) pkg.price = parseFloat(priceInput.value) || 0;
+        if (printsInput) pkg.printsCount = parseInt(printsInput.value, 10) || 1;
+        if (inclusionsInput) pkg.inclusions = inclusionsInput.value.trim();
+        if (enabledCheck) pkg.isEnabled = enabledCheck.checked;
+      });
+
+      // Update currentConfig and persist
+      currentConfig.packages = pkgs;
+      localStorage.setItem('kiosk_config', JSON.stringify(currentConfig));
+      alert('Success! Payment Packages A, B, C, and D configuration saved successfully.');
+    });
 
     // Hook events
     const bulkBtn = container.querySelector('#btn-settings-bulk-collect');
@@ -2219,83 +2345,311 @@ export class AdminPanelView {
     renderFilteredRevenue();
   }
 
+  private async loadClientAccountsTab(container: HTMLElement): Promise<void> {
+    const orgs = portalDb.getOrganizations();
+
+    const tableRowsHtml = orgs.map(org => `
+      <tr>
+        <td>
+          <div style="font-weight: 700; color: #1c1c1e;">${org.name}</div>
+          <div style="font-size: 11px; color: #8e8e93;">ID: ${org.id}</div>
+        </td>
+        <td>
+          <div style="font-weight: 600; color: #007aff;">${org.contactEmail}</div>
+          <div style="font-size: 11px; color: #8e8e93;">${org.contactPhone}</div>
+        </td>
+        <td>
+          <span class="status-badge online" style="text-transform: uppercase;">${org.plan} PLAN</span>
+        </td>
+        <td>
+          <div style="font-size: 12px; font-weight: 600;">${org.branches.filter(b => b !== 'All Locations').join(', ') || 'Main'}</div>
+        </td>
+        <td style="text-align: right;">
+          <button class="btn btn-sm btn-copy-onboarding" data-org-id="${org.id}" style="padding: 6px 12px; font-size: 11.5px; background: #f2f2f7; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; cursor: pointer; font-weight: 600; margin-right: 6px;">
+            📋 Copy Onboarding Info
+          </button>
+          <button class="btn btn-sm btn-delete-org" data-org-id="${org.id}" style="padding: 6px 10px; font-size: 11.5px; background: rgba(255,59,48,0.1); color: #ff3b30; border: 1px solid rgba(255,59,48,0.2); border-radius: 8px; cursor: pointer; font-weight: 600;">
+            🗑️
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="client-accounts-tab">
+        ${this.getOfflineBannerHtml()}
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800; letter-spacing: -0.3px;">Partner Client Portal Accounts</h3>
+            <p style="font-size: 12.5px; color: #8e8e93; margin-top: 2px;">Provision, license, and issue credentials for café and business client portals.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-show-add-client-modal" style="padding: 10px 18px; font-weight: 700; border-radius: 99px; background: #007aff; color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(0,122,255,0.3);">
+            ➕ Provision New Client Account
+          </button>
+        </div>
+
+        <div class="card-panel" style="background: #ffffff; border: 1px solid rgba(0,0,0,0.06); border-radius: 20px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+          <div class="table-container">
+            <table class="portal-table">
+              <thead>
+                <tr>
+                  <th>Client Organization</th>
+                  <th>Contact Email / Phone</th>
+                  <th>Subscription Plan</th>
+                  <th>Location Branches</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHtml.length > 0 ? tableRowsHtml : '<tr><td colspan="5" style="text-align: center; padding: 24px;">No client accounts provisioned yet. Click button above to add one.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Provision Modal -->
+        <div class="portal-modal-overlay" id="modal-provision-client" style="position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; padding: 20px;">
+          <div style="background: #ffffff; border-radius: 24px; width: 100%; max-width: 520px; padding: 28px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); color: #1c1c1e;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 14px;">
+              <h3 style="font-size: 18px; font-weight: 800;">🏢 Provision Client Portal Account</h3>
+              <button type="button" id="btn-close-provision-modal" style="background: transparent; border: none; font-size: 20px; cursor: pointer;">✕</button>
+            </div>
+
+            <form id="form-provision-client" style="display: flex; flex-direction: column; gap: 16px;">
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 11.5px; font-weight: 700; color: #8e8e93; text-transform: uppercase;">Partner Business Name</label>
+                <input type="text" id="prov-name" placeholder="e.g. COCO Coffee & Roastery" required style="padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); font-size: 13.5px;" />
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="font-size: 11.5px; font-weight: 700; color: #8e8e93; text-transform: uppercase;">Partner Contact Email</label>
+                  <input type="email" id="prov-email" placeholder="admin@cococoffee.ph" required style="padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); font-size: 13.5px;" />
+                </div>
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="font-size: 11.5px; font-weight: 700; color: #8e8e93; text-transform: uppercase;">Contact Phone</label>
+                  <input type="text" id="prov-phone" placeholder="+63 917 888 7777" required style="padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); font-size: 13.5px;" />
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="font-size: 11.5px; font-weight: 700; color: #8e8e93; text-transform: uppercase;">Subscription Plan</label>
+                  <select id="prov-plan" style="padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); font-size: 13.5px;">
+                    <option value="enterprise">Enterprise (Unlimited Booths)</option>
+                    <option value="pro">Pro (Up to 5 Booths)</option>
+                    <option value="basic">Basic (Single Booth)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="font-size: 11.5px; font-weight: 700; color: #8e8e93; text-transform: uppercase;">Initial Branch City/Location</label>
+                  <input type="text" id="prov-branch" placeholder="e.g. BGC Taguig" required style="padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.12); font-size: 13.5px;" />
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+                <button type="button" id="btn-cancel-provision-modal" style="padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); background: #ffffff; cursor: pointer; font-weight: 600;">Cancel</button>
+                <button type="submit" style="padding: 10px 20px; border-radius: 10px; background: #007aff; color: #fff; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(0,122,255,0.3);">🚀 Issue Credentials & Keys</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const modal = container.querySelector('#modal-provision-client') as HTMLElement;
+    const showModalBtn = container.querySelector('#btn-show-add-client-modal');
+    const closeModalBtn = container.querySelector('#btn-close-provision-modal');
+    const cancelModalBtn = container.querySelector('#btn-cancel-provision-modal');
+
+    showModalBtn?.addEventListener('click', () => {
+      if (modal) modal.style.display = 'flex';
+    });
+
+    const hideModal = () => {
+      if (modal) modal.style.display = 'none';
+    };
+
+    closeModalBtn?.addEventListener('click', hideModal);
+    cancelModalBtn?.addEventListener('click', hideModal);
+
+    const form = container.querySelector('#form-provision-client') as HTMLFormElement;
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = (container.querySelector('#prov-name') as HTMLInputElement).value;
+      const email = (container.querySelector('#prov-email') as HTMLInputElement).value;
+      const phone = (container.querySelector('#prov-phone') as HTMLInputElement).value;
+      const plan = (container.querySelector('#prov-plan') as HTMLSelectElement).value as any;
+      const branch = (container.querySelector('#prov-branch') as HTMLInputElement).value;
+
+      const res = portalDb.createOrganization({
+        name,
+        contactEmail: email,
+        contactPhone: phone,
+        plan,
+        branchName: branch
+      });
+
+      hideModal();
+
+      const onboardingText = `
+🎉 SNAPRECEIPT™ CLIENT PORTAL ONBOARDING PACKAGE
+------------------------------------------------
+Partner Organization: ${res.org.name}
+Portal Web Access: http://photoreceipt.stoodioph.com/portal.html
+Login Email: ${res.org.contactEmail}
+Temporary Password: snapreceipt2026
+
+Partner API Key: ${res.apiKey}
+Initial Activation Key: ${res.activationKey}
+------------------------------------------------
+Enter this Activation Key on your physical kiosk screen during setup to bind telemetry.
+      `.trim();
+
+      navigator.clipboard.writeText(onboardingText);
+      alert(`🎉 Account for '${res.org.name}' provisioned successfully!\n\nOnboarding package copied to clipboard:\n\nEmail: ${res.org.contactEmail}\nAPI Key: ${res.apiKey}\nActivation Key: ${res.activationKey}`);
+      void this.loadClientAccountsTab(container);
+    });
+
+    container.querySelectorAll('.btn-copy-onboarding').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const orgId = (e.currentTarget as HTMLElement).getAttribute('data-org-id');
+        const org = orgs.find(o => o.id === orgId);
+        if (org) {
+          const text = `
+🎉 SNAPRECEIPT™ CLIENT PORTAL ONBOARDING PACKAGE
+------------------------------------------------
+Partner Organization: ${org.name}
+Portal Web Access: http://photoreceipt.stoodioph.com/portal.html
+Login Email: ${org.contactEmail}
+Temporary Password: snapreceipt2026
+
+Partner API Key: KEY_${org.slug.toUpperCase()}_LIVE_9821
+------------------------------------------------
+          `.trim();
+          navigator.clipboard.writeText(text);
+          alert(`📋 Onboarding credentials for ${org.name} copied to clipboard!`);
+        }
+      });
+    });
+
+    container.querySelectorAll('.btn-delete-org').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const orgId = (e.currentTarget as HTMLElement).getAttribute('data-org-id');
+        const org = orgs.find(o => o.id === orgId);
+        if (org && confirm(`Are you sure you want to delete client account '${org.name}'?`)) {
+          portalDb.deleteOrganization(org.id);
+          void this.loadClientAccountsTab(container);
+        }
+      });
+    });
+  }
+
   private injectAdminStyles(): void {
     if (document.getElementById('snapceipt-admin-styles')) return;
 
     const styleEl = document.createElement('style');
     styleEl.id = 'snapceipt-admin-styles';
     styleEl.innerHTML = `
-      /* Admin Portal Colors and Styles conforming to Snapceipt Design language */
+      /* Apple HIG Modernized Admin Portal Styling System */
+      :root {
+        --admin-bg: #f2f2f7;
+        --admin-card-bg: #ffffff;
+        --admin-text-primary: #1c1c1e;
+        --admin-text-secondary: #8e8e93;
+        --admin-accent: #007aff;
+        --admin-success: #34c759;
+        --admin-warning: #ff9500;
+        --admin-danger: #ff3b30;
+        --admin-border: rgba(0, 0, 0, 0.06);
+        --admin-glass-bg: rgba(255, 255, 255, 0.85);
+        --admin-glass-blur: saturate(180%) blur(20px);
+      }
+
       .admin-login-wrapper {
-        background-color: #f8f9fa;
+        background-color: var(--admin-bg);
+        background-image: radial-gradient(at 0% 0%, rgba(0, 122, 255, 0.08) 0px, transparent 50%),
+                          radial-gradient(at 100% 100%, rgba(88, 86, 214, 0.08) 0px, transparent 50%);
         min-height: 100vh;
         width: 100vw;
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0;
-        padding: 20px;
+        padding: 24px;
         box-sizing: border-box;
       }
       .admin-login-card {
-        background: #ffffff;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        border-radius: 12px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
-        padding: 40px 30px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: var(--admin-glass-blur);
+        -webkit-backdrop-filter: var(--admin-glass-blur);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.02);
+        padding: 44px 36px;
         width: 100%;
-        max-width: 400px;
+        max-width: 420px;
         display: flex;
         flex-direction: column;
         text-align: center;
       }
       .login-header {
-        margin-bottom: 30px;
+        margin-bottom: 32px;
       }
       .login-title {
-        font-family: 'Space Grotesk', sans-serif;
-        font-weight: 700;
-        font-size: 28px;
-        letter-spacing: 2px;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Space Grotesk", sans-serif;
+        font-weight: 800;
+        font-size: 32px;
+        letter-spacing: -0.5px;
+        color: var(--admin-text-primary);
         margin: 0;
       }
       .login-subtitle {
-        font-size: 13px;
-        color: #868e96;
+        font-size: 14px;
+        color: var(--admin-text-secondary);
         margin: 6px 0 0 0;
+        font-weight: 500;
       }
       .login-error-msg {
-        background-color: #fff5f5;
-        border: 1px solid #ffc9c9;
-        color: #c92a2a;
-        padding: 10px;
-        border-radius: 6px;
-        font-size: 12px;
+        background-color: rgba(255, 59, 48, 0.08);
+        border: 1px solid rgba(255, 59, 48, 0.2);
+        color: var(--admin-danger);
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
         margin-bottom: 20px;
         text-align: left;
       }
       .btn-login {
-        background-color: #000000;
+        background: linear-gradient(135deg, #007aff 0%, #00c7e1 100%);
         color: #ffffff;
         border: none;
-        padding: 14px;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 1px;
+        padding: 16px;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
         cursor: pointer;
         width: 100%;
-        border-radius: 6px;
-        transition: opacity 0.2s;
+        border-radius: 99px;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, opacity 0.2s ease;
+        box-shadow: 0 4px 16px rgba(0, 122, 255, 0.25);
       }
       .btn-login:hover {
-        opacity: 0.85;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 122, 255, 0.35);
+      }
+      .btn-login:active {
+        transform: translateY(0) scale(0.97);
       }
       .login-footer {
-        margin-top: 30px;
-        font-size: 10px;
-        color: #adb5bd;
+        margin-top: 32px;
+        font-size: 11px;
+        color: var(--admin-text-secondary);
         text-transform: uppercase;
         letter-spacing: 1px;
+        font-weight: 600;
       }
 
       /* Portal Layout */
@@ -2303,43 +2657,55 @@ export class AdminPanelView {
         display: flex;
         min-height: 100vh;
         width: 100vw;
-        background-color: #f8f9fa;
+        background-color: var(--admin-bg);
         overflow: hidden;
       }
       .portal-sidebar {
-        width: 260px;
-        background-color: #ffffff;
-        border-right: 1px solid rgba(0, 0, 0, 0.06);
+        width: 270px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: var(--admin-glass-blur);
+        -webkit-backdrop-filter: var(--admin-glass-blur);
+        border-right: 1px solid var(--admin-border);
         display: flex;
         flex-direction: column;
-        padding: 24px 16px;
+        padding: 28px 18px;
         box-sizing: border-box;
         flex-shrink: 0;
       }
       .portal-brand {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
         padding-bottom: 24px;
-        border-bottom: 1px solid rgba(0,0,0,0.06);
-        margin-bottom: 20px;
+        border-bottom: 1px solid var(--admin-border);
+        margin-bottom: 24px;
       }
       .brand-logo {
-        font-size: 24px;
+        font-size: 28px;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: rgba(0, 122, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .brand-name {
-        font-family: 'Space Grotesk', sans-serif;
-        font-weight: 700;
-        font-size: 16px;
-        letter-spacing: 1.5px;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Space Grotesk", sans-serif;
+        font-weight: 800;
+        font-size: 17px;
+        letter-spacing: -0.2px;
+        color: var(--admin-text-primary);
         display: block;
       }
       .brand-tag {
-        font-size: 10px;
-        color: #868e96;
+        font-size: 11px;
+        color: var(--admin-text-secondary);
         text-transform: uppercase;
         display: block;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        font-weight: 600;
+        margin-top: 2px;
       }
       .portal-nav {
         display: flex;
@@ -2353,60 +2719,70 @@ export class AdminPanelView {
         gap: 12px;
         background: none;
         border: none;
-        color: #495057;
+        color: #48484a;
         font-size: 14px;
-        font-weight: 500;
-        padding: 12px 14px;
-        border-radius: 8px;
+        font-weight: 600;
+        padding: 12px 16px;
+        border-radius: 14px;
         cursor: pointer;
         text-align: left;
         width: 100%;
-        font-family: 'Space Grotesk', sans-serif;
-        transition: all 0.2s;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
       }
       .nav-item:hover {
-        background-color: #f1f3f5;
-        color: #000000;
+        background-color: rgba(0, 0, 0, 0.04);
+        color: var(--admin-text-primary);
       }
       .nav-item.active {
-        background-color: #000000;
+        background-color: var(--admin-accent);
         color: #ffffff;
+        box-shadow: 0 4px 14px rgba(0, 122, 255, 0.25);
       }
       .portal-sidebar-footer {
-        padding-top: 15px;
-        border-top: 1px solid rgba(0,0,0,0.06);
+        padding-top: 18px;
+        border-top: 1px solid var(--admin-border);
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
       }
       .user-badge {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 6px;
+        gap: 12px;
+        padding: 8px 12px;
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 12px;
+      }
+      .user-icon {
+        font-size: 16px;
       }
       .user-email {
         font-size: 12px;
-        color: #495057;
+        font-weight: 600;
+        color: var(--admin-text-primary);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
       .btn-logout-sidebar {
-        background: none;
-        border: 1px solid rgba(0,0,0,0.15);
-        border-radius: 6px;
-        padding: 8px;
+        background: #ffffff;
+        border: 1px solid var(--admin-border);
+        border-radius: 99px;
+        padding: 10px;
         cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--admin-text-primary);
         text-align: center;
-        transition: background-color 0.2s;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
       }
       .btn-logout-sidebar:hover {
-        background-color: #fff5f5;
-        border-color: #ffc9c9;
-        color: #c92a2a;
+        background-color: rgba(255, 59, 48, 0.08);
+        border-color: rgba(255, 59, 48, 0.2);
+        color: var(--admin-danger);
       }
 
       /* Main Workspace */
@@ -2416,28 +2792,36 @@ export class AdminPanelView {
         flex-direction: column;
         height: 100vh;
         overflow-y: auto;
-        padding: 30px;
+        padding: 32px 36px;
         box-sizing: border-box;
       }
       .portal-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 28px;
       }
       .portal-header h2 {
-        font-family: 'Playfair Display', serif;
-        font-size: 26px;
-        font-weight: 500;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: var(--admin-text-primary);
         margin: 0;
       }
       .sync-status-indicator {
-        font-size: 12px;
-        color: #868e96;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--admin-text-secondary);
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        margin-right: 15px;
+        gap: 8px;
+        margin-right: 16px;
+        background: #ffffff;
+        padding: 6px 14px;
+        border-radius: 99px;
+        border: 1px solid var(--admin-border);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
       }
       .status-dot {
         width: 8px;
@@ -2445,193 +2829,215 @@ export class AdminPanelView {
         border-radius: 50%;
       }
       .status-dot.online {
-        background-color: #40c057;
+        background-color: var(--admin-success);
+        box-shadow: 0 0 8px var(--admin-success);
       }
       .btn-header-refresh {
         background-color: #ffffff;
-        border: 1px solid rgba(0,0,0,0.1);
-        padding: 8px 16px;
-        border-radius: 6px;
+        border: 1px solid var(--admin-border);
+        padding: 10px 18px;
+        border-radius: 99px;
         cursor: pointer;
-        font-size: 12px;
-        font-weight: 500;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--admin-text-primary);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        transition: transform 0.2s ease, background 0.2s ease;
       }
       .btn-header-refresh:hover {
-        background-color: #f8f9fa;
+        background-color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      }
+      .btn-header-refresh:active {
+        transform: scale(0.96);
       }
 
       /* Metrics Grid */
       .metrics-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 20px;
-        margin-bottom: 30px;
+        margin-bottom: 32px;
       }
       .metric-card {
         background: #ffffff;
-        border: 1px solid rgba(0,0,0,0.06);
-        border-radius: 10px;
-        padding: 20px;
+        border: 1px solid var(--admin-border);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+      }
+      .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.06);
       }
       .metric-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        color: #868e96;
+        color: var(--admin-text-secondary);
         font-size: 12px;
         text-transform: uppercase;
-        font-weight: 600;
-        letter-spacing: 0.5px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
       }
       .metric-value {
-        font-size: 28px;
-        font-weight: 700;
-        color: #000000;
-        margin-top: 10px;
-        font-family: 'Space Grotesk', sans-serif;
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--admin-text-primary);
+        margin-top: 12px;
+        letter-spacing: -0.5px;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
       }
       .metric-subtext {
-        font-size: 11px;
-        color: #868e96;
-        margin-top: 6px;
+        font-size: 12px;
+        color: var(--admin-text-secondary);
+        margin-top: 8px;
+        font-weight: 500;
       }
 
       /* Details Layout */
       .dashboard-details-row {
         display: grid;
         grid-template-columns: 3fr 2fr;
-        gap: 20px;
+        gap: 24px;
+      }
+      @media (max-width: 1024px) {
+        .dashboard-details-row {
+          grid-template-columns: 1fr;
+        }
       }
       .details-card {
         background: #ffffff;
-        border: 1px solid rgba(0,0,0,0.06);
-        border-radius: 10px;
-        padding: 24px;
+        border: 1px solid var(--admin-border);
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
       }
       .details-card h3 {
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: 16px;
-        margin: 0 0 20px 0;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--admin-text-primary);
+        margin: 0 0 24px 0;
+        letter-spacing: -0.2px;
       }
 
       /* Activity Feed */
       .activity-feed {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 14px;
       }
       .feed-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding-bottom: 12px;
-        border-bottom: 1px solid rgba(0,0,0,0.04);
-        font-size: 13px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        font-size: 14px;
       }
       .feed-item:last-child {
         border-bottom: none;
         padding-bottom: 0;
       }
       .item-time {
-        color: #adb5bd;
-        font-family: monospace;
+        color: var(--admin-text-secondary);
+        font-family: 'Courier Prime', Courier, monospace;
         font-size: 12px;
+        font-weight: 700;
       }
       .item-details {
         flex-grow: 1;
-        margin-left: 15px;
-        color: #495057;
+        margin-left: 16px;
+        color: var(--admin-text-primary);
+        font-weight: 500;
       }
       .item-price {
-        font-weight: 600;
-        font-family: monospace;
-        color: #2f9e44;
+        font-weight: 700;
+        font-family: 'Courier Prime', Courier, monospace;
+        color: var(--admin-success);
       }
 
       /* Summaries */
       .summary-list {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 16px;
       }
       .summary-row {
         display: flex;
         justify-content: space-between;
         font-size: 14px;
-        padding-bottom: 12px;
-        border-bottom: 1px dashed rgba(0,0,0,0.06);
+        padding-bottom: 14px;
+        border-bottom: 1px dashed var(--admin-border);
+        color: var(--admin-text-primary);
       }
       .summary-row.total-highlight {
         border-bottom: none;
         padding-bottom: 0;
-        font-size: 18px;
-        font-weight: 700;
-        color: #000000;
-        font-family: 'Space Grotesk', sans-serif;
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--admin-text-primary);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
       }
       .summary-row.total-highlight strong {
-        color: #2f9e44;
+        color: var(--admin-success);
       }
 
       /* Table Styles */
       .table-container {
         overflow-x: auto;
-        margin-top: 10px;
+        margin-top: 12px;
+        background: #ffffff;
+        border: 1px solid var(--admin-border);
+        border-radius: 18px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.02);
       }
       .portal-table {
         width: 100%;
         border-collapse: collapse;
         text-align: left;
-        font-size: 13px;
+        font-size: 14px;
       }
       .portal-table th {
-        background-color: #f8f9fa;
-        color: #868e96;
+        background-color: rgba(0, 0, 0, 0.02);
+        color: var(--admin-text-secondary);
         text-transform: uppercase;
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        padding: 12px 16px;
-        border-bottom: 1px solid rgba(0,0,0,0.06);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--admin-border);
       }
       .portal-table td {
-        padding: 14px 16px;
-        border-bottom: 1px solid rgba(0,0,0,0.04);
-        color: #495057;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        color: var(--admin-text-primary);
+        font-weight: 500;
       }
       .portal-table tr:last-child td {
         border-bottom: none;
       }
+      .portal-table tr:hover td {
+        background-color: rgba(0, 0, 0, 0.015);
+      }
       .font-mono {
-        font-family: Courier, monospace;
-      }
-      .status-badge {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      .status-badge.online {
-        background-color: #ebfbee;
-        color: #2f9e44;
-      }
-      .status-badge.offline {
-        background-color: #f1f3f5;
-        color: #868e96;
+        font-family: 'Courier Prime', Courier, monospace;
+        font-weight: 600;
       }
 
       /* Filters */
       .filter-bar {
         display: flex;
-        gap: 15px;
+        gap: 16px;
         background-color: #ffffff;
-        border: 1px solid rgba(0,0,0,0.06);
-        border-radius: 10px;
-        padding: 16px 20px;
-        margin-bottom: 20px;
+        border: 1px solid var(--admin-border);
+        border-radius: 16px;
+        padding: 18px 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
       }
       .filter-group {
         display: flex;
@@ -2641,25 +3047,33 @@ export class AdminPanelView {
       }
       .filter-group label {
         font-size: 11px;
-        color: #868e96;
+        color: var(--admin-text-secondary);
         text-transform: uppercase;
-        font-weight: 600;
+        font-weight: 700;
+        letter-spacing: 0.5px;
       }
       .filter-group select, .filter-group input {
-        border: 1px solid rgba(0,0,0,0.15);
-        border-radius: 6px;
-        padding: 10px;
-        font-size: 13px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 14px;
         font-family: inherit;
         background: #ffffff;
+        color: var(--admin-text-primary);
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .filter-group select:focus, .filter-group input:focus {
+        border-color: var(--admin-accent);
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
       }
       .layout-badge {
-        background-color: #e8f4fd;
-        color: #1c7ed6;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
+        background-color: rgba(0, 122, 255, 0.08);
+        color: var(--admin-accent);
+        padding: 4px 10px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 700;
       }
 
       /* Sliding Details Drawer */
@@ -2683,7 +3097,9 @@ export class AdminPanelView {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.4);
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         opacity: 0;
         transition: opacity 0.3s ease;
         pointer-events: auto;
@@ -2693,88 +3109,98 @@ export class AdminPanelView {
       }
       .drawer-content {
         position: relative;
-        width: 450px;
+        width: 480px;
         max-width: 90%;
         height: 100%;
-        background: #fff;
-        box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
+        background: #ffffff;
+        box-shadow: -10px 0 40px rgba(0, 0, 0, 0.12);
         transform: translateX(100%);
-        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         display: flex;
         flex-direction: column;
         pointer-events: auto;
-        color: #333;
+        color: var(--admin-text-primary);
+        border-top-left-radius: 24px;
+        border-bottom-left-radius: 24px;
       }
       .detail-drawer.active .drawer-content {
         transform: translateX(0);
       }
       .drawer-header {
-        padding: 20px;
-        border-bottom: 1px solid #eee;
+        padding: 24px;
+        border-bottom: 1px solid var(--admin-border);
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
       .drawer-header h3 {
         margin: 0;
-        font-size: 18px;
-        font-weight: 700;
-        font-family: 'Space Grotesk', sans-serif;
+        font-size: 20px;
+        font-weight: 800;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+        color: var(--admin-text-primary);
       }
       .drawer-close-btn {
-        background: none;
+        background: rgba(0, 0, 0, 0.05);
         border: none;
-        font-size: 28px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-size: 20px;
         cursor: pointer;
-        color: #aaa;
-        transition: color 0.2s;
-        padding: 0 5px;
+        color: var(--admin-text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
       }
       .drawer-close-btn:hover {
-        color: #333;
+        background: rgba(0, 0, 0, 0.1);
+        color: var(--admin-text-primary);
       }
       .drawer-body {
-        padding: 24px;
+        padding: 28px;
         overflow-y: auto;
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 20px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        gap: 24px;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
       }
 
       .drawer-section {
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        border-bottom: 1px solid #f1f3f5;
-        padding-bottom: 15px;
+        gap: 8px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding-bottom: 18px;
       }
       .drawer-section:last-child {
         border-bottom: none;
       }
       .drawer-label {
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
-        color: #868e96;
-        letter-spacing: 0.5px;
+        color: var(--admin-text-secondary);
+        letter-spacing: 0.8px;
       }
       .drawer-value {
-        font-size: 14px;
-        color: #212529;
+        font-size: 15px;
+        color: var(--admin-text-primary);
+        font-weight: 500;
       }
       .drawer-value.highlight {
-        font-size: 18px;
-        font-weight: 700;
-        font-family: monospace;
+        font-size: 20px;
+        font-weight: 800;
+        font-family: 'Courier Prime', Courier, monospace;
       }
       .booth-row-clickable {
         cursor: pointer;
         transition: background-color 0.15s ease;
       }
       .booth-row-clickable:hover {
-        background-color: #f1f3f5 !important;
+        background-color: rgba(0, 122, 255, 0.03) !important;
       }
 
       /* Transitions & Pulsing Status Badges */
@@ -2794,56 +3220,56 @@ export class AdminPanelView {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
-        padding: 4px 10px;
+        padding: 5px 12px;
         border-radius: 99px;
         letter-spacing: 0.5px;
       }
       .status-badge::before {
         content: '';
-        width: 6px;
-        height: 6px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         display: inline-block;
       }
-      .status-badge.status-online {
-        background: #e6fcf5;
-        color: #0ca678;
+      .status-badge.status-online, .status-badge.online {
+        background: rgba(52, 199, 89, 0.1);
+        color: var(--admin-success);
       }
-      .status-badge.status-online::before {
-        background: #0ca678;
-        box-shadow: 0 0 6px #0ca678;
+      .status-badge.status-online::before, .status-badge.online::before {
+        background: var(--admin-success);
+        box-shadow: 0 0 6px var(--admin-success);
         animation: pulse-green 1.5s infinite;
       }
       .status-badge.status-attention {
-        background: #fff9db;
-        color: #f08c00;
+        background: rgba(255, 149, 0, 0.1);
+        color: var(--admin-warning);
       }
       .status-badge.status-attention::before {
-        background: #f08c00;
-        box-shadow: 0 0 6px #f08c00;
+        background: var(--admin-warning);
+        box-shadow: 0 0 6px var(--admin-warning);
         animation: pulse-yellow 1.5s infinite;
       }
-      .status-badge.status-offline {
-        background: #f1f3f5;
-        color: #868e96;
+      .status-badge.status-offline, .status-badge.offline {
+        background: rgba(142, 142, 147, 0.1);
+        color: var(--admin-text-secondary);
       }
-      .status-badge.status-offline::before {
-        background: #868e96;
-        box-shadow: 0 0 4px #868e96;
+      .status-badge.status-offline::before, .status-badge.offline::before {
+        background: var(--admin-text-secondary);
+        box-shadow: 0 0 4px var(--admin-text-secondary);
       }
 
       @keyframes pulse-green {
-        0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(12, 166, 120, 0.7); }
-        70% { transform: scale(1.1); box-shadow: 0 0 0 4px rgba(12, 166, 120, 0); }
-        100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(12, 166, 120, 0); }
+        0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7); }
+        70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(52, 199, 89, 0); }
+        100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
       }
       @keyframes pulse-yellow {
-        0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(240, 140, 0, 0.7); }
-        70% { transform: scale(1.1); box-shadow: 0 0 0 4px rgba(240, 140, 0, 0); }
-        100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(240, 140, 0, 0); }
+        0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(255, 149, 0, 0.7); }
+        70% { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(255, 149, 0, 0); }
+        100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(255, 149, 0, 0); }
       }
     `;
     document.head.appendChild(styleEl);

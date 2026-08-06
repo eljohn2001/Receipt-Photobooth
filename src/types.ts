@@ -5,6 +5,10 @@ export type AppState =
   | 'template-selection'
   | 'package-selection'
   | 'order-summary'
+  | 'payment-method'
+  | 'cash-instruction'
+  | 'qr-scanner'
+  | 'payment'
   | 'camera-capture'
   | 'review'
   | 'stickers'
@@ -18,6 +22,11 @@ export interface PrintPackage {
   printsCount: number;
   price: number;
   isEnabled: boolean;
+  qrCodeDataUrl?: string | null;
+  inclusions?: string;
+  photoCount?: number;
+  allowedLayouts?: string[];
+  qrDataCode?: string;
 }
 
 export interface OrderItem {
@@ -63,4 +72,10 @@ export interface AppSession {
   selectedQuote?: string;
   selectedIllustration?: string;
   selectedPackage?: PrintPackage;
+  isPaid?: boolean;
+  paymentRefNumber?: string;
+  paymentMethod?: 'cash' | 'cashless';
+  scannedPackageQr?: string;
+  isPackageLocked?: boolean;
 }
+

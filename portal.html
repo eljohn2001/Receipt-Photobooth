@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snapreceipt™ Client Portal — Partner Dashboard</title>
+  <meta name="description" content="Dedicated enterprise dashboard for Snapreceipt™ booth partners, café owners, and business clients." />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <!-- Google Fonts: Inter & Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/portal/style.css" />
+</head>
+<body class="portal-body">
+  <div id="portal-app" class="portal-root">
+    <!-- Rendered dynamically by src/portal/index.ts -->
+    <div class="portal-loading-screen">
+      <div class="portal-spinner"></div>
+      <p>Initializing Snapreceipt™ Client Portal...</p>
+    </div>
+  </div>
+  <script type="module" src="/src/portal/index.ts"></script>
+</body>
+</html>

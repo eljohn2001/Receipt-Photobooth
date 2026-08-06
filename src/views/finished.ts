@@ -5,6 +5,7 @@ import { audioManager } from '../services/audio';
 import { downloadReceiptImage } from '../services/download';
 import { loadKioskConfig } from '../services/config';
 import { saveOfflineShare } from '../services/db';
+import { renderAnimatedHeartIcon } from '../components/animated-icons';
 
 export class FinishedView extends BaseView {
   private activeSession: AppSession;
@@ -87,18 +88,30 @@ export class FinishedView extends BaseView {
       ${logoHtml}
       <h3 class="thank-you-cafe-name">THANK YOU</h3>
       <p class="thank-you-message">Your print memory has been processed successfully.</p>
-      
       ${hasQr ? `
         <div class="thank-you-divider"></div>
         <div class="finished-qr-section" style="width: 100%;">
-          <p class="download-label" style="font-family: var(--font-ui); font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px;">Scan to download digital copy</p>
-          <div class="finished-qr-container" style="display: flex; justify-content: center; align-items: center; margin: 0 auto 15px auto; width: 180px; height: 180px; border: 1.5px solid var(--border-primary); padding: 8px; background: #ffffff; position: relative; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+          <p class="download-label" style="font-family: var(--font-ui); font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Scan to download digital copy</p>
+          <div class="finished-qr-container finished-qr-container-clickable" id="finished-qr-box" style="display: flex; justify-content: center; align-items: center; margin: 0 auto 8px auto; width: 180px; height: 180px; border: 1.5px solid var(--border-primary); padding: 8px; background: #ffffff; position: relative; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
             <img class="finished-qr-image" id="finished-qr-img" src="" alt="Download QR" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
-          <p class="cafe-tag" style="font-family: var(--font-ui); font-size: 12px; color: var(--text-secondary); margin: 0 0 10px 0;">Share the joy! Tag us at <strong>${cleanTag}</strong></p>
+          <div class="receipt-tear-hint">🔍 TAP QR TO EXPAND FOR GROUP SCANS</div>
+          <p class="cafe-tag" style="font-family: var(--font-ui); font-size: 12px; color: var(--text-secondary); margin: 10px 0 10px 0;">Share the joy! Tag us at <strong>${cleanTag}</strong></p>
         </div>
       ` : ''}
-      
+
+      <div class="package-qr-return-reminder-card">
+        <div class="qr-reminder-badge" style="display: inline-flex; align-items: center; gap: 6px;">
+          ${renderAnimatedHeartIcon(16)}
+          <span>THANK YOU</span>
+        </div>
+        <h4 class="qr-reminder-title">Return Your Package QR Code</h4>
+        <p class="qr-reminder-body">
+          Please return your <strong>Package QR Code</strong> to the cashier counter before leaving so it can be reused for the next customer.
+        </p>
+        <p class="qr-reminder-sub">Thank you, and we hope you enjoyed your Snapreceipt™ experience!</p>
+      </div>
+
       <div class="thank-you-divider"></div>
       
       <div class="receipt-meta-grid">
@@ -152,6 +165,46 @@ export class FinishedView extends BaseView {
       <div class="receipt-bottom-scallops"></div>
     `;
     cardContainer.appendChild(thankYouCard);
+
+    // Tap QR Box to expand for group scans
+    const qrBox = thankYouCard.querySelector('#finished-qr-box');
+    qrBox?.addEventListener('click', () => {
+      const qrImg = thankYouCard.querySelector('#finished-qr-img') as HTMLImageElement;
+      if (qrImg && qrImg.src) {
+        audioManager.playBeep();
+        const modal = document.createElement('div');
+        modal.className = 'kiosk-modal-overlay';
+        modal.innerHTML = `
+          <div class="kiosk-modal-card">
+            <div style="width: 260px; height: 260px; padding: 12px; background: #fff; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);">
+              <img src="${qrImg.src}" style="width: 100%; height: 100%; object-fit: contain;" />
+            </div>
+            <h3 class="kiosk-modal-title">Scan Digital Copy</h3>
+            <p class="kiosk-modal-desc">Point phone camera to download digital keepsake photo</p>
+            <button class="btn btn-primary" id="btn-close-qr-expand">CLOSE</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('#btn-close-qr-expand')?.addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) modal.remove();
+        });
+      }
+    });
+
+    // Touch gesture for downward drag tear
+    let startY = 0;
+    thankYouCard.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    thankYouCard.addEventListener('touchend', (e) => {
+      const endY = e.changedTouches[0].clientY;
+      if (endY - startY > 60) {
+        audioManager.playPaperTear();
+        this.triggerConfetti();
+      }
+    }, { passive: true });
 
     // If QR code feature is disabled, return early
     if (!hasQr) {

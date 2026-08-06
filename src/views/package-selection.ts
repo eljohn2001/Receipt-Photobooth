@@ -191,12 +191,18 @@ export class PackageSelectionView extends BaseView {
 
     gridContainer.innerHTML = pkgs.map((pkg) => {
       const formattedPrice = `${currency}${pkg.price.toFixed(2)}`;
+      const printsLabel = pkg.printsCount === 1 ? '1 COPY' : `${pkg.printsCount} COPIES`;
+      const inclusionsText = pkg.inclusions || `${pkg.printsCount} Thermal Print ${pkg.printsCount === 1 ? '' : 's'} + Digital Softcopy`;
+
       return `
         <div class="package-card-option ripple-container" data-pkg-id="${pkg.id}">
-          <div class="package-card-icon">🖨️</div>
+          <div class="package-card-top">
+            <span class="package-card-badge">${printsLabel}</span>
+            <div class="package-card-icon-badge">🖨️</div>
+          </div>
           <h3 class="package-card-title">${pkg.name}</h3>
-          <p class="package-card-desc">Prints ${pkg.printsCount} photo strip copies</p>
-          <div class="package-card-price">${formattedPrice}</div>
+          <p class="package-card-desc">${inclusionsText}</p>
+          <div class="package-card-price-pill">${formattedPrice}</div>
         </div>
       `;
     }).join('');

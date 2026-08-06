@@ -43,6 +43,7 @@ export class PrintingView extends BaseView {
         <!-- Virtual Printer Hardware Mock -->
         <div class="virtual-printer-box">
           <div class="printer-body">
+            <div class="printer-status-led"></div>
             <div class="printer-slot-opening"></div>
             
             <!-- Paper rolls up out of the slot -->

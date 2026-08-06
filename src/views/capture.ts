@@ -46,6 +46,15 @@ export class CaptureView extends BaseView {
           <!-- Guided overlay frame -->
           <div class="camera-frame-guide"></div>
           
+          <!-- Pre-Capture Pose & Positioning Guide Overlay (Phase 2) -->
+          <div class="pose-guide-overlay hidden" id="pose-guide-overlay">
+            <div class="pose-guide-card">
+              <div class="pose-guide-icon">📸</div>
+              <h3 class="pose-guide-title">Get Ready!</h3>
+              <p class="pose-guide-sub">Stand 2 feet back. Center your face inside the guided frame!</p>
+            </div>
+          </div>
+
           <!-- Countdown centered overlay (no boxes) -->
           <div class="countdown-overlay hidden" id="countdown-overlay">
             <span id="countdown-text">3</span>
@@ -66,6 +75,7 @@ export class CaptureView extends BaseView {
           
           <!-- Sleek camera shutter button -->
           <button class="shutter-button" id="btn-shutter" disabled>
+            <div class="shutter-inner-ring"></div>
             <span class="shutter-icon">📸</span>
           </button>
           
@@ -175,6 +185,22 @@ export class CaptureView extends BaseView {
         if (shutterBtn) {
           shutterBtn.disabled = false;
         }
+
+        // Automatic Camera Auto-Start (Option A): Trigger countdown automatically after payment
+        if (this.retakeIndex === null && !this.isCaptureActive) {
+          const autoStartBanner = document.createElement('div');
+          autoStartBanner.className = 'auto-start-banner';
+          autoStartBanner.innerHTML = '⚡ PAYMENT VERIFIED! CAMERA STARTING...';
+          const viewport = this.element.querySelector('.camera-viewport-container');
+          if (viewport) viewport.appendChild(autoStartBanner);
+
+          setTimeout(() => {
+            autoStartBanner.remove();
+            if (!this.isCaptureActive) {
+              shutterBtn?.click();
+            }
+          }, 1200);
+        }
         
       } catch (err) {
         console.error('Camera startup failed', err);
@@ -242,6 +268,16 @@ export class CaptureView extends BaseView {
    */
   private async runCaptureSequence(totalShots: number) {
     this.isCaptureActive = true;
+
+    // Show Pre-Capture Pose & Positioning Guide overlay for fresh sequences (Phase 2)
+    if (this.retakeIndex === null) {
+      const poseGuide = this.element.querySelector('#pose-guide-overlay');
+      if (poseGuide) {
+        poseGuide.classList.remove('hidden');
+        await new Promise((r) => setTimeout(r, 1800));
+        poseGuide.classList.add('hidden');
+      }
+    }
 
     if (this.retakeIndex !== null) {
       // Retake Mode

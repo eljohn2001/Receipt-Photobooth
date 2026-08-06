@@ -40,6 +40,11 @@ export interface KioskConfig {
   cameraFilter?: 'bw' | 'color';
   enableStickers?: boolean;
   enableEventMode?: boolean;
+  enablePaywall?: boolean;
+  paymentQrCodeDataUrl?: string | null;
+  paymentAccountName?: string;
+  paymentAccountNumber?: string;
+  paymentInstructions?: string;
 }
 
 export const DEFAULT_CONFIG: KioskConfig = {
@@ -72,16 +77,21 @@ export const DEFAULT_CONFIG: KioskConfig = {
   cameraFilter: 'color',
   enableStickers: true,
   enableEventMode: false,
+  enablePaywall: false,
+  paymentQrCodeDataUrl: null,
+  paymentAccountName: 'BEANS & BITES',
+  paymentAccountNumber: '',
+  paymentInstructions: 'Scan QR code via GCash or e-wallet to pay exact amount.',
   sessionPrice: 30.00,
   profitSharePercent: 60.00,
   maxPrintsAllowed: 4,
   currencySymbol: '₱',
   welcomeMessage: 'Welcome to Snapceipt!',
   packages: [
-    { id: 'pkg-1', name: '1 Print', printsCount: 1, price: 30, isEnabled: true },
-    { id: 'pkg-2', name: '2 Prints', printsCount: 2, price: 40, isEnabled: true },
-    { id: 'pkg-3', name: '3 Prints', printsCount: 3, price: 50, isEnabled: true },
-    { id: 'pkg-4', name: '4 Prints', printsCount: 4, price: 60, isEnabled: true }
+    { id: 'pkg-a', name: 'Package A', printsCount: 1, photoCount: 3, price: 50, isEnabled: true, qrCodeDataUrl: null, qrDataCode: 'PACKAGE_A|PRINTS=1', inclusions: '1 Thermal Print + Digital Softcopy', allowedLayouts: [] },
+    { id: 'pkg-b', name: 'Package B', printsCount: 2, photoCount: 3, price: 99, isEnabled: true, qrCodeDataUrl: null, qrDataCode: 'PACKAGE_B|PRINTS=2', inclusions: '2 Thermal Prints + Digital Softcopy', allowedLayouts: [] },
+    { id: 'pkg-c', name: 'Package C', printsCount: 3, photoCount: 3, price: 149, isEnabled: true, qrCodeDataUrl: null, qrDataCode: 'PACKAGE_C|PRINTS=3', inclusions: '3 Thermal Prints + Digital Softcopy', allowedLayouts: [] },
+    { id: 'pkg-d', name: 'Package D', printsCount: 4, photoCount: 3, price: 199, isEnabled: true, qrCodeDataUrl: null, qrDataCode: 'PACKAGE_D|PRINTS=4', inclusions: '4 Thermal Prints + Digital Softcopy', allowedLayouts: [] }
   ],
   paperMaxPrints: 150,
   paperPrintsRemaining: 150,
@@ -102,7 +112,16 @@ export function loadKioskConfig(): KioskConfig {
         parsed.textColor = '#000000';
         localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
       }
-      return { ...DEFAULT_CONFIG, ...parsed };
+      const config = { ...DEFAULT_CONFIG, ...parsed };
+      if (!config.packages || !Array.isArray(config.packages) || config.packages.length === 0) {
+        config.packages = DEFAULT_CONFIG.packages;
+      } else {
+        config.packages = DEFAULT_CONFIG.packages!.map((defPkg, idx) => {
+          const existing = config.packages![idx] || config.packages!.find((p: any) => p.id === defPkg.id) || {};
+          return { ...defPkg, ...existing };
+        });
+      }
+      return config;
     } catch (e) {
       console.warn('Failed to parse saved kiosk configuration:', e);
       return DEFAULT_CONFIG;

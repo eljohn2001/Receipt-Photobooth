@@ -73,7 +73,7 @@ export class IdleView extends BaseView {
         audioManager.playPaperTear();
 
         // Load fresh config dynamically to check if comfort cards are enabled
-        const nextState = freshConfig.enableComfortCards !== false ? 'mode-selection' : 'template-selection';
+        const nextState = freshConfig.enableComfortCards !== false ? 'mode-selection' : 'payment-method';
         this.navigateTo(nextState);
 
         setTimeout(() => {
@@ -228,7 +228,7 @@ export class IdleView extends BaseView {
           if (config.enableComfortCards !== false) {
             this.navigateTo('mode-selection');
           } else {
-            this.navigateTo('template-selection');
+            this.navigateTo('payment-method');
           }
         }, 400);
       };

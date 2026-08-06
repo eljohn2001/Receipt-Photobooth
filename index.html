@@ -1,719 +1,1112 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <script>
-      (async function() {
-        // Do not redirect if running inside a native app wrapper (Capacitor)
-        if (
-          window.location.hostname === 'localhost' || 
-          window.location.hostname === '127.0.0.1' || 
-          window.location.protocol === 'capacitor:' || 
-          window.location.protocol === 'http:' && window.location.hostname === '10.0.2.2'
-        ) {
-          console.log('Running in native wrapper, skipping redirect.');
-          return;
+
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (async function () {
+      // Do not redirect if running inside a native app wrapper (Capacitor)
+      if (
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.protocol === 'capacitor:' ||
+        window.location.protocol === 'http:' && window.location.hostname === '10.0.2.2'
+      ) {
+        console.log('Running in native wrapper, skipping redirect.');
+        return;
+      }
+      if (navigator.onLine && !window.location.href.startsWith('https://photoreceipt.stoodioph.com')) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1500);
+          const res = await fetch('https://photoreceipt.stoodioph.com/favicon.svg', {
+            method: 'HEAD',
+            signal: controller.signal,
+            cache: 'no-store',
+            mode: 'no-cors'
+          });
+          clearTimeout(timeoutId);
+          window.location.replace('https://photoreceipt.stoodioph.com/' + window.location.search);
+        } catch (e) {
+          console.warn('Hosted site unreachable, running local assets:', e);
         }
-        if (navigator.onLine && !window.location.href.startsWith('https://photoreceipt.stoodioph.com')) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1500);
-            const res = await fetch('https://photoreceipt.stoodioph.com/favicon.svg', {
-              method: 'HEAD',
-              signal: controller.signal,
-              cache: 'no-store',
-              mode: 'no-cors'
-            });
-            clearTimeout(timeoutId);
-            window.location.replace('https://photoreceipt.stoodioph.com/' + window.location.search);
-          } catch (e) {
-            console.warn('Hosted site unreachable, running local assets:', e);
-          }
-        }
-      })();
-    </script>
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <!-- Lock scale and viewport for strict tablet/mobile kiosk setup -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    
-    <!-- Meta details for SEO/kiosk headers -->
-    <title>Beans & Bites — Receipt Photo Booth Kiosk</title>
-    <meta name="description" content="Premium monochrome memory vending machine and thermal receipt printing kiosk for cafés." />
-    
-    <!-- Google Fonts for UI, Vintage Serif, Script, and Monospace Thermal styling -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=Pinyon+Script&family=Italianno&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <!-- Main Kiosk Frame (Scroll disabled, horizontal sliding only) -->
-    <div id="app" class="kiosk-app-frame">
-      <div class="views-slider" id="views-slider">
-        <!-- 0. Device Activation -->
-        <div class="view-panel active-slide" id="view-activation"></div>
+      }
+    })();
+  </script>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <!-- Lock scale and viewport for strict tablet/mobile kiosk setup -->
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
-        <!-- 1. Idle Attract Screen -->
-        <div class="view-panel" id="view-idle"></div>
-        
-        <!-- 1.5 Experience Mode Selection -->
-        <div class="view-panel" id="view-mode-selection"></div>
-        
-        <!-- 2. Template Selection -->
-        <div class="view-panel" id="view-template-selection"></div>
-        
-        <!-- 2.5 Print Package Selection -->
-        <div class="view-panel" id="view-package-selection"></div>
-        
-        <!-- 2.7 Order Summary -->
-        <div class="view-panel" id="view-order-summary"></div>
-        
-        <!-- 3. Camera Capture -->
-        <div class="view-panel" id="view-camera-capture"></div>
+  <!-- Meta details for SEO/kiosk headers -->
+  <title>Beans & Bites — Receipt Photo Booth Kiosk</title>
+  <meta name="description"
+    content="Premium monochrome memory vending machine and thermal receipt printing kiosk for cafés." />
 
-        <!-- 3.5 Review Screen -->
-        <div class="view-panel" id="view-review"></div>
+  <!-- Google Fonts for UI, Vintage Serif, Script, and Monospace Thermal styling -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Space+Grotesk:wght@300;400;500;600;700&family=Pinyon+Script&family=Italianno&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
+    rel="stylesheet" />
+</head>
 
-        <!-- 3.6 Stickers Decorator Screen -->
-        <div class="view-panel" id="view-stickers"></div>
-        
-        <!-- 4. Thermal Paper Preview -->
-        <div class="view-panel" id="view-preview"></div>
-        
-        <!-- 5. Printing Animation -->
-        <div class="view-panel" id="view-printing"></div>
-        
-        <!-- 6. Finished & Digital Download -->
-        <div class="view-panel" id="view-finished"></div>
-      </div>
-      
-      <!-- Global Curtain Panels for Welcome Screen Transition -->
-      <div id="global-curtain-container" class="global-curtain-container hidden">
-        <!-- Hidden hotspot for admin panel when curtains are closed -->
-        <div class="admin-hotspot" id="admin-curtain-hotspot"></div>
-        <div class="curtain-container">
-          <div class="curtain-panel curtain-left"></div>
-          <div class="curtain-panel curtain-right"></div>
-        </div>
-        <div class="curtain-overlay-panel" id="curtain-overlay-panel"></div>
-      </div>
+<body>
+  <!-- Main Kiosk Frame (Scroll disabled, horizontal sliding only) -->
+  <div id="app" class="kiosk-app-frame">
+    <div class="views-slider" id="views-slider">
+      <!-- 0. Device Activation -->
+      <div class="view-panel active-slide" id="view-activation"></div>
+
+      <!-- 1. Idle Attract Screen -->
+      <div class="view-panel" id="view-idle"></div>
+
+      <!-- 1.5 Experience Mode Selection -->
+      <div class="view-panel" id="view-mode-selection"></div>
+
+      <!-- 2. Template Selection -->
+      <div class="view-panel" id="view-template-selection"></div>
+
+      <!-- 2.5 Print Package Selection -->
+      <div class="view-panel" id="view-package-selection"></div>
+
+      <!-- 2.7 Order Summary -->
+      <div class="view-panel" id="view-order-summary"></div>
+
+      <!-- 2.75 Payment Method Selection -->
+      <div class="view-panel" id="view-payment-method"></div>
+
+      <!-- 2.76 Pay at Counter Cash Instructions -->
+      <div class="view-panel" id="view-cash-instruction"></div>
+
+      <!-- 2.77 Package QR Code Scanner -->
+      <div class="view-panel" id="view-qr-scanner"></div>
+
+      <!-- 2.8 Payment & Paywall (Cashless Flow) -->
+      <div class="view-panel" id="view-payment"></div>
+
+      <!-- 3. Camera Capture -->
+      <div class="view-panel" id="view-camera-capture"></div>
+
+      <!-- 3.5 Review Screen -->
+      <div class="view-panel" id="view-review"></div>
+
+      <!-- 3.6 Stickers Decorator Screen -->
+      <div class="view-panel" id="view-stickers"></div>
+
+      <!-- 4. Thermal Paper Preview -->
+      <div class="view-panel" id="view-preview"></div>
+
+      <!-- 5. Printing Animation -->
+      <div class="view-panel" id="view-printing"></div>
+
+      <!-- 6. Finished & Digital Download -->
+      <div class="view-panel" id="view-finished"></div>
     </div>
 
-    <!-- Hidden printing queue container (rendered at 58mm via CSS media print query) -->
-    <div id="print-container"></div>
+    <!-- Global Curtain Panels for Welcome Screen Transition -->
+    <div id="global-curtain-container" class="global-curtain-container hidden">
+      <!-- Hidden hotspot for admin panel when curtains are closed -->
+      <div class="admin-hotspot" id="admin-curtain-hotspot"></div>
+      <div class="curtain-container">
+        <div class="curtain-panel curtain-left"></div>
+        <div class="curtain-panel curtain-right"></div>
+      </div>
+      <div class="curtain-overlay-panel" id="curtain-overlay-panel"></div>
+    </div>
+  </div>
 
-    <!-- Hidden Admin settings panel overlay -->
-    <div id="admin-modal" class="admin-modal-overlay hidden">
-      <div class="admin-modal-content">
-        <div class="admin-modal-header">
-          <h3 class="admin-modal-title">Booth Setup Panel</h3>
-          <button id="admin-close-x" class="admin-close-x" type="button">&times;</button>
-        </div>
-        <div class="admin-modal-body">
-          <form id="admin-config-form" class="admin-form-split">
-            
-            <!-- Left Sidebar Navigation -->
-            <div class="admin-sidebar">
-              <button type="button" class="admin-tab-btn active" data-tab="branding">
-                🏢 Cafe Details
-              </button>
-              <button type="button" class="admin-tab-btn" data-tab="visuals">
-                🎨 Visual Theme
-              </button>
-              <button type="button" class="admin-tab-btn" data-tab="packages">
-                📦 Print Packages
-              </button>
-              <button type="button" class="admin-tab-btn" data-tab="system">
-                ⚙️ System & Hardware
-              </button>
-              <button type="button" class="admin-tab-btn" data-tab="sync">
-                ☁️ Cloud Sync
-              </button>
-              <button type="button" class="admin-tab-btn" data-tab="statistics">
-                📊 Statistics
-              </button>
-              <button type="button" class="admin-tab-btn" data-tab="maintenance">
-                🚨 Maintenance
-              </button>
-            </div>
-            
-            <!-- Right Form Pane -->
-            <div class="admin-form-pane">
-              <div class="admin-form-scrollable">
-                
-                <!-- Tab 1: Cafe Details -->
-                <div id="admin-tab-branding" class="admin-tab-content">
-                  <h4 class="admin-tab-section-title">Café Branding Info</h4>
-                  
-                  <div class="form-group">
-                    <label for="input-cafe-name">Café Name</label>
-                    <input type="text" id="input-cafe-name" placeholder="e.g. BEANS & BITES" required />
-                  </div>
+  <!-- Hidden printing queue container (rendered at 58mm via CSS media print query) -->
+  <div id="print-container"></div>
 
-                  <div class="form-group">
-                    <label for="input-cafe-address">Location Address</label>
-                    <input type="text" id="input-cafe-address" placeholder="e.g. 128 Espresso Blvd, City" required />
-                  </div>
+  <!-- Hidden Admin settings panel overlay -->
+  <div id="admin-modal" class="admin-modal-overlay hidden">
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title">Booth Setup Panel</h3>
+        <button id="admin-close-x" class="admin-close-x" type="button">&times;</button>
+      </div>
+      <div class="admin-modal-body">
+        <form id="admin-config-form" class="admin-form-split">
 
-                  <div class="form-group">
-                    <label for="input-cafe-phone">Telephone (Receipt Footer)</label>
-                    <input type="text" id="input-cafe-phone" placeholder="e.g. 555-123-4567" required />
-                  </div>
+          <!-- Left Sidebar Navigation -->
+          <div class="admin-sidebar">
+            <button type="button" class="admin-tab-btn active" data-tab="branding">
+              🏢 Cafe Details
+            </button>
+            <button type="button" class="admin-tab-btn" data-tab="visuals">
+              🎨 Visual Theme
+            </button>
+            <button type="button" class="admin-tab-btn" data-tab="packages">
+              📦 Print Packages
+            </button>
+            <button type="button" class="admin-tab-btn" data-tab="system">
+              ⚙️ System & Hardware
+            </button>
+            <button type="button" class="admin-tab-btn" data-tab="sync">
+              ☁️ Cloud Sync
+            </button>
+            <button type="button" class="admin-tab-btn" data-tab="paywall">
+              💳 Scan to Pay
+            </button>
+            <button type="button" class="admin-tab-btn" data-tab="statistics">
+              📊 Statistics
+            </button>
+            <button type="button" class="admin-tab-btn" data-tab="maintenance">
+              🚨 Maintenance
+            </button>
+          </div>
 
-                  <div class="form-group">
-                    <label for="input-social-tag">Instagram Username / Social Tag</label>
-                    <input type="text" id="input-social-tag" placeholder="e.g. @beansandbites" />
-                  </div>
+          <!-- Right Form Pane -->
+          <div class="admin-form-pane">
+            <div class="admin-form-scrollable">
 
-                  <div class="form-group">
-                    <label for="input-custom-message">Custom Receipt Footer Message</label>
-                    <textarea id="input-custom-message" rows="3" placeholder="e.g. Keep smiling! Thank you for visiting."></textarea>
-                  </div>
+              <!-- Tab 1: Cafe Details -->
+              <div id="admin-tab-branding" class="admin-tab-content">
+                <h4 class="admin-tab-section-title">Café Branding Info</h4>
 
-                  <div class="form-group">
-                    <label for="input-home-subtitle-top">Home Top Subtitle / Date (e.g. Event Date)</label>
-                    <input type="text" id="input-home-subtitle-top" placeholder="Leave empty for dynamic current date (e.g. Wednesday, July 15)" />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="input-home-subtitle-bottom">Home Bottom Subtitle / Event Name</label>
-                    <input type="text" id="input-home-subtitle-bottom" placeholder="e.g. Receipt Photo Booth" />
-                  </div>
-
-                  <div class="form-row">
-                    <div class="form-group half-width">
-                      <label for="input-session-price">Session Price (₱)</label>
-                      <input type="number" id="input-session-price" step="1" min="0" placeholder="250.00" required />
-                    </div>
-                    <div class="form-group half-width">
-                      <label for="input-profit-share">Snapceipt Share %</label>
-                      <input type="number" id="input-profit-share" step="0.5" min="0" max="100" placeholder="60.0" required />
-                    </div>
-                  </div>
+                <div class="form-group">
+                  <label for="input-cafe-name">Café Name</label>
+                  <input type="text" id="input-cafe-name" placeholder="e.g. BEANS & BITES" required />
                 </div>
 
-                <!-- Tab 2: Visual Theme -->
-                <div id="admin-tab-visuals" class="admin-tab-content hidden">
-                  <h4 class="admin-tab-section-title">Visual Styling & Custom Media</h4>
+                <div class="form-group">
+                  <label for="input-cafe-address">Location Address</label>
+                  <input type="text" id="input-cafe-address" placeholder="e.g. 128 Espresso Blvd, City" required />
+                </div>
 
-                  <div class="form-row">
-                    <div class="form-group half-width">
-                      <label for="input-bg-color">UI Background Color</label>
-                      <div class="color-picker-wrapper">
-                        <input type="color" id="input-bg-color" />
-                      </div>
-                    </div>
-                    <div class="form-group half-width">
-                      <label for="input-text-color">UI Text Color</label>
-                      <div class="color-picker-wrapper">
-                        <input type="color" id="input-text-color" />
-                      </div>
-                    </div>
+                <div class="form-group">
+                  <label for="input-cafe-phone">Telephone (Receipt Footer)</label>
+                  <input type="text" id="input-cafe-phone" placeholder="e.g. 555-123-4567" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="input-social-tag">Instagram Username / Social Tag</label>
+                  <input type="text" id="input-social-tag" placeholder="e.g. @beansandbites" />
+                </div>
+
+                <div class="form-group">
+                  <label for="input-custom-message">Custom Receipt Footer Message</label>
+                  <textarea id="input-custom-message" rows="3"
+                    placeholder="e.g. Keep smiling! Thank you for visiting."></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="input-home-subtitle-top">Home Top Subtitle / Date (e.g. Event Date)</label>
+                  <input type="text" id="input-home-subtitle-top"
+                    placeholder="Leave empty for dynamic current date (e.g. Wednesday, July 15)" />
+                </div>
+
+                <div class="form-group">
+                  <label for="input-home-subtitle-bottom">Home Bottom Subtitle / Event Name</label>
+                  <input type="text" id="input-home-subtitle-bottom" placeholder="e.g. Receipt Photo Booth" />
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group half-width">
+                    <label for="input-session-price">Session Price (₱)</label>
+                    <input type="number" id="input-session-price" step="1" min="0" placeholder="250.00" required />
                   </div>
-
-                  <div class="form-row">
-                    <div class="form-group half-width">
-                      <label for="input-text-home-color">Home Screen Text Color</label>
-                      <div class="color-picker-wrapper">
-                        <input type="color" id="input-text-home-color" />
-                      </div>
-                    </div>
-                    <div class="form-group half-width">
-                      <label for="input-accent-color">UI Brand / Accent Color</label>
-                      <div class="color-picker-wrapper">
-                        <input type="color" id="input-accent-color" />
-                      </div>
-                    </div>
+                  <div class="form-group half-width">
+                    <label for="input-profit-share">Snapceipt Share %</label>
+                    <input type="number" id="input-profit-share" step="0.5" min="0" max="100" placeholder="60.0"
+                      required />
                   </div>
+                </div>
+              </div>
 
-                  <div class="form-group">
-                    <label for="input-home-mode">Home Screen Layout Style</label>
-                    <select id="input-home-mode">
-                      <option value="graphic">Full Screen Welcome Graphic (Touch anywhere to start)</option>
-                      <option value="layout">Interactive Theme Layout (Logo, Printer Animation)</option>
-                      <option value="curtain">Theatre Curtain Transition (Closed until tap)</option>
-                    </select>
-                  </div>
+              <!-- Tab 2: Visual Theme -->
+              <div id="admin-tab-visuals" class="admin-tab-content hidden">
+                <h4 class="admin-tab-section-title">Visual Styling & Custom Media</h4>
 
-                  <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-primary); margin-bottom: 15px;">
-                    <div style="flex-grow: 1; padding-right: 15px;">
-                      <label style="margin-bottom: 2px;">Grayscale Camera Filter</label>
-                      <p style="font-size: 11.5px; color: var(--text-secondary); margin: 0; opacity: 0.8; line-height: 1.3;">
-                        Force the webcam preview and captured photos to be Black & White.
-                      </p>
-                    </div>
-                    <label class="toggle-switch">
-                      <input type="checkbox" id="input-camera-filter-bw" />
-                      <span class="toggle-slider"></span>
-                    </label>
-                  </div>
-                  <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-primary); margin-bottom: 15px;">
-                    <div style="flex-grow: 1; padding-right: 15px;">
-                      <label style="margin-bottom: 2px;">Interactive Digital Stickers</label>
-                      <p style="font-size: 11.5px; color: var(--text-secondary); margin: 0; opacity: 0.8; line-height: 1.3;">
-                        Allow users to decorate their photos with emojis before printing.
-                      </p>
-                    </div>
-                    <label class="toggle-switch">
-                      <input type="checkbox" id="input-enable-stickers" />
-                      <span class="toggle-slider"></span>
-                    </label>
-                  </div>
-
-
-
-                  <div class="form-group">
-                    <label>Café Logo for Receipt Paper (Dark/Black logo recommended)</label>
-                    <div class="file-uploader-box">
-                      <input type="file" id="input-logo-file" accept="image/*" class="file-input-hidden" />
-                      <label for="input-logo-file" class="file-uploader-label">
-                        <span>📤</span> Click to upload receipt logo
-                      </label>
-                      <div id="preview-logo-container" class="uploader-preview-img hidden"></div>
-                    </div>
-                  </div>
-
-                  <div class="form-group">
-                    <label>Café Logo for Screen UI (Light/White logo recommended)</label>
-                    <div class="file-uploader-box">
-                      <input type="file" id="input-logo-screen-file" accept="image/*" class="file-input-hidden" />
-                      <label for="input-logo-screen-file" class="file-uploader-label">
-                        <span>📤</span> Click to upload screen logo
-                      </label>
-                      <div id="preview-logo-screen-container" class="uploader-preview-img hidden"></div>
-                    </div>
-                  </div>
-
-                  <div class="form-group" id="curtain-overlay-group">
-                    <label>Curtain Overlay Graphic (Transparent PNG recommended)</label>
-                    <div class="file-uploader-box">
-                      <input type="file" id="input-curtain-overlay-file" accept="image/png" class="file-input-hidden" />
-                      <label for="input-curtain-overlay-file" class="file-uploader-label">
-                        <span>📤</span> Click to upload overlay graphic
-                      </label>
-                      <div id="preview-curtain-overlay-container" class="uploader-preview-img hidden"></div>
-                    </div>
-                  </div>
-
-                  <div class="form-group" id="curtain-color-group">
-                    <label for="input-curtain-color">Curtain Base Color</label>
+                <div class="form-row">
+                  <div class="form-group half-width">
+                    <label for="input-bg-color">UI Background Color</label>
                     <div class="color-picker-wrapper">
-                      <input type="color" id="input-curtain-color" />
+                      <input type="color" id="input-bg-color" />
                     </div>
                   </div>
-
-                  <div class="form-group">
-                    <label>Home Screen Background Media (Photo/Video)</label>
-                    <div class="file-uploader-box">
-                      <input type="file" id="input-bg-file" accept="image/*,video/*" class="file-input-hidden" />
-                      <label for="input-bg-file" class="file-uploader-label">
-                        <span>🎬</span> Click to upload image or video
-                      </label>
-                      <div id="preview-bg-container" class="uploader-preview-img hidden"></div>
+                  <div class="form-group half-width">
+                    <label for="input-text-color">UI Text Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="input-text-color" />
                     </div>
                   </div>
                 </div>
 
-                <!-- Tab 2.5: Print Packages -->
-                <div id="admin-tab-packages" class="admin-tab-content hidden">
-                  <h4 class="admin-tab-section-title">Configure Print Packages</h4>
-
-                  <!-- General package configs -->
-                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
-                    <div class="form-group">
-                      <label for="input-currency-symbol">Currency Symbol</label>
-                      <input type="text" id="input-currency-symbol" placeholder="e.g. ₱" value="₱" required style="width: 100%;" />
-                    </div>
-                    <div class="form-group">
-                      <label for="input-max-prints">Max Prints Per Session</label>
-                      <input type="number" id="input-max-prints" placeholder="e.g. 4" min="1" max="10" value="4" required style="width: 100%;" />
+                <div class="form-row">
+                  <div class="form-group half-width">
+                    <label for="input-text-home-color">Home Screen Text Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="input-text-home-color" />
                     </div>
                   </div>
-
-                  <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="input-welcome-msg">Idle Screen Welcome Message</label>
-                    <input type="text" id="input-welcome-msg" placeholder="e.g. Welcome to Snapceipt!" style="width: 100%;" />
-                  </div>
-
-                  <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-primary); margin-bottom: 15px;">
-                    <div style="flex-grow: 1; padding-right: 15px;">
-                      <label style="margin-bottom: 2px;">Enable Event Mode</label>
-                      <p style="font-size: 11.5px; color: var(--text-secondary); margin: 0; opacity: 0.8; line-height: 1.3;">
-                        Bypasses packages & payment screens. Guests go directly to capture, and choose print copies at the end.
-                      </p>
+                  <div class="form-group half-width">
+                    <label for="input-accent-color">UI Brand / Accent Color</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="input-accent-color" />
                     </div>
-                    <label class="toggle-switch">
-                      <input type="checkbox" id="input-enable-event-mode" />
-                      <span class="toggle-slider"></span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="input-home-mode">Home Screen Layout Style</label>
+                  <select id="input-home-mode">
+                    <option value="graphic">Full Screen Welcome Graphic (Touch anywhere to start)</option>
+                    <option value="layout">Interactive Theme Layout (Logo, Printer Animation)</option>
+                    <option value="curtain">Theatre Curtain Transition (Closed until tap)</option>
+                  </select>
+                </div>
+
+                <div class="form-group"
+                  style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-primary); margin-bottom: 15px;">
+                  <div style="flex-grow: 1; padding-right: 15px;">
+                    <label style="margin-bottom: 2px;">Grayscale Camera Filter</label>
+                    <p
+                      style="font-size: 11.5px; color: var(--text-secondary); margin: 0; opacity: 0.8; line-height: 1.3;">
+                      Force the webcam preview and captured photos to be Black & White.
+                    </p>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="input-camera-filter-bw" />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="form-group"
+                  style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-primary); margin-bottom: 15px;">
+                  <div style="flex-grow: 1; padding-right: 15px;">
+                    <label style="margin-bottom: 2px;">Interactive Digital Stickers</label>
+                    <p
+                      style="font-size: 11.5px; color: var(--text-secondary); margin: 0; opacity: 0.8; line-height: 1.3;">
+                      Allow users to decorate their photos with emojis before printing.
+                    </p>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="input-enable-stickers" />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+
+
+                <div class="form-group">
+                  <label>Café Logo for Receipt Paper (Dark/Black logo recommended)</label>
+                  <div class="file-uploader-box">
+                    <input type="file" id="input-logo-file" accept="image/*" class="file-input-hidden" />
+                    <label for="input-logo-file" class="file-uploader-label">
+                      <span>📤</span> Click to upload receipt logo
                     </label>
+                    <div id="preview-logo-container" class="uploader-preview-img hidden"></div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Café Logo for Screen UI (Light/White logo recommended)</label>
+                  <div class="file-uploader-box">
+                    <input type="file" id="input-logo-screen-file" accept="image/*" class="file-input-hidden" />
+                    <label for="input-logo-screen-file" class="file-uploader-label">
+                      <span>📤</span> Click to upload screen logo
+                    </label>
+                    <div id="preview-logo-screen-container" class="uploader-preview-img hidden"></div>
+                  </div>
+                </div>
+
+                <div class="form-group" id="curtain-overlay-group">
+                  <label>Curtain Overlay Graphic (Transparent PNG recommended)</label>
+                  <div class="file-uploader-box">
+                    <input type="file" id="input-curtain-overlay-file" accept="image/png" class="file-input-hidden" />
+                    <label for="input-curtain-overlay-file" class="file-uploader-label">
+                      <span>📤</span> Click to upload overlay graphic
+                    </label>
+                    <div id="preview-curtain-overlay-container" class="uploader-preview-img hidden"></div>
+                  </div>
+                </div>
+
+                <div class="form-group" id="curtain-color-group">
+                  <label for="input-curtain-color">Curtain Base Color</label>
+                  <div class="color-picker-wrapper">
+                    <input type="color" id="input-curtain-color" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Home Screen Background Media (Photo/Video)</label>
+                  <div class="file-uploader-box">
+                    <input type="file" id="input-bg-file" accept="image/*,video/*" class="file-input-hidden" />
+                    <label for="input-bg-file" class="file-uploader-label">
+                      <span>🎬</span> Click to upload image or video
+                    </label>
+                    <div id="preview-bg-container" class="uploader-preview-img hidden"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 2.5: Print Packages -->
+              <div id="admin-tab-packages" class="admin-tab-content hidden">
+                <h4 class="admin-tab-section-title">Configure Print Packages</h4>
+
+                <!-- General package configs -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                  <div class="form-group">
+                    <label for="input-currency-symbol">Currency Symbol</label>
+                    <input type="text" id="input-currency-symbol" placeholder="e.g. ₱" value="₱" required
+                      style="width: 100%;" />
+                  </div>
+                  <div class="form-group">
+                    <label for="input-max-prints">Max Prints Per Session</label>
+                    <input type="number" id="input-max-prints" placeholder="e.g. 4" min="1" max="10" value="4" required
+                      style="width: 100%;" />
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label for="input-welcome-msg">Idle Screen Welcome Message</label>
+                  <input type="text" id="input-welcome-msg" placeholder="e.g. Welcome to Snapceipt!"
+                    style="width: 100%;" />
+                </div>
+
+                <div class="form-group"
+                  style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-primary); margin-bottom: 15px;">
+                  <div style="flex-grow: 1; padding-right: 15px;">
+                    <label style="margin-bottom: 2px;">Enable Event Mode</label>
+                    <p
+                      style="font-size: 11.5px; color: var(--text-secondary); margin: 0; opacity: 0.8; line-height: 1.3;">
+                      Bypasses packages & payment screens. Guests go directly to capture, and choose print copies at the
+                      end.
+                    </p>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="input-enable-event-mode" />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <h5
+                  style="font-size: 13px; font-weight: 700; margin: 20px 0 10px; color: var(--text-primary); text-transform: uppercase;">
+                  Manage Packages List</h5>
+
+                <div class="packages-manager-table-wrapper"
+                  style="border: 1px solid var(--border-primary); border-radius: 8px; overflow: hidden; background: #fff; margin-bottom: 20px;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                    <thead>
+                      <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border-primary);">
+                        <th style="padding: 10px;">Name</th>
+                        <th style="padding: 10px; text-align: center;">Prints</th>
+                        <th style="padding: 10px; text-align: right;">Price</th>
+                        <th style="padding: 10px; text-align: center;">Status</th>
+                        <th style="padding: 10px; text-align: center;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="packages-editor-tbody">
+                      <!-- Dynamic list -->
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Add / Edit Form -->
+                <div class="package-form-editor"
+                  style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); padding: 15px; border-radius: 8px;">
+                  <h6 id="package-form-title"
+                    style="margin: 0 0 10px; font-size: 12px; font-weight: 700; color: var(--text-primary);">EDIT PACKAGE CONFIGURATION</h6>
+                  <input type="hidden" id="editor-package-id" />
+
+                  <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div class="form-group" style="margin: 0;">
+                      <label for="editor-package-name" style="font-size: 10px;">Package Name</label>
+                      <input type="text" id="editor-package-name" placeholder="e.g. Package A"
+                        style="padding: 6px; font-size: 12px;" />
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                      <label for="editor-package-prints" style="font-size: 10px;">Prints Count</label>
+                      <input type="number" id="editor-package-prints" min="1" max="10" placeholder="1"
+                        style="padding: 6px; font-size: 12px;" />
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                      <label for="editor-package-photos" style="font-size: 10px;">Photos Count</label>
+                      <input type="number" id="editor-package-photos" min="1" max="10" placeholder="3"
+                        style="padding: 6px; font-size: 12px;" />
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                      <label for="editor-package-price" style="font-size: 10px;">Price</label>
+                      <input type="number" id="editor-package-price" min="0" placeholder="50"
+                        style="padding: 6px; font-size: 12px;" />
+                    </div>
                   </div>
 
-                  <h5 style="font-size: 13px; font-weight: 700; margin: 20px 0 10px; color: var(--text-primary); text-transform: uppercase;">Manage Packages List</h5>
-                  
-                  <div class="packages-manager-table-wrapper" style="border: 1px solid var(--border-primary); border-radius: 8px; overflow: hidden; background: #fff; margin-bottom: 20px;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div class="form-group" style="margin: 0;">
+                      <label for="editor-package-qr-data" style="font-size: 10px;">Package QR Code Data Preview</label>
+                      <input type="text" id="editor-package-qr-data" placeholder="e.g. PACKAGE_A|PRINTS=1"
+                        style="padding: 6px; font-size: 12px; font-family: monospace; font-weight: bold;" />
+                    </div>
+                    <div class="form-group" style="margin: 0; display: flex; flex-direction: column; justify-content: flex-end;">
+                      <label class="toggle-switch" style="align-self: flex-start; margin-bottom: 4px;">
+                        <input type="checkbox" id="editor-package-enabled" checked />
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <span style="font-size: 10px; color: var(--text-secondary);">Enable Package</span>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+                    <button type="button" id="btn-package-cancel" class="btn-admin btn-admin-secondary"
+                      style="padding: 6px 12px; font-size: 11px; display: none;">Cancel</button>
+                    <button type="button" id="btn-package-save" class="btn-admin btn-admin-primary"
+                      style="padding: 6px 12px; font-size: 11px;">Save Package</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 3: System & Hardware -->
+              <div id="admin-tab-system" class="admin-tab-content hidden">
+                <h4 class="admin-tab-section-title">Hardware & Device Options</h4>
+
+                <div class="form-group">
+                  <label for="input-admin-pin">Admin Hotspot PIN Passcode</label>
+                  <input type="password" id="input-admin-pin" placeholder="e.g. 1234" pattern="[0-9]{4,8}"
+                    title="4 to 8 digits PIN code" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="input-print-contrast">Thermal Print Contrast Tuning</label>
+                  <select id="input-print-contrast">
+                    <option value="light">Light (Less heat, faster printing)</option>
+                    <option value="medium">Medium (Standard default contrast)</option>
+                    <option value="dark">Dark (Deep highlights, high definition)</option>
+                    <option value="deep">Deep Black (Maximum heat, stark contrast)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="input-print-mode">Printer Connection Mode</label>
+                  <select id="input-print-mode">
+                    <option value="usb">USB Direct Connection (OTG)</option>
+                    <option value="bluetooth">Bluetooth Direct Connection (Wireless)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="input-paper-width">Printer Paper Width</label>
+                  <select id="input-paper-width">
+                    <option value="80mm">80mm Paper Width (Default, scaled layout)</option>
+                    <option value="58mm">58mm Paper Width (Standard compact layout)</option>
+                  </select>
+                </div>
+
+                <div class="form-group inline-checkbox-group">
+                  <input type="checkbox" id="input-enable-qr" checked />
+                  <label for="input-enable-qr">Enable Digital Copy QR Code Feature</label>
+                </div>
+
+                <div class="form-group inline-checkbox-group">
+                  <input type="checkbox" id="input-enable-fortune" checked />
+                  <label for="input-enable-fortune">Enable "Memory Fortune" Surprise Quotes on Receipts</label>
+                </div>
+
+                <div class="form-group inline-checkbox-group">
+                  <input type="checkbox" id="input-save-gallery" checked />
+                  <label for="input-save-gallery">Auto-Save Branded Receipt Collages to Device Gallery</label>
+                </div>
+
+                <div class="form-group inline-checkbox-group">
+                  <input type="checkbox" id="input-enable-comfort" checked />
+                  <label for="input-enable-comfort">Enable "Comfort Cards" Alternative Option</label>
+                </div>
+
+                <div class="form-group" style="margin-top: 10px;">
+                  <label for="input-imgur-client-id">Imgur Client ID (Digital Copy QR Code)</label>
+                  <input type="text" id="input-imgur-client-id" placeholder="e.g. 6e08c02c63d5ad3" />
+                  <p
+                    style="font-size: 11px; margin-top: 4px; color: var(--text-secondary); opacity: 0.8; line-height: 1.3;">
+                    Required for uploading photos online to scan. Get a free client ID by registering an application at
+                    <a href="https://api.imgur.com/oauth2/addclient" target="_blank"
+                      style="color: inherit; text-decoration: underline;">api.imgur.com/oauth2/addclient</a>.
+                  </p>
+                </div>
+
+                <div class="form-group">
+                  <label for="input-imgbb-api-key">ImgBB API Key (Alternative Image Hosting)</label>
+                  <input type="text" id="input-imgbb-api-key" placeholder="e.g. c6b792880a4b31c6d365bd5586f10dc2" />
+                  <p
+                    style="font-size: 11px; margin-top: 4px; color: var(--text-secondary); opacity: 0.8; line-height: 1.3;">
+                    An easier alternative image host. Register at <a href="https://imgbb.com" target="_blank"
+                      style="color: inherit; text-decoration: underline;">imgbb.com</a> to generate a free API key at <a
+                      href="https://api.imgbb.com/" target="_blank"
+                      style="color: inherit; text-decoration: underline;">api.imgbb.com</a>.
+                  </p>
+                </div>
+
+                <h5
+                  style="font-size: 13px; font-weight: 700; margin: 20px 0 10px; color: var(--text-primary); text-transform: uppercase;">
+                  Hardware Diagnostics</h5>
+                <div
+                  style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
+                  <p style="font-size: 11.5px; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+                    Test connection status and print feed of the physical thermal printer. Make sure printer is powered
+                    on, connected via USB/Bluetooth, and loaded with paper.
+                  </p>
+                  <button type="button" id="btn-admin-test-print" class="btn-admin btn-admin-primary"
+                    style="padding: 10px 18px; font-weight: 800; font-size: 12px; width: 100%;">
+                    🖨️ SEND DIAGNOSTIC TEST PRINT
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tab 4: Cloud Sync -->
+              <div id="admin-tab-sync" class="admin-tab-content hidden">
+                <h4 class="admin-tab-section-title">Offline Cloud Sync Manager</h4>
+
+                <p style="font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 20px;">
+                  If the device captures photos while offline, the images and transaction sessions are cached locally.
+                  Sync them to the cloud database once an active internet connection is restored.
+                </p>
+
+                <!-- Queue 1: Captured Photos Upload -->
+                <div class="offline-sync-card"
+                  style="margin-bottom: 20px; border: 1px solid var(--border-primary); border-radius: 8px; padding: 15px; background: #fff;">
+                  <div class="offline-sync-header"
+                    style="font-weight: 700; font-size: 13px; margin-bottom: 10px; text-transform: uppercase;">1.
+                    Unuploaded Photo Collages</div>
+                  <div class="offline-sync-row"
+                    style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span class="offline-sync-count" id="offline-captures-count"
+                      style="font-size: 13px; color: var(--text-secondary);">0 captures saved offline</span>
+                    <button type="button" id="admin-sync-btn" class="btn-admin btn-admin-primary"
+                      style="padding: 8px 16px;" disabled>Upload Photos</button>
+                  </div>
+                </div>
+
+                <!-- Queue 2: Kiosk Session Reports Sync -->
+                <div class="offline-sync-card"
+                  style="border: 1px solid var(--border-primary); border-radius: 8px; padding: 15px; background: #fff;">
+                  <div class="offline-sync-header"
+                    style="font-weight: 700; font-size: 13px; margin-bottom: 10px; text-transform: uppercase;">2.
+                    Unsynced Sales Ledger Sessions</div>
+                  <div class="offline-sync-row"
+                    style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span class="offline-sync-count" id="offline-sessions-count"
+                      style="font-size: 13px; color: var(--text-secondary);">0 sessions pending sync</span>
+                    <button type="button" id="admin-sync-sessions-btn" class="btn-admin btn-admin-primary"
+                      style="padding: 8px 16px;" disabled>Sync Sessions</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 6: Statistics -->
+              <div id="admin-tab-statistics" class="admin-tab-content hidden">
+                <h4 class="admin-tab-section-title">Kiosk Performance & Cloud Reconciliation</h4>
+
+                <div class="stats-overview-grid"
+                  style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+                  <div class="stat-box-local"
+                    style="border: 1px solid var(--border-primary); padding: 12px; background: rgba(var(--accent-color), 0.03);">
+                    <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Local
+                      Sessions</div>
+                    <div id="stats-local-sessions"
+                      style="font-size: 22px; font-weight: 700; font-family: var(--font-ui); margin-top: 4px;">0</div>
+                  </div>
+                  <div class="stat-box-local"
+                    style="border: 1px solid var(--border-primary); padding: 12px; background: rgba(var(--accent-color), 0.03);">
+                    <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Local Gross
+                      Revenue</div>
+                    <div id="stats-local-revenue"
+                      style="font-size: 22px; font-weight: 700; font-family: var(--font-ui); margin-top: 4px;">₱0.00
+                    </div>
+                  </div>
+                  <div class="stat-box-local"
+                    style="border: 1px solid var(--border-primary); padding: 12px; background: rgba(var(--accent-color), 0.03);">
+                    <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Local Prints
+                    </div>
+                    <div id="stats-local-prints"
+                      style="font-size: 22px; font-weight: 700; font-family: var(--font-ui); margin-top: 4px;">0</div>
+                  </div>
+                  <div class="stat-box-local"
+                    style="border: 1px solid var(--border-primary); padding: 12px; background: rgba(var(--accent-color), 0.03);">
+                    <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Pending Sync
+                      Queue</div>
+                    <div id="stats-local-pending"
+                      style="font-size: 22px; font-weight: 700; font-family: var(--font-ui); margin-top: 4px; color: #e69500;">
+                      0</div>
+                  </div>
+                </div>
+
+                <h5 style="font-size: 12px; text-transform: uppercase; margin: 15px 0 8px 0; letter-spacing: 0.5px;">
+                  Reconciliation Status</h5>
+                <div class="reconciliation-panel"
+                  style="border: 1px solid var(--border-primary); padding: 15px; background: var(--bg-tertiary); margin-bottom: 20px; font-size: 13px;">
+                  <div id="recon-loading" style="text-align: center; color: var(--text-secondary); padding: 10px 0;">
+                    ⏳ Loading cloud stats...
+                  </div>
+                  <div id="recon-data" class="hidden">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
                       <thead>
-                        <tr style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border-primary);">
-                          <th style="padding: 10px;">Name</th>
-                          <th style="padding: 10px; text-align: center;">Prints</th>
-                          <th style="padding: 10px; text-align: right;">Price</th>
-                          <th style="padding: 10px; text-align: center;">Status</th>
-                          <th style="padding: 10px; text-align: center;">Actions</th>
+                        <tr
+                          style="border-bottom: 1px solid var(--border-primary); font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">
+                          <th style="padding: 6px 0;">Metric</th>
+                          <th style="padding: 6px 0; text-align: center;">Device</th>
+                          <th style="padding: 6px 0; text-align: center;">Cloud</th>
+                          <th style="padding: 6px 0; text-align: right;">Status</th>
                         </tr>
                       </thead>
-                      <tbody id="packages-editor-tbody">
-                        <!-- Dynamic list -->
+                      <tbody>
+                        <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                          <td style="padding: 8px 0; font-weight: 500;">Sessions</td>
+                          <td id="recon-device-sessions" style="padding: 8px 0; text-align: center;">-</td>
+                          <td id="recon-cloud-sessions" style="padding: 8px 0; text-align: center;">-</td>
+                          <td id="recon-status-sessions" style="padding: 8px 0; text-align: right;">-</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                          <td style="padding: 8px 0; font-weight: 500;">Prints</td>
+                          <td id="recon-device-prints" style="padding: 8px 0; text-align: center;">-</td>
+                          <td id="recon-cloud-prints" style="padding: 8px 0; text-align: center;">-</td>
+                          <td id="recon-status-prints" style="padding: 8px 0; text-align: right;">-</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 8px 0; font-weight: 500;">Revenue</td>
+                          <td id="recon-device-revenue" style="padding: 8px 0; text-align: center;">-</td>
+                          <td id="recon-cloud-revenue" style="padding: 8px 0; text-align: center;">-</td>
+                          <td id="recon-status-revenue" style="padding: 8px 0; text-align: right;">-</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
+                </div>
 
-                  <!-- Add / Edit Form -->
-                  <div class="package-form-editor" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); padding: 15px; border-radius: 8px;">
-                    <h6 id="package-form-title" style="margin: 0 0 10px; font-size: 12px; font-weight: 700; color: var(--text-primary);">ADD NEW PACKAGE</h6>
-                    <input type="hidden" id="editor-package-id" />
-                    
-                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-                      <div class="form-group" style="margin: 0;">
-                        <label for="editor-package-name" style="font-size: 10px;">Package Name</label>
-                        <input type="text" id="editor-package-name" placeholder="e.g. 2 Prints" style="padding: 6px; font-size: 12px;" />
-                      </div>
-                      <div class="form-group" style="margin: 0;">
-                        <label for="editor-package-prints" style="font-size: 10px;">Prints</label>
-                        <input type="number" id="editor-package-prints" min="1" max="10" placeholder="2" style="padding: 6px; font-size: 12px;" />
-                      </div>
-                      <div class="form-group" style="margin: 0;">
-                        <label for="editor-package-price" style="font-size: 10px;">Price</label>
-                        <input type="number" id="editor-package-price" min="0" placeholder="40" style="padding: 6px; font-size: 12px;" />
-                      </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                      <button type="button" id="btn-package-cancel" class="btn-admin btn-admin-secondary" style="padding: 6px 12px; font-size: 11px; display: none;">Cancel</button>
-                      <button type="button" id="btn-package-save" class="btn-admin btn-admin-primary" style="padding: 6px 12px; font-size: 11px;">Add Package</button>
-                    </div>
+                <h5 style="font-size: 12px; text-transform: uppercase; margin: 15px 0 8px 0; letter-spacing: 0.5px;">
+                  Summary Breakdowns</h5>
+                <div class="summary-breakdowns" style="font-size: 13px;">
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--border-primary);">
+                    <span>Today's Sessions</span>
+                    <strong id="stats-breakdown-today">0 sessions (₱0.00)</strong>
+                  </div>
+                  <div
+                    style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--border-primary);">
+                    <span>This Week's Sessions</span>
+                    <strong id="stats-breakdown-week">0 sessions (₱0.00)</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                    <span>This Month's Sessions</span>
+                    <strong id="stats-breakdown-month">0 sessions (₱0.00)</strong>
                   </div>
                 </div>
 
-                <!-- Tab 3: System & Hardware -->
-                <div id="admin-tab-system" class="admin-tab-content hidden">
-                  <h4 class="admin-tab-section-title">Hardware & Device Options</h4>
-
-                  <div class="form-group">
-                    <label for="input-admin-pin">Admin Hotspot PIN Passcode</label>
-                    <input type="password" id="input-admin-pin" placeholder="e.g. 1234" pattern="[0-9]{4,8}" title="4 to 8 digits PIN code" required />
+                <h5
+                  style="font-size: 12px; text-transform: uppercase; margin: 20px 0 8px 0; letter-spacing: 0.5px; color: var(--text-primary);">
+                  💰 Local Revenue Collection</h5>
+                <div
+                  style="border: 1px solid var(--border-primary); padding: 15px; background: rgba(47, 158, 68, 0.05); margin-bottom: 20px; font-size: 13px; border-radius: 8px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="color: var(--text-secondary);">Last Collection Date:</span>
+                    <strong id="kiosk-last-collected-label">Never</strong>
                   </div>
-
-                  <div class="form-group">
-                    <label for="input-print-contrast">Thermal Print Contrast Tuning</label>
-                    <select id="input-print-contrast">
-                      <option value="light">Light (Less heat, faster printing)</option>
-                      <option value="medium">Medium (Standard default contrast)</option>
-                      <option value="dark">Dark (Deep highlights, high definition)</option>
-                      <option value="deep">Deep Black (Maximum heat, stark contrast)</option>
-                    </select>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="color: var(--text-secondary);">Uncollected Balance:</span>
+                    <strong id="kiosk-uncollected-balance"
+                      style="font-size: 16px; color: #2f9e44; font-family: monospace;">₱0.00</strong>
                   </div>
-
-                  <div class="form-group">
-                    <label for="input-print-mode">Printer Connection Mode</label>
-                    <select id="input-print-mode">
-                      <option value="usb">USB Direct Connection (OTG)</option>
-                      <option value="bluetooth">Bluetooth Direct Connection (Wireless)</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="input-paper-width">Printer Paper Width</label>
-                    <select id="input-paper-width">
-                      <option value="80mm">80mm Paper Width (Default, scaled layout)</option>
-                      <option value="58mm">58mm Paper Width (Standard compact layout)</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group inline-checkbox-group">
-                    <input type="checkbox" id="input-enable-qr" checked />
-                    <label for="input-enable-qr">Enable Digital Copy QR Code Feature</label>
-                  </div>
-
-                  <div class="form-group inline-checkbox-group">
-                    <input type="checkbox" id="input-enable-fortune" checked />
-                    <label for="input-enable-fortune">Enable "Memory Fortune" Surprise Quotes on Receipts</label>
-                  </div>
-
-                  <div class="form-group inline-checkbox-group">
-                    <input type="checkbox" id="input-save-gallery" checked />
-                    <label for="input-save-gallery">Auto-Save Branded Receipt Collages to Device Gallery</label>
-                  </div>
-
-                  <div class="form-group inline-checkbox-group">
-                    <input type="checkbox" id="input-enable-comfort" checked />
-                    <label for="input-enable-comfort">Enable "Comfort Cards" Alternative Option</label>
-                  </div>
-
-                  <div class="form-group" style="margin-top: 10px;">
-                    <label for="input-imgur-client-id">Imgur Client ID (Digital Copy QR Code)</label>
-                    <input type="text" id="input-imgur-client-id" placeholder="e.g. 6e08c02c63d5ad3" />
-                    <p style="font-size: 11px; margin-top: 4px; color: var(--text-secondary); opacity: 0.8; line-height: 1.3;">
-                      Required for uploading photos online to scan. Get a free client ID by registering an application at 
-                      <a href="https://api.imgur.com/oauth2/addclient" target="_blank" style="color: inherit; text-decoration: underline;">api.imgur.com/oauth2/addclient</a>.
-                    </p>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="input-imgbb-api-key">ImgBB API Key (Alternative Image Hosting)</label>
-                    <input type="text" id="input-imgbb-api-key" placeholder="e.g. c6b792880a4b31c6d365bd5586f10dc2" />
-                    <p style="font-size: 11px; margin-top: 4px; color: var(--text-secondary); opacity: 0.8; line-height: 1.3;">
-                      An easier alternative image host. Register at <a href="https://imgbb.com" target="_blank" style="color: inherit; text-decoration: underline;">imgbb.com</a> to generate a free API key at <a href="https://api.imgbb.com/" target="_blank" style="color: inherit; text-decoration: underline;">api.imgbb.com</a>.
-                    </p>
-                  </div>
-
-                  <h5 style="font-size: 13px; font-weight: 700; margin: 20px 0 10px; color: var(--text-primary); text-transform: uppercase;">Hardware Diagnostics</h5>
-                  <div style="background: var(--bg-tertiary); border: 1px solid var(--border-primary); padding: 15px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px;">
-                    <p style="font-size: 11.5px; color: var(--text-secondary); margin: 0; line-height: 1.4;">
-                      Test connection status and print feed of the physical thermal printer. Make sure printer is powered on, connected via USB/Bluetooth, and loaded with paper.
-                    </p>
-                    <button type="button" id="btn-admin-test-print" class="btn-admin btn-admin-primary" style="padding: 10px 18px; font-weight: 800; font-size: 12px; width: 100%;">
-                      🖨️ SEND DIAGNOSTIC TEST PRINT
-                    </button>
-                  </div>
+                  <button type="button" id="admin-confirm-collected-btn" class="btn-admin"
+                    style="width: 100%; background: #2f9e44; color: white; border: none; font-weight: bold; border-radius: 6px; padding: 10px; cursor: pointer; transition: background-color 0.2s;">
+                    💰 Confirm Cash Collected (Audit)
+                  </button>
                 </div>
 
-                <!-- Tab 4: Cloud Sync -->
-                <div id="admin-tab-sync" class="admin-tab-content hidden">
-                  <h4 class="admin-tab-section-title">Offline Cloud Sync Manager</h4>
-                  
-                  <p style="font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 20px;">
-                    If the device captures photos while offline, the images and transaction sessions are cached locally. Sync them to the cloud database once an active internet connection is restored.
-                  </p>
-
-                  <!-- Queue 1: Captured Photos Upload -->
-                  <div class="offline-sync-card" style="margin-bottom: 20px; border: 1px solid var(--border-primary); border-radius: 8px; padding: 15px; background: #fff;">
-                    <div class="offline-sync-header" style="font-weight: 700; font-size: 13px; margin-bottom: 10px; text-transform: uppercase;">1. Unuploaded Photo Collages</div>
-                    <div class="offline-sync-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                      <span class="offline-sync-count" id="offline-captures-count" style="font-size: 13px; color: var(--text-secondary);">0 captures saved offline</span>
-                      <button type="button" id="admin-sync-btn" class="btn-admin btn-admin-primary" style="padding: 8px 16px;" disabled>Upload Photos</button>
-                    </div>
+                <h5
+                  style="font-size: 12px; text-transform: uppercase; margin: 20px 0 8px 0; letter-spacing: 0.5px; color: var(--text-primary);">
+                  🔋 Kiosk Printer Paper Roll</h5>
+                <div
+                  style="border: 1px solid var(--border-primary); padding: 15px; background: rgba(28, 126, 214, 0.05); margin-bottom: 20px; font-size: 13px; border-radius: 8px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="color: var(--text-secondary);">Prints Remaining:</span>
+                    <strong id="kiosk-paper-remaining-label" style="font-size: 15px;">150 / 150 prints</strong>
                   </div>
-
-                  <!-- Queue 2: Kiosk Session Reports Sync -->
-                  <div class="offline-sync-card" style="border: 1px solid var(--border-primary); border-radius: 8px; padding: 15px; background: #fff;">
-                    <div class="offline-sync-header" style="font-weight: 700; font-size: 13px; margin-bottom: 10px; text-transform: uppercase;">2. Unsynced Sales Ledger Sessions</div>
-                    <div class="offline-sync-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                      <span class="offline-sync-count" id="offline-sessions-count" style="font-size: 13px; color: var(--text-secondary);">0 sessions pending sync</span>
-                      <button type="button" id="admin-sync-sessions-btn" class="btn-admin btn-admin-primary" style="padding: 8px 16px;" disabled>Sync Sessions</button>
-                    </div>
+                  <div
+                    style="background: rgba(0,0,0,0.05); border-radius: 4px; height: 10px; width: 100%; overflow: hidden; margin-bottom: 15px; position: relative;">
+                    <div id="kiosk-paper-bar"
+                      style="background: #1c7ed6; height: 100%; width: 100%; transition: width 0.3s ease;"></div>
                   </div>
+                  <button type="button" id="admin-refill-paper-btn" class="btn-admin"
+                    style="width: 100%; background: #1c7ed6; color: white; border: none; font-weight: bold; border-radius: 6px; padding: 10px; cursor: pointer; transition: background-color 0.2s;">
+                    🔋 Refill Paper Roll (Reset Counter)
+                  </button>
                 </div>
 
-                <!-- Tab 6: Statistics -->
-                <div id="admin-tab-statistics" class="admin-tab-content hidden">
-                  <h4 class="admin-tab-section-title">Kiosk Performance & Cloud Reconciliation</h4>
-                  
-                  <div class="stats-overview-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
-                    <div class="stat-box-local" style="border: 1px solid var(--border-primary); padding: 12px; background: rgba(var(--accent-color), 0.03);">
-                      <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Local Sessions</div>
-                      <div id="stats-local-sessions" style="font-size: 22px; font-weight: 700; font-family: var(--font-ui); margin-top: 4px;">0</div>
-                    </div>
-                    <div class="stat-box-local" style="border: 1px solid var(--border-primary); padding: 12px; background: rgba(var(--accent-color), 0.03);">
-                      <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Local Gross Revenue</div>
-                      <div id="stats-local-revenue" style="font-size: 22px; font-weight: 700; font-family: var(--font-ui); margin-top: 4px;">₱0.00</div>
-                    </div>
-                    <div class="stat-box-local" style="border: 1px solid var(--border-primary); padding: 12px; background: rgba(var(--accent-color), 0.03);">
-                      <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Local Prints</div>
-                      <div id="stats-local-prints" style="font-size: 22px; font-weight: 700; font-family: var(--font-ui); margin-top: 4px;">0</div>
-                    </div>
-                    <div class="stat-box-local" style="border: 1px solid var(--border-primary); padding: 12px; background: rgba(var(--accent-color), 0.03);">
-                      <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Pending Sync Queue</div>
-                      <div id="stats-local-pending" style="font-size: 22px; font-weight: 700; font-family: var(--font-ui); margin-top: 4px; color: #e69500;">0</div>
-                    </div>
-                  </div>
-
-                  <h5 style="font-size: 12px; text-transform: uppercase; margin: 15px 0 8px 0; letter-spacing: 0.5px;">Reconciliation Status</h5>
-                  <div class="reconciliation-panel" style="border: 1px solid var(--border-primary); padding: 15px; background: var(--bg-tertiary); margin-bottom: 20px; font-size: 13px;">
-                    <div id="recon-loading" style="text-align: center; color: var(--text-secondary); padding: 10px 0;">
-                      ⏳ Loading cloud stats...
-                    </div>
-                    <div id="recon-data" class="hidden">
-                      <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead>
-                          <tr style="border-bottom: 1px solid var(--border-primary); font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">
-                            <th style="padding: 6px 0;">Metric</th>
-                            <th style="padding: 6px 0; text-align: center;">Device</th>
-                            <th style="padding: 6px 0; text-align: center;">Cloud</th>
-                            <th style="padding: 6px 0; text-align: right;">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
-                            <td style="padding: 8px 0; font-weight: 500;">Sessions</td>
-                            <td id="recon-device-sessions" style="padding: 8px 0; text-align: center;">-</td>
-                            <td id="recon-cloud-sessions" style="padding: 8px 0; text-align: center;">-</td>
-                            <td id="recon-status-sessions" style="padding: 8px 0; text-align: right;">-</td>
-                          </tr>
-                          <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
-                            <td style="padding: 8px 0; font-weight: 500;">Prints</td>
-                            <td id="recon-device-prints" style="padding: 8px 0; text-align: center;">-</td>
-                            <td id="recon-cloud-prints" style="padding: 8px 0; text-align: center;">-</td>
-                            <td id="recon-status-prints" style="padding: 8px 0; text-align: right;">-</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-weight: 500;">Revenue</td>
-                            <td id="recon-device-revenue" style="padding: 8px 0; text-align: center;">-</td>
-                            <td id="recon-cloud-revenue" style="padding: 8px 0; text-align: center;">-</td>
-                            <td id="recon-status-revenue" style="padding: 8px 0; text-align: right;">-</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <h5 style="font-size: 12px; text-transform: uppercase; margin: 15px 0 8px 0; letter-spacing: 0.5px;">Summary Breakdowns</h5>
-                  <div class="summary-breakdowns" style="font-size: 13px;">
-                    <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--border-primary);">
-                      <span>Today's Sessions</span>
-                      <strong id="stats-breakdown-today">0 sessions (₱0.00)</strong>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--border-primary);">
-                      <span>This Week's Sessions</span>
-                      <strong id="stats-breakdown-week">0 sessions (₱0.00)</strong>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; padding: 6px 0;">
-                      <span>This Month's Sessions</span>
-                      <strong id="stats-breakdown-month">0 sessions (₱0.00)</strong>
-                    </div>
-                  </div>
-
-                  <h5 style="font-size: 12px; text-transform: uppercase; margin: 20px 0 8px 0; letter-spacing: 0.5px; color: var(--text-primary);">💰 Local Revenue Collection</h5>
-                  <div style="border: 1px solid var(--border-primary); padding: 15px; background: rgba(47, 158, 68, 0.05); margin-bottom: 20px; font-size: 13px; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                      <span style="color: var(--text-secondary);">Last Collection Date:</span>
-                      <strong id="kiosk-last-collected-label">Never</strong>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                      <span style="color: var(--text-secondary);">Uncollected Balance:</span>
-                      <strong id="kiosk-uncollected-balance" style="font-size: 16px; color: #2f9e44; font-family: monospace;">₱0.00</strong>
-                    </div>
-                    <button type="button" id="admin-confirm-collected-btn" class="btn-admin" style="width: 100%; background: #2f9e44; color: white; border: none; font-weight: bold; border-radius: 6px; padding: 10px; cursor: pointer; transition: background-color 0.2s;">
-                      💰 Confirm Cash Collected (Audit)
-                    </button>
-                  </div>
-
-                  <h5 style="font-size: 12px; text-transform: uppercase; margin: 20px 0 8px 0; letter-spacing: 0.5px; color: var(--text-primary);">🔋 Kiosk Printer Paper Roll</h5>
-                  <div style="border: 1px solid var(--border-primary); padding: 15px; background: rgba(28, 126, 214, 0.05); margin-bottom: 20px; font-size: 13px; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                      <span style="color: var(--text-secondary);">Prints Remaining:</span>
-                      <strong id="kiosk-paper-remaining-label" style="font-size: 15px;">150 / 150 prints</strong>
-                    </div>
-                    <div style="background: rgba(0,0,0,0.05); border-radius: 4px; height: 10px; width: 100%; overflow: hidden; margin-bottom: 15px; position: relative;">
-                      <div id="kiosk-paper-bar" style="background: #1c7ed6; height: 100%; width: 100%; transition: width 0.3s ease;"></div>
-                    </div>
-                    <button type="button" id="admin-refill-paper-btn" class="btn-admin" style="width: 100%; background: #1c7ed6; color: white; border: none; font-weight: bold; border-radius: 6px; padding: 10px; cursor: pointer; transition: background-color 0.2s;">
-                      🔋 Refill Paper Roll (Reset Counter)
-                    </button>
-                  </div>
-
-                  <div style="margin-top: 20px; display: flex; gap: 10px;">
-                    <button type="button" id="admin-force-sync-btn" class="btn-admin btn-admin-primary" style="flex: 1;">Force Resync All</button>
-                    <button type="button" id="admin-refresh-stats-btn" class="btn-admin btn-admin-secondary" style="flex: 1;">Refresh Stats</button>
-                  </div>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                  <button type="button" id="admin-force-sync-btn" class="btn-admin btn-admin-primary"
+                    style="flex: 1;">Force Resync All</button>
+                  <button type="button" id="admin-refresh-stats-btn" class="btn-admin btn-admin-secondary"
+                    style="flex: 1;">Refresh Stats</button>
                 </div>
-
-                <!-- Tab 5: Maintenance -->
-                <div id="admin-tab-maintenance" class="admin-tab-content hidden">
-                  <h4 class="admin-tab-section-title">License & System Reset</h4>
-                  
-                  <p style="font-size: 13px; color: #ff3333; font-weight: 500; line-height: 1.5; margin-bottom: 15px;">
-                    Warning: These options are destructive. Make sure you understand the consequences before initiating these actions.
-                  </p>
-
-                  <div class="form-group" style="border: 1px dashed rgba(255, 51, 51, 0.3); padding: 15px; margin-bottom: 10px;">
-                    <label style="color: #ff3333; font-size: 12px; margin-bottom: 8px; display: block;">Reset Customizations</label>
-                    <p style="font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.4;">
-                      Clears all custom cafe branding, colors, logos, and settings back to factory defaults.
-                    </p>
-                    <button type="button" id="admin-reset-btn" class="btn-admin btn-admin-danger" style="width: auto;">Reset stock</button>
-                  </div>
-
-                  <div class="form-group" style="border: 1px dashed rgba(230, 149, 0, 0.3); padding: 15px;">
-                    <label style="color: #e69500; font-size: 12px; margin-bottom: 8px; display: block;">Deactivate License</label>
-                    <p style="font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.4;">
-                      Unlocks the device license from this kiosk instance. The device will return to the Activation screen on reload.
-                    </p>
-                    <button type="button" id="admin-deactivate-btn" class="btn-admin btn-admin-warning" style="width: auto;">Deactivate License</button>
-                  </div>
-                </div>
-
               </div>
 
-              <!-- Pinned Footer Actions -->
-              <div class="form-actions">
-                <button type="button" id="admin-cancel-btn" class="btn-admin btn-admin-secondary">Cancel</button>
-                <button type="submit" class="btn-admin btn-admin-primary">Save setup</button>
+              <!-- Tab 5: Maintenance -->
+              <div id="admin-tab-maintenance" class="admin-tab-content hidden">
+                <h4 class="admin-tab-section-title">License & System Reset</h4>
+
+                <p style="font-size: 13px; color: #ff3333; font-weight: 500; line-height: 1.5; margin-bottom: 15px;">
+                  Warning: These options are destructive. Make sure you understand the consequences before initiating
+                  these actions.
+                </p>
+
+                <div class="form-group"
+                  style="border: 1px dashed rgba(255, 51, 51, 0.3); padding: 15px; margin-bottom: 10px;">
+                  <label style="color: #ff3333; font-size: 12px; margin-bottom: 8px; display: block;">Reset
+                    Customizations</label>
+                  <p style="font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.4;">
+                    Clears all custom cafe branding, colors, logos, and settings back to factory defaults.
+                  </p>
+                  <button type="button" id="admin-reset-btn" class="btn-admin btn-admin-danger"
+                    style="width: auto;">Reset stock</button>
+                </div>
+
+                <div class="form-group" style="border: 1px dashed rgba(230, 149, 0, 0.3); padding: 15px;">
+                  <label style="color: #e69500; font-size: 12px; margin-bottom: 8px; display: block;">Deactivate
+                    License</label>
+                  <p style="font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.4;">
+                    Unlocks the device license from this kiosk instance. The device will return to the Activation screen
+                    on reload.
+                  </p>
+                  <button type="button" id="admin-deactivate-btn" class="btn-admin btn-admin-warning"
+                    style="width: auto;">Deactivate License</button>
+                </div>
               </div>
+
+              <!-- Tab: Scan to Pay / Paywall -->
+              <div id="admin-tab-paywall" class="admin-tab-content hidden">
+                <h4 class="admin-tab-section-title">Online Payment & Scan-to-Pay Paywall</h4>
+
+                <div class="form-group"
+                  style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-primary); margin-bottom: 15px;">
+                  <div style="flex-grow: 1; padding-right: 15px;">
+                    <label style="margin-bottom: 2px; font-weight: 600;">Enable Scan-to-Pay Paywall</label>
+                    <p
+                      style="font-size: 11.5px; color: var(--text-secondary); margin: 0; opacity: 0.8; line-height: 1.3;">
+                      Require customers to scan QR code & enter GCash / E-wallet Reference Number before photo session
+                      starts.
+                    </p>
+                  </div>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="input-enable-paywall" />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="form-group">
+                  <label for="input-payment-account-name">Account Name (e.g. GCash / Maya Name)</label>
+                  <input type="text" id="input-payment-account-name" placeholder="e.g. BEANS & BITES / JOHN D." />
+                </div>
+
+                <div class="form-group">
+                  <label for="input-payment-account-number">Mobile / Account Number (Optional Reference)</label>
+                  <input type="text" id="input-payment-account-number" placeholder="e.g. 0917-123-4567" />
+                </div>
+
+                <div class="form-group">
+                  <label for="input-payment-instructions">Payment Instructions</label>
+                  <textarea id="input-payment-instructions" rows="2"
+                    placeholder="e.g. Scan QR code via GCash or Maya app to pay exact amount."></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label>Global Fallback Payment QR Code (GCash / Maya / QRPh Graphic)</label>
+                  <div class="file-uploader-box">
+                    <input type="file" id="input-payment-qr-file" accept="image/*" class="file-input-hidden" />
+                    <label for="input-payment-qr-file" class="file-uploader-label">
+                      <span>📤</span> Click to upload Fallback Payment QR Code
+                    </label>
+                    <div id="preview-payment-qr-container" class="uploader-preview-img hidden"></div>
+                  </div>
+                  <p style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; opacity: 0.8;">
+                    Used if a specific package does not have an uploaded QR code.
+                  </p>
+                </div>
+
+                <h5 style="font-size: 13px; font-weight: 700; margin: 25px 0 12px; color: var(--text-primary); text-transform: uppercase; border-top: 1px solid var(--border-primary); padding-top: 15px;">
+                  📱 Print Packages & Package-Specific QR Codes
+                </h5>
+                <p style="font-size: 11.5px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.4;">
+                  Customize pricing, print counts, inclusions, and upload dedicated QR Code graphics for Package A, B, C, and D.
+                </p>
+
+                <div id="kiosk-packages-setup-list" style="display: flex; flex-direction: column; gap: 16px;">
+                  <!-- Package A Card -->
+                  <div class="package-setup-card" style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <strong style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE A</strong>
+                      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" id="input-pkg-enabled-pkg-a" checked /> Enable Package
+                      </label>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-name-pkg-a" style="font-size: 11px;">Package Name</label>
+                        <input type="text" id="input-pkg-name-pkg-a" value="Package A" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-price-pkg-a" style="font-size: 11px;">Price (₱)</label>
+                        <input type="number" id="input-pkg-price-pkg-a" value="50" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-prints-pkg-a" style="font-size: 11px;">Prints Count</label>
+                        <input type="number" id="input-pkg-prints-pkg-a" value="1" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-inclusions-pkg-a" style="font-size: 11px;">Inclusions</label>
+                        <input type="text" id="input-pkg-inclusions-pkg-a" value="1 Thermal Print + Digital Softcopy" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                      <label style="font-size: 11px;">Upload Package A QR Code Image</label>
+                      <div class="file-uploader-box" style="padding: 10px;">
+                        <input type="file" id="input-pkg-qr-file-pkg-a" accept="image/*" class="file-input-hidden" />
+                        <label for="input-pkg-qr-file-pkg-a" class="file-uploader-label" style="padding: 8px;">
+                          <span>📤</span> Select Package A QR Code
+                        </label>
+                        <div id="preview-pkg-qr-container-pkg-a" class="uploader-preview-img hidden"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Package B Card -->
+                  <div class="package-setup-card" style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <strong style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE B</strong>
+                      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" id="input-pkg-enabled-pkg-b" checked /> Enable Package
+                      </label>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-name-pkg-b" style="font-size: 11px;">Package Name</label>
+                        <input type="text" id="input-pkg-name-pkg-b" value="Package B" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-price-pkg-b" style="font-size: 11px;">Price (₱)</label>
+                        <input type="number" id="input-pkg-price-pkg-b" value="99" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-prints-pkg-b" style="font-size: 11px;">Prints Count</label>
+                        <input type="number" id="input-pkg-prints-pkg-b" value="2" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-inclusions-pkg-b" style="font-size: 11px;">Inclusions</label>
+                        <input type="text" id="input-pkg-inclusions-pkg-b" value="2 Thermal Prints + Digital Softcopy" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                      <label style="font-size: 11px;">Upload Package B QR Code Image</label>
+                      <div class="file-uploader-box" style="padding: 10px;">
+                        <input type="file" id="input-pkg-qr-file-pkg-b" accept="image/*" class="file-input-hidden" />
+                        <label for="input-pkg-qr-file-pkg-b" class="file-uploader-label" style="padding: 8px;">
+                          <span>📤</span> Select Package B QR Code
+                        </label>
+                        <div id="preview-pkg-qr-container-pkg-b" class="uploader-preview-img hidden"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Package C Card -->
+                  <div class="package-setup-card" style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <strong style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE C</strong>
+                      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" id="input-pkg-enabled-pkg-c" checked /> Enable Package
+                      </label>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-name-pkg-c" style="font-size: 11px;">Package Name</label>
+                        <input type="text" id="input-pkg-name-pkg-c" value="Package C" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-price-pkg-c" style="font-size: 11px;">Price (₱)</label>
+                        <input type="number" id="input-pkg-price-pkg-c" value="149" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-prints-pkg-c" style="font-size: 11px;">Prints Count</label>
+                        <input type="number" id="input-pkg-prints-pkg-c" value="3" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-inclusions-pkg-c" style="font-size: 11px;">Inclusions</label>
+                        <input type="text" id="input-pkg-inclusions-pkg-c" value="3 Thermal Prints + Digital Softcopy" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                      <label style="font-size: 11px;">Upload Package C QR Code Image</label>
+                      <div class="file-uploader-box" style="padding: 10px;">
+                        <input type="file" id="input-pkg-qr-file-pkg-c" accept="image/*" class="file-input-hidden" />
+                        <label for="input-pkg-qr-file-pkg-c" class="file-uploader-label" style="padding: 8px;">
+                          <span>📤</span> Select Package C QR Code
+                        </label>
+                        <div id="preview-pkg-qr-container-pkg-c" class="uploader-preview-img hidden"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Package D Card -->
+                  <div class="package-setup-card" style="background: var(--bg-tertiary, #f8f9fa); border: 1px solid var(--border-primary, #e9ecef); padding: 14px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <strong style="font-size: 12px; color: var(--accent-color, #007aff); text-transform: uppercase;">PACKAGE D</strong>
+                      <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                        <input type="checkbox" id="input-pkg-enabled-pkg-d" checked /> Enable Package
+                      </label>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-name-pkg-d" style="font-size: 11px;">Package Name</label>
+                        <input type="text" id="input-pkg-name-pkg-d" value="Package D" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-price-pkg-d" style="font-size: 11px;">Price (₱)</label>
+                        <input type="number" id="input-pkg-price-pkg-d" value="199" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-prints-pkg-d" style="font-size: 11px;">Prints Count</label>
+                        <input type="number" id="input-pkg-prints-pkg-d" value="4" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                      <div class="form-group" style="margin: 0;">
+                        <label for="input-pkg-inclusions-pkg-d" style="font-size: 11px;">Inclusions</label>
+                        <input type="text" id="input-pkg-inclusions-pkg-d" value="4 Thermal Prints + Digital Softcopy" style="font-size: 12px; padding: 6px 8px;" />
+                      </div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                      <label style="font-size: 11px;">Upload Package D QR Code Image</label>
+                      <div class="file-uploader-box" style="padding: 10px;">
+                        <input type="file" id="input-pkg-qr-file-pkg-d" accept="image/*" class="file-input-hidden" />
+                        <label for="input-pkg-qr-file-pkg-d" class="file-uploader-label" style="padding: 8px;">
+                          <span>📤</span> Select Package D QR Code
+                        </label>
+                        <div id="preview-pkg-qr-container-pkg-d" class="uploader-preview-img hidden"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-          </form>
-        </div>
+            <!-- Pinned Footer Actions -->
+            <div class="form-actions">
+              <button type="button" id="admin-cancel-btn" class="btn-admin btn-admin-secondary">Cancel</button>
+              <button type="submit" class="btn-admin btn-admin-primary">Save setup</button>
+            </div>
+          </div>
+
+        </form>
       </div>
     </div>
+  </div>
 
-    <script>
-      // Tab switching controller for the Admin Setup modal
-      function setupAdminTabs() {
-        const sidebar = document.querySelector('.admin-sidebar');
-        if (!sidebar) return;
-        
-        const tabs = sidebar.querySelectorAll('.admin-tab-btn');
-        tabs.forEach(tab => {
-          tab.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const targetTab = tab.getAttribute('data-tab');
-            if (!targetTab) return;
-            
-            // Set active button
+  <script>
+    // Tab switching controller for the Admin Setup modal
+    function setupAdminTabs() {
+      const sidebar = document.querySelector('.admin-sidebar');
+      if (!sidebar) return;
+
+      const tabs = sidebar.querySelectorAll('.admin-tab-btn');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetTab = tab.getAttribute('data-tab');
+          if (!targetTab) return;
+
+          // Set active button
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+
+          // Show corresponding content pane
+          const contentPanes = document.querySelectorAll('.admin-tab-content');
+          contentPanes.forEach(pane => {
+            if (pane.id === `admin-tab-${targetTab}`) {
+              pane.classList.remove('hidden');
+            } else {
+              pane.classList.add('hidden');
+            }
+          });
+        });
+      });
+    }
+
+    // Initialize tabs once DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      setupAdminTabs();
+
+      // Also listen on modal show events to reset to the first tab (branding)
+      const adminModal = document.getElementById('admin-modal');
+      if (adminModal) {
+        adminModal.addEventListener('open-admin', () => {
+          const firstTab = document.querySelector('.admin-tab-btn[data-tab="branding"]');
+          if (firstTab) {
+            // Trigger click
+            const tabs = document.querySelectorAll('.admin-sidebar .admin-tab-btn');
             tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            // Show corresponding content pane
+            firstTab.classList.add('active');
+
             const contentPanes = document.querySelectorAll('.admin-tab-content');
             contentPanes.forEach(pane => {
-              if (pane.id === `admin-tab-${targetTab}`) {
+              if (pane.id === 'admin-tab-branding') {
                 pane.classList.remove('hidden');
               } else {
                 pane.classList.add('hidden');
               }
             });
-          });
+          }
         });
       }
+    });
+  </script>
 
-      // Initialize tabs once DOM is loaded
-      document.addEventListener('DOMContentLoaded', () => {
-        setupAdminTabs();
-        
-        // Also listen on modal show events to reset to the first tab (branding)
-        const adminModal = document.getElementById('admin-modal');
-        if (adminModal) {
-          adminModal.addEventListener('open-admin', () => {
-            const firstTab = document.querySelector('.admin-tab-btn[data-tab="branding"]');
-            if (firstTab) {
-              // Trigger click
-              const tabs = document.querySelectorAll('.admin-sidebar .admin-tab-btn');
-              tabs.forEach(t => t.classList.remove('active'));
-              firstTab.classList.add('active');
-              
-              const contentPanes = document.querySelectorAll('.admin-tab-content');
-              contentPanes.forEach(pane => {
-                if (pane.id === 'admin-tab-branding') {
-                  pane.classList.remove('hidden');
-                } else {
-                  pane.classList.add('hidden');
-                }
-              });
-            }
-          });
-        }
-      });
-    </script>
+  <script type="module" src="/src/main.ts"></script>
+</body>
 
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+</html>
+pane.classList.remove('hidden');
+} else {
+pane.classList.add('hidden');
+}
+});
+});
+});
+}
+
+// Initialize tabs once DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+setupAdminTabs();
+
+// Also listen on modal show events to reset to the first tab (branding)
+const adminModal = document.getElementById('admin-modal');
+if (adminModal) {
+adminModal.addEventListener('open-admin', () => {
+const firstTab = document.querySelector('.admin-tab-btn[data-tab="branding"]');
+if (firstTab) {
+// Trigger click
+const tabs = document.querySelectorAll('.admin-sidebar .admin-tab-btn');
+tabs.forEach(t => t.classList.remove('active'));
+firstTab.classList.add('active');
+
+const contentPanes = document.querySelectorAll('.admin-tab-content');
+contentPanes.forEach(pane => {
+if (pane.id === 'admin-tab-branding') {
+pane.classList.remove('hidden');
+} else {
+pane.classList.add('hidden');
+}
+});
+}
+});
+}
+});
+</script>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>
