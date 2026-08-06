@@ -2,6 +2,7 @@ import { BaseView } from './base';
 import { loadKioskConfig } from '../services/config';
 import type { KioskConfig } from '../services/config';
 import { audioManager } from '../services/audio';
+import { showKioskPinModal, showKioskAlertModal } from '../services/modal';
 
 export class IdleView extends BaseView {
   private clickHandler: ((e: MouseEvent) => void) | null = null;
@@ -280,18 +281,32 @@ export class IdleView extends BaseView {
     }
   }
 
-  private triggerAdminModal(): void {
+  private async triggerAdminModal(): Promise<void> {
     const config = loadKioskConfig();
     const expectedPin = config.adminPin || '1234';
-    const pin = prompt('Enter Admin PIN to access configuration:');
-    if (pin === expectedPin) {
+    
+    const pin = await showKioskPinModal({
+      title: 'Admin Settings Access',
+      message: 'Enter 4-digit Staff Admin PIN to open kiosk settings',
+      icon: '⚙️'
+    });
+
+    if (pin === null) return;
+
+    if (pin.trim() === expectedPin) {
+      audioManager.playBeep();
       const adminModal = document.getElementById('admin-modal');
       if (adminModal) {
         adminModal.classList.remove('hidden');
         adminModal.dispatchEvent(new CustomEvent('open-admin'));
       }
-    } else if (pin !== null) {
-      alert('Incorrect PIN!');
+    } else {
+      audioManager.playBeep();
+      await showKioskAlertModal({
+        title: 'Access Denied',
+        message: 'Incorrect Admin PIN entered. Please try again.',
+        icon: '❌'
+      });
     }
   }
 

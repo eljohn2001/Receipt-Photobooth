@@ -3,7 +3,7 @@ import type { AppSession } from '../types';
 import { loadKioskConfig } from '../services/config';
 import { audioManager } from '../services/audio';
 import { verifyPaymentRefOnline } from '../services/payment';
-import { showKioskPromptModal, showKioskAlertModal } from '../services/modal';
+import { showKioskAlertModal, showKioskPinModal } from '../services/modal';
 
 export class PaymentView extends BaseView {
   private activeSession: AppSession;
@@ -251,11 +251,10 @@ export class PaymentView extends BaseView {
     // Staff PIN Bypass Override (Custom In-App Glass Modal)
     staffOverrideBtn?.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const enteredPin = await showKioskPromptModal({
+      const enteredPin = await showKioskPinModal({
         title: "Staff Override",
-        message: "Enter Admin PIN to bypass paywall verification",
-        placeholder: "••••",
-        confirmText: "AUTHORIZE"
+        message: "Enter 4-digit Staff Admin PIN to bypass paywall verification",
+        icon: "🔑"
       });
 
       if (enteredPin === null) return;

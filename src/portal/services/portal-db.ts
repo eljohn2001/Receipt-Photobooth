@@ -667,6 +667,7 @@ export class PortalDatabaseService {
       socialTag: `@${this.activeOrg.slug}`,
       customMessage: 'Thank you for visiting! Smile, share memories, and spread love.',
       welcomeMsg: `Welcome to ${this.activeOrg.name}! Tap screen to start photobooth.`,
+      adminPin: '1234',
       homeSubtitleTop: 'SNAPSHOT MEMORIES',
       homeSubtitleBottom: 'Thermal Receipt Photobooth',
       accentColor: '#6366f1',

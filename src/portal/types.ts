@@ -103,6 +103,7 @@ export interface RemoteSettings {
   socialTag: string;
   customMessage: string;
   welcomeMsg: string;
+  adminPin: string;
   homeSubtitleTop: string;
   homeSubtitleBottom: string;
   accentColor: string;

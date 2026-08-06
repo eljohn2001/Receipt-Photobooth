@@ -78,6 +78,12 @@ export function renderSettingsView(settings: RemoteSettings): string {
               <label>Idle Welcome Screen Banner Message</label>
               <input type="text" id="setting-welcome-msg" class="form-control" value="${settings.welcomeMsg}" />
             </div>
+
+            <div class="form-group full">
+              <label>Staff Security & Admin Hotspot PIN Passcode (4 Digits)</label>
+              <input type="password" id="setting-admin-pin" class="form-control" value="${settings.adminPin || '1234'}" maxlength="8" placeholder="e.g. 1234" />
+              <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">Passcode used by staff to unlock kiosk settings & perform Paywall Staff Overrides</div>
+            </div>
           </div>
 
           <h2 style="font-size: 15px; font-weight: 700; margin: 24px 0 16px; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">

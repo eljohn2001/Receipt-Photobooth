@@ -173,3 +173,108 @@ export function showKioskOnboardingWizard(): Promise<void> {
     renderWizardStep(currentStep);
   });
 }
+
+export function showKioskPinModal(options: {
+  title?: string;
+  message?: string;
+  icon?: string;
+}): Promise<string | null> {
+  return new Promise((resolve) => {
+    const existing = document.getElementById('kiosk-pin-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'kiosk-pin-overlay';
+    overlay.className = 'kiosk-modal-overlay';
+
+    const title = options.title || 'Staff Admin PIN';
+    const message = options.message || 'Enter 4-digit PIN passcode to authorize access';
+    const icon = options.icon || '🔑';
+
+    overlay.innerHTML = `
+      <div class="kiosk-modal-card pin-modal-card animate-pop-in">
+        <div class="kiosk-modal-icon-badge">${icon}</div>
+        <h3 class="kiosk-modal-title">${title}</h3>
+        <p class="kiosk-modal-desc">${message}</p>
+
+        <div class="pin-display-row" id="kiosk-pin-display-row">
+          <div class="pin-slot" id="k-pin-0">-</div>
+          <div class="pin-slot" id="k-pin-1">-</div>
+          <div class="pin-slot" id="k-pin-2">-</div>
+          <div class="pin-slot" id="k-pin-3">-</div>
+        </div>
+
+        <div class="keypad-grid" id="k-pin-keypad" style="margin-top: 16px;">
+          <button type="button" class="keypad-btn" data-key="1">1</button>
+          <button type="button" class="keypad-btn" data-key="2">2</button>
+          <button type="button" class="keypad-btn" data-key="3">3</button>
+          <button type="button" class="keypad-btn" data-key="4">4</button>
+          <button type="button" class="keypad-btn" data-key="5">5</button>
+          <button type="button" class="keypad-btn" data-key="6">6</button>
+          <button type="button" class="keypad-btn" data-key="7">7</button>
+          <button type="button" class="keypad-btn" data-key="8">8</button>
+          <button type="button" class="keypad-btn" data-key="9">9</button>
+          <button type="button" class="keypad-btn keypad-btn-action" data-key="delete">⌫</button>
+          <button type="button" class="keypad-btn" data-key="0">0</button>
+          <button type="button" class="keypad-btn keypad-btn-action" data-key="cancel">CANCEL</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    let digits: string[] = [];
+
+    const updateDisplay = () => {
+      for (let i = 0; i < 4; i++) {
+        const slot = overlay.querySelector(`#k-pin-${i}`) as HTMLElement;
+        if (slot) {
+          if (i < digits.length) {
+            slot.textContent = '•';
+            slot.classList.add('filled');
+            slot.classList.remove('active');
+          } else if (i === digits.length) {
+            slot.textContent = '-';
+            slot.classList.remove('filled');
+            slot.classList.add('active');
+          } else {
+            slot.textContent = '-';
+            slot.classList.remove('filled', 'active');
+          }
+        }
+      }
+    };
+
+    updateDisplay();
+
+    const keypad = overlay.querySelector('#k-pin-keypad');
+    keypad?.addEventListener('click', (e) => {
+      const target = (e.target as HTMLElement).closest('.keypad-btn') as HTMLButtonElement;
+      if (!target) return;
+
+      e.stopPropagation();
+      const key = target.getAttribute('data-key');
+
+      if (key === 'cancel') {
+        overlay.remove();
+        resolve(null);
+      } else if (key === 'delete') {
+        digits.pop();
+        updateDisplay();
+      } else if (key && /^[0-9]$/.test(key)) {
+        if (digits.length < 4) {
+          digits.push(key);
+          updateDisplay();
+
+          if (digits.length === 4) {
+            const val = digits.join('');
+            setTimeout(() => {
+              overlay.remove();
+              resolve(val);
+            }, 150);
+          }
+        }
+      }
+    });
+  });
+}
